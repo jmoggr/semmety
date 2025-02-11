@@ -34,7 +34,7 @@ public:
     class Parent {
     public:
         std::list<SP<SemmetyFrame>> children;
-        Parent() = default;
+        Parent(std::list<SP<SemmetyFrame>> childrenList = {}) : children(std::move(childrenList)) {}
 
         bool operator==(const Parent& other) const {
             return children == other.children;
