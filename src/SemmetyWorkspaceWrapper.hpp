@@ -15,6 +15,6 @@ public:
 
 	SemmetyWorkspaceWrapper(PHLWORKSPACEREF w);
 	void addWindow(PHLWINDOWREF w);
-  void putWindowInActiveFrame(PHLWINDOWREF w);
+  void putWindowInFocusedFrame(PHLWINDOWREF w);
   SemmetyFrame& getFocusedFrame();
 };

@@ -15,6 +15,6 @@ SemmetyFrame& SemmetyWorkspaceWrapper::getFocusedFrame() {
   // assert that the frame is not a parent?
 }
 
-void SemmetyWorkspaceWrapper::putWindowInActiveFrame(PHLWINDOWREF window) {
+void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
   //
 }
