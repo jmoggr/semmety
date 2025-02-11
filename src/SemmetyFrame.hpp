@@ -24,6 +24,9 @@ public:
         bool operator==(const Window& other) const {
             return window.get() == other.window.get();
         }
+        bool operator==(const Window& other) const {
+            return window.get() == other.window.get();
+        }
     };
 
     class Window {
