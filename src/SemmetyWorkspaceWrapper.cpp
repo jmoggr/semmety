@@ -18,12 +18,12 @@ SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFrameForWindow(PHLWINDOWREF window)
         auto current = stack.back();
         stack.pop_back();
 
-        if (current->is_window() && current->getWindow() == window) {
+        if (current->is_window() && current->data.as_window() == window) {
             return current;
         }
 
-        if (auto parentFrame = std::dynamic_pointer_cast<SemmetyParentFrame>(current)) {
-            for (const auto& child : parentFrame->children) {
+        if (current->is_parent()) {
+            for (const auto& child : current->data.as_group().children) {
                 stack.push_back(child);
             }
         }
@@ -71,11 +71,11 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
     auto& activeFrame = getFocusedFrame();
 
     if (activeFrame.is_window()) {
-        if (activeFrame.getWindow() == window) {
+        if (activeFrame.data.as_window() == window) {
             return;
         }
 
-        minimized_windows.push_back(activeFrame.getWindow());
+        minimized_windows.push_back(activeFrame.data.as_window());
     }
 
     auto frameWithWindow = getFrameForWindow(window);
