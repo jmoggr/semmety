@@ -32,16 +32,16 @@ void dispatch_split(std::string arg) {
     if (focused_frame.data.is_window()) {
         // If the focused frame had a window, the first child should have that window
         auto window = focused_frame.data.as_window();
-        auto firstChild = std::make_shared<SemmetyFrame>(window);
+        auto firstChild = Hyprutils::Memory::makeCSharedPointer<SemmetyFrame>(window);
         parentData.children.push_back(firstChild);
     } else {
         // Otherwise, the first child should be empty
-        auto firstChild = std::make_shared<SemmetyFrame>(SemmetyFrame::Empty{});
+        auto firstChild = Hyprutils::Memory::makeCSharedPointer<SemmetyFrame>(SemmetyFrame::Empty{});
         parentData.children.push_back(firstChild);
     }
 
     // The second child should always be empty
-    auto secondChild = std::make_shared<SemmetyFrame>(SemmetyFrame::Empty{});
+    auto secondChild = Hyprutils::Memory::makeCSharedPointer<SemmetyFrame>(SemmetyFrame::Empty{});
     parentData.children.push_back(secondChild);
 
     // Set the focused frame's data to be the new parent
