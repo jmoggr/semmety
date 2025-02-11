@@ -19,6 +19,8 @@ public:
 
     virtual bool is_window() const { return false; }
 
+    virtual bool is_empty() const { return false; }
+    virtual bool is_leaf() const { return is_empty() || is_window(); }
     virtual void print() const = 0;
 
     SP<SemmetyParentFrame> get_parent() const;
@@ -34,6 +36,7 @@ public:
 
     SemmetyWindowFrame(PHLWINDOWREF w);
     bool is_window() const override;
+    bool is_empty() const override { return true; }
     void print() const override;
 };
 

@@ -6,6 +6,10 @@ SP<SemmetyParentFrame> SemmetyFrame::get_parent() const {
     return parent.lock();
 }
 
+bool SemmetyWindowFrame::is_empty() const {
+    return false;
+}
+
 bool SemmetyWindowFrame::is_window() const {
     return true;
 }
