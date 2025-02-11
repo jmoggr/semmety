@@ -53,7 +53,7 @@ SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE
 
     this->workspaceWrappers.emplace_back(workspace);
 
-    return &this->workspaceWrappers.back();
+    return this->workspaceWrappers.back();
 }
 bool SemmetyLayout::isWindowTiled(PHLWINDOW) {
     // Logic to determine if a window is tiled
