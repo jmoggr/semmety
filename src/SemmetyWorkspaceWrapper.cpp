@@ -96,6 +96,6 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window)
 }
 
 void SemmetyWorkspaceWrapper::apply() {
-      root.propagateGeometry();
-      root.applyRecursive();
+      root->propagateGeometry();
+      root->applyRecursive();
 }
