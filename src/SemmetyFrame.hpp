@@ -42,7 +42,7 @@ public:
     void print() const override;
 };
 
-class SemmetyParentFrame : public SemmetyFrame, public std::enable_shared_from_this<SemmetyParentFrame> {
+class SemmetyParentFrame : public SemmetyFrame {
 public:
     std::list<SP<SemmetyFrame>> children;
 

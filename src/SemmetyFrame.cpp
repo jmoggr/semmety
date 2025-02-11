@@ -20,7 +20,7 @@ void SemmetyEmptyFrame::print() const {
 
 SemmetyParentFrame::SemmetyParentFrame(std::list<SP<SemmetyFrame>> ch) : children(std::move(ch)) {
     for (auto& child : children) {
-        child->parent = shared_from_this();
+        child->parent = SP<SemmetyParentFrame>(this);
     }
 }
 
