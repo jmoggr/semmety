@@ -3,7 +3,11 @@
 
 
 SP<SemmetyFrame> SemmetyFrame::get_parent() const {
-    return parent.lock();
+    auto parentFrame = parent.lock();
+    if (parentFrame && parentFrame->data.is_parent()) {
+        return parentFrame;
+    }
+    return nullptr;
 }
 
 
