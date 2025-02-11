@@ -45,14 +45,14 @@ SemmetyFrame& SemmetyWorkspaceWrapper::getFocusedFrame() {
 }
 
 void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
-    auto& activeFrame = getFocusedFrame();
+    auto& focusedFrame = getFocusedFrame();
 
-    if (activeFrame.is_window()) {
-        if (activeFrame.data.as_window() == window) {
+    if (focusedFrame.is_window()) {
+        if (focusedFrame.data.as_window() == window) {
             return;
         }
 
-        minimized_windows.push_back(activeFrame.data.as_window());
+        minimized_windows.push_back(focusedFrame.data.as_window());
     }
 
     auto frameWithWindow = getFrameForWindow(window);
@@ -62,6 +62,6 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
         minimized_windows.remove(window);
     }
 
-    activeFrame.setWindow(window);
+    focusedFrame.setWindow(window);
 }
 }
