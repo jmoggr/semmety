@@ -120,9 +120,39 @@ CBox SemmetyFrame::getStandardWindowArea(SBoxExtents extents) {
 }
 
 void SemmetyFrame::applyRecursive() {
-	if (this->data.is_window()) {
-		// this->data.as_window()->setHidden(this->hidden);
-		this->layout->applyNodeDataToWindow(this, no_animation);
-		return;
-	}
+    if (this->data.is_empty()) {
+        return;
+    }
+
+    if (this->data.is_parent()) {
+        // Todo aplly recursive
+        return;
+    }
+
+    auto window = this->data.as_window().window;
+
+    
+    	auto nodeBox = CBox(position, size);
+    	nodeBox.round();
+
+    	window->m_vSize = nodeBox.size();
+    	window->m_vPosition = nodeBox.pos();
+
+     window->m_sWindowData.decorate = CWindowOverridableVar(
+		    true,
+		    PRIORITY_LAYOUT
+		); // a little curious but copying what dwindle does
+		window->m_sWindowData.noBorder =
+		    CWindowOverridableVar(*no_gaps_when_only != 2, PRIORITY_LAYOUT);
+		window->m_sWindowData.noRounding = CWindowOverridableVar(true, PRIORITY_LAYOUT);
+		window->m_sWindowData.noShadow = CWindowOverridableVar(true, PRIORITY_LAYOUT);
+
+		window->updateWindowDecos();
+
+		const auto reserved = window->getFullWindowReservedArea();
+
+		*window->m_vRealPosition = window->m_vPosition + reserved.topLeft;
+		*window->m_vRealSize = window->m_vSize - (reserved.topLeft + reserved.bottomRight);
+
+		window->sendWindowSize(true);   
 }
