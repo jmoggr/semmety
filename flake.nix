@@ -72,7 +72,7 @@
     devShells = perSystem (system: pkgs: {
       default = pkgs.mkShell {
         name = "Semmety-shell";
-        nativeBuildInputs = with pkgs; [gcc14];
+        nativeBuildInputs = with pkgs; [gcc14 clang-tools];
         buildInputs = [hyprland.packages.${system}.hyprland];
         inputsFrom = [
           hyprland.packages.${system}.hyprland
