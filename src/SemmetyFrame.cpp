@@ -20,11 +20,11 @@ std::pair<CBox, CBox> SemmetyFrame::getChildGeometries() const {
 
             CBox left_rect(
                 this->position,
-                Vector2D(new_width + this->gap_topleft_offset.x, this->size.y)
+                Vector2D(new_width + this->child0Offset, this->size.y)
             );
             CBox right_rect(
                 Vector2D(this->position.x + new_width + this->gap_topleft_offset.x, this->position.y),
-                Vector2D(new_width - this->gap_topleft_offset.x, this->size.y)
+                Vector2D(new_width - this->child0Offset, this->size.y)
             );
 
             return {left_rect, right_rect};
@@ -34,11 +34,11 @@ std::pair<CBox, CBox> SemmetyFrame::getChildGeometries() const {
 
             CBox top_rect(
                 this->position,
-                Vector2D(this->size.x, new_height + this->gap_topleft_offset.y)
+                Vector2D(this->size.x, new_height + this->child0Offset)
             );
             CBox bottom_rect(
                 Vector2D(this->position.x, this->position.y + new_height + this->gap_topleft_offset.y),
-                Vector2D(this->size.x, new_height - this->gap_topleft_offset.y)
+                Vector2D(this->size.x, new_height - this->child0Offset)
             );
 
             return {top_rect, bottom_rect};
