@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <list>
+#include <variant>
 
 enum class SemmetyGroupLayout {
 	SplitH,
@@ -13,48 +14,32 @@ class SemmetyParentFrame;
 
 class SemmetyFrame {
 public:
-    virtual ~SemmetyFrame() = default;
+    struct Empty {};
+    struct Window {
+        PHLWINDOWREF window;
+    };
+    struct Parent {
+        std::list<SP<SemmetyFrame>> children;
+    };
 
-    WP<SemmetyParentFrame> parent;
+    using FrameData = std::variant<Empty, Window, Parent>;
 
-    virtual bool is_window() const { return false; }
-    virtual bool is_empty() const { return false; }
-    virtual bool is_leaf() const { return is_empty() || is_window(); }
-    virtual void print() const = 0;
-    virtual void setWindow(PHLWINDOWREF window) {
-        throw std::runtime_error("Cannot set window on non-window frame");
-    }
+    FrameData data;
+    WP<SemmetyFrame> parent;
 
-    SP<SemmetyParentFrame> get_parent() const;
-  	Vector2D position;
-  	Vector2D size;
-  	Vector2D gap_topleft_offset;
-  	Vector2D gap_bottomright_offset;
-};
+    SemmetyFrame() : data(Empty{}) {}
 
-class SemmetyWindowFrame : public SemmetyFrame {
-public:
-    PHLWINDOWREF window;
+    bool is_window() const { return std::holds_alternative<Window>(data); }
+    bool is_empty() const { return std::holds_alternative<Empty>(data); }
+    bool is_leaf() const { return is_empty() || is_window(); }
 
-    SemmetyWindowFrame(PHLWINDOWREF w);
-    bool is_window() const override;
-    void print() const override;
-};
+    void setWindow(PHLWINDOWREF window);
+    void clearWindow();
+    void print() const;
 
-class SemmetyEmptyFrame : public SemmetyFrame {
-public:
-    void print() const override;
-    bool is_empty() const { return false; }
-    void setWindow(PHLWINDOWREF window) override {
-        // Convert this empty frame into a window frame
-        this->window = window;
-    }
-};
-
-class SemmetyParentFrame : public SemmetyFrame {
-public:
-    std::list<SP<SemmetyFrame>> children;
-
-    SemmetyParentFrame(std::list<SP<SemmetyFrame>> ch);
-    void print() const override;
+    SP<SemmetyFrame> get_parent() const;
+    Vector2D position;
+    Vector2D size;
+    Vector2D gap_topleft_offset;
+    Vector2D gap_bottomright_offset;
 };

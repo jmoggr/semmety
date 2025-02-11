@@ -6,33 +6,24 @@ SP<SemmetyParentFrame> SemmetyFrame::get_parent() const {
     return parent.lock();
 }
 
-bool SemmetyWindowFrame::is_window() const {
-    return true;
+void SemmetyFrame::setWindow(PHLWINDOWREF window) {
+    data = Window{window};
 }
 
-void SemmetyWindowFrame::setWindow(PHLWINDOWREF window) {
-    this->window = window;
+void SemmetyFrame::clearWindow() {
+    data = Empty{};
 }
 
-void SemmetyWindowFrame::print() const {
-    // std::cout << "SemmetyWindowFrame (WindowId: " << windowId << ")\n";
-}
-
-void SemmetyEmptyFrame::print() const {
-    // std::cout << "SemmetyEmptyFrame (children = null)\n";
-}
-
-
-SemmetyParentFrame::SemmetyParentFrame(std::list<SP<SemmetyFrame>> ch) : children(std::move(ch)) {
-    for (auto& child : children) {
-        child->parent = SP<SemmetyParentFrame>(this);
-    }
-}
-
-void SemmetyParentFrame::print() const {
-    // std::cout << "SemmetyParentFrame with " << children.size() << " children\n";
-    for (const auto& child : children) {
-        child->print();
+void SemmetyFrame::print() const {
+    if (is_window()) {
+        // std::cout << "SemmetyFrame (WindowId: " << std::get<Window>(data).window << ")\n";
+    } else if (is_empty()) {
+        // std::cout << "SemmetyFrame (Empty)\n";
+    } else {
+        // std::cout << "SemmetyFrame (Parent with children)\n";
+        for (const auto& child : std::get<Parent>(data).children) {
+            child->print();
+        }
     }
 }
 
