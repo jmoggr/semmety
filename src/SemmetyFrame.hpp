@@ -21,18 +21,15 @@ public:
         bool operator==(const Empty&) const {
             return true; // All Empty instances are considered equal
         }
-        bool operator==(const Window& other) const {
-            return window.get() == other.window.get();
-        }
-        bool operator==(const Window& other) const {
-            return window.get() == other.window.get();
-        }
     };
 
     class Window {
     public:
         PHLWINDOWREF window;
         Window(PHLWINDOWREF win) : window(win) {}
+        bool operator==(const Window& other) const {
+            return window.get() == other.window.get();
+        }
     };
 
     class Parent {
@@ -92,7 +89,6 @@ public:
         std::variant<Empty, Window, Parent> data;
     };
 
-    FrameData data;
 
     FrameData data;
     WP<SemmetyFrame> parent;
