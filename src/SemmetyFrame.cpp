@@ -13,6 +13,42 @@ SP<SemmetyFrame> SemmetyFrame::get_parent() const {
     return parentFrame;
 }
 
+std::pair<CBox, CBox> SemmetyFrame::getChildGeometries() const {
+    switch (this->split_direction) {
+        case SemmetySplitDirection::SplitV: {
+            const auto new_width = static_cast<int>(this->size.x / 2);
+
+            CBox left_rect(
+                this->position,
+                Vector2D(new_width + this->gap_topleft_offset.x, this->size.y)
+            );
+            CBox right_rect(
+                Vector2D(this->position.x + new_width + this->gap_topleft_offset.x, this->position.y),
+                Vector2D(new_width - this->gap_topleft_offset.x, this->size.y)
+            );
+
+            return {left_rect, right_rect};
+        }
+        case SemmetySplitDirection::SplitH: {
+            const auto new_height = static_cast<int>(this->size.y / 2);
+
+            CBox top_rect(
+                this->position,
+                Vector2D(this->size.x, new_height + this->gap_topleft_offset.y)
+            );
+            CBox bottom_rect(
+                Vector2D(this->position.x, this->position.y + new_height + this->gap_topleft_offset.y),
+                Vector2D(this->size.x, new_height - this->gap_topleft_offset.y)
+            );
+
+            return {top_rect, bottom_rect};
+        }
+        default: {
+            throw std::runtime_error("Invalid split direction");
+        }
+    }
+}
+
 
 void SemmetyFrame::print() const {
     if (data.is_window()) {
