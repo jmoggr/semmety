@@ -70,7 +70,7 @@ public:
         bool is_leaf() const { return is_empty() || is_window(); }
         bool is_parent() const { return std::holds_alternative<Parent>(data); }
 
-        Parent& as_parent() {
+        Parent& as_parent() const {
             if (std::holds_alternative<Parent>(data)) {
                 return std::get<Parent>(data);
             } else {
