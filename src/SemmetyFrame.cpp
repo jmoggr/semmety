@@ -4,7 +4,10 @@
 
 SP<SemmetyFrame> SemmetyFrame::get_parent() const {
     auto parentFrame = parent.lock();
-    if (parentFrame && parentFrame->data.is_parent()) {
+    if (!parentFrame) {
+        return nullptr;
+    }
+    if (parentFrame->data.is_parent()) {
         return parentFrame;
     }
     return nullptr;
