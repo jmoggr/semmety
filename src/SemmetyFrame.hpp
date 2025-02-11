@@ -21,6 +21,9 @@ public:
         bool operator==(const Empty&) const {
             return true; // All Empty instances are considered equal
         }
+        bool operator==(const Window& other) const {
+            return window == other.window;
+        }
     };
 
     class Window {
