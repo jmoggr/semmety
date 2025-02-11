@@ -7,6 +7,7 @@
 #include <list>
 
 #include "SemmetyWorkspaceWrapper.hpp"
+#include "SemmetyFrame.hpp"
 #include "log.hpp"
 
 
