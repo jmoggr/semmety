@@ -1,3 +1,16 @@
+
+#include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/config/ConfigManager.hpp>
+#include <hyprland/src/desktop/DesktopTypes.hpp>
+#include <hyprland/src/desktop/Workspace.hpp>
+#include <hyprland/src/managers/LayoutManager.hpp>
+#include <hyprland/src/managers/PointerManager.hpp>
+#include <hyprland/src/managers/SeatManager.hpp>
+#include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprland/src/plugins/PluginSystem.hpp>
+#include <hyprutils/math/Vector2D.hpp>
+
 #include "globals.hpp"
 #include "SemmetyFrame.hpp"
 
@@ -125,13 +138,31 @@ void SemmetyFrame::applyRecursive() {
     }
 
     if (this->data.is_parent()) {
-        // Todo aplly recursive
+            for (const auto& child : current->data.as_parent().children) {
+                child.applyRecursive();
+            }
+        
         return;
     }
 
     auto window = this->data.as_window().window;
 
     
+    	if (!valid(window) || !window->m_bIsMapped) {
+    		semmety_log(
+    		    ERR,
+    		    "node {:x} is an unmapped window ({:x}), cannot apply node data, removing from tiled "
+    		    "layout",
+    		    (uintptr_t) node,
+    		    (uintptr_t) window.get()
+    		);
+    		errorNotif();
+    		// this->onWindowRemovedTiling(window);
+    		return;
+    	}
+
+    	window->unsetWindowData(PRIORITY_LAYOUT);
+
     	auto nodeBox = CBox(position, size);
     	nodeBox.round();
 
