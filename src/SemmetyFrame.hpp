@@ -35,14 +35,13 @@ public:
 
     SemmetyWindowFrame(PHLWINDOWREF w);
     bool is_window() const override;
-    bool is_empty() const override { return true; }
-    bool is_empty() const override;
     void print() const override;
 };
 
 class SemmetyEmptyFrame : public SemmetyFrame {
 public:
     void print() const override;
+    bool is_empty() const { return false; }
 };
 
 class SemmetyParentFrame : public SemmetyFrame {

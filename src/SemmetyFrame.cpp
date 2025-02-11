@@ -6,10 +6,6 @@ SP<SemmetyParentFrame> SemmetyFrame::get_parent() const {
     return parent.lock();
 }
 
-bool SemmetyWindowFrame::is_empty() const {
-    return false;
-}
-
 bool SemmetyWindowFrame::is_window() const {
     return true;
 }
@@ -21,6 +17,7 @@ void SemmetyWindowFrame::print() const {
 void SemmetyEmptyFrame::print() const {
     // std::cout << "SemmetyEmptyFrame (children = null)\n";
 }
+
 
 SemmetyParentFrame::SemmetyParentFrame(std::list<SP<SemmetyFrame>> ch) : children(std::move(ch)) {
     for (auto& child : children) {
