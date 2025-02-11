@@ -32,6 +32,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         semmety_log(ERR, "fail add layout");
     }
 
+    semmety_log(ERR, "in init");
     registerDispatchers();
 
 		HyprlandAPI::reloadConfig();
