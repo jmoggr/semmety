@@ -138,52 +138,44 @@ void SemmetyFrame::applyRecursive() {
     }
 
     if (this->data.is_parent()) {
-            for (const auto& child : current->data.as_parent().children) {
-                child.applyRecursive();
-            }
-        
+        for (const auto& child : this->data.as_parent().children) {
+            child->applyRecursive();
+        }
         return;
     }
 
-    auto window = this->data.as_window().window;
+    auto window = this->data.as_window();
 
-    
-    	if (!valid(window) || !window->m_bIsMapped) {
-    		semmety_log(
-    		    ERR,
-    		    "node {:x} is an unmapped window ({:x}), cannot apply node data, removing from tiled "
-    		    "layout",
-    		    (uintptr_t) node,
-    		    (uintptr_t) window.get()
-    		);
-    		errorNotif();
-    		// this->onWindowRemovedTiling(window);
-    		return;
-    	}
+    if (!valid(window) || !window->m_bIsMapped) {
+        semmety_log(
+            ERR,
+            "node {:x} is an unmapped window ({:x}), cannot apply node data, removing from tiled layout",
+            (uintptr_t)this,
+            (uintptr_t)window.get()
+        );
+        // Handle error notification or removal logic here
+        return;
+    }
 
-    	window->unsetWindowData(PRIORITY_LAYOUT);
+    window->unsetWindowData(PRIORITY_LAYOUT);
 
-    	auto nodeBox = CBox(position, size);
-    	nodeBox.round();
+    auto nodeBox = CBox(position, size);
+    nodeBox.round();
 
-    	window->m_vSize = nodeBox.size();
-    	window->m_vPosition = nodeBox.pos();
+    window->m_vSize = nodeBox.size();
+    window->m_vPosition = nodeBox.pos();
 
-     window->m_sWindowData.decorate = CWindowOverridableVar(
-		    true,
-		    PRIORITY_LAYOUT
-		); // a little curious but copying what dwindle does
-		window->m_sWindowData.noBorder =
-		    CWindowOverridableVar(*no_gaps_when_only != 2, PRIORITY_LAYOUT);
-		window->m_sWindowData.noRounding = CWindowOverridableVar(true, PRIORITY_LAYOUT);
-		window->m_sWindowData.noShadow = CWindowOverridableVar(true, PRIORITY_LAYOUT);
+    window->m_sWindowData.decorate = CWindowOverridableVar(true, PRIORITY_LAYOUT);
+    window->m_sWindowData.noBorder = CWindowOverridableVar(true, PRIORITY_LAYOUT);
+    window->m_sWindowData.noRounding = CWindowOverridableVar(true, PRIORITY_LAYOUT);
+    window->m_sWindowData.noShadow = CWindowOverridableVar(true, PRIORITY_LAYOUT);
 
-		window->updateWindowDecos();
+    window->updateWindowDecos();
 
-		const auto reserved = window->getFullWindowReservedArea();
+    const auto reserved = window->getFullWindowReservedArea();
 
-		*window->m_vRealPosition = window->m_vPosition + reserved.topLeft;
-		*window->m_vRealSize = window->m_vSize - (reserved.topLeft + reserved.bottomRight);
+    *window->m_vRealPosition = window->m_vPosition + reserved.topLeft;
+    *window->m_vRealSize = window->m_vSize - (reserved.topLeft + reserved.bottomRight);
 
-		window->sendWindowSize(true);   
+    window->sendWindowSize(true);
 }
