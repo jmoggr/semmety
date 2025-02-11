@@ -11,6 +11,14 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w) {
   this->focused_frame = frame;
 }
 
+void SemmetyWorkspaceWrapper::minimizeWindow(PHLWINDOWREF window) {
+    auto frameWithWindow = getFrameForWindow(window);
+    if (frameWithWindow) {
+        frameWithWindow->data = SemmetyFrame::Empty{};
+        minimized_windows.push_back(window);
+    }
+}
+
 SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFrameForWindow(PHLWINDOWREF window) const
 {
     std::list<SP<SemmetyFrame>> stack;
