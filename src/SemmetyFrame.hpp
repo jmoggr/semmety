@@ -30,6 +30,10 @@ public:
     public:
         std::list<SP<SemmetyFrame>> children;
         Parent() = default;
+
+        bool operator==(const Parent& other) const {
+            return children == other.children;
+        }
     };
 
     class FrameData {
