@@ -65,12 +65,20 @@ public:
         bool is_leaf() const { return is_empty() || is_window(); }
         bool is_parent() const { return std::holds_alternative<Parent>(data); }
 
-        Parent& as_group() {
-            return std::get<Parent>(data);
+        Parent& as_parent() {
+            if (std::holds_alternative<Parent>(data)) {
+                return std::get<Parent>(data);
+            } else {
+                throw std::runtime_error("Attempted to get parent value of a non-parent FrameData");
+            }
         }
 
         PHLWINDOWREF as_window() {
-            return std::get<Window>(data).window;
+            if (std::holds_alternative<Window>(data)) {
+                return std::get<Window>(data).window;
+            } else {
+                throw std::runtime_error("Attempted to get window value of a non-window FrameData");
+            }
         }
 
     private:
