@@ -18,6 +18,9 @@ public:
     class Empty {
     public:
         Empty() = default;
+        bool operator==(const Window& other) const {
+            return window == other.window;
+        }
     };
 
     class Window {
