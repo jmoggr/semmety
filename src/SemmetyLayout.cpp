@@ -8,7 +8,7 @@
 #include "SemmetyWorkspaceWrapper.hpp"
 #include "SemmetyWorkspaceWrapper.hpp"
 
-SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = false) {
+SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
   auto layout = g_SemmetyLayout.get();
 	if (g_pLayoutManager->getCurrentLayout() != layout) return nullptr;
 
@@ -18,7 +18,7 @@ SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = false) {
 	if (!valid(workspace)) return nullptr;
 	if (!allow_fullscreen && workspace->m_bHasFullscreenWindow) return nullptr;
 
-	return layout.getOrCreateWorkspaceWrapper(workspace);
+	return layout->getOrCreateWorkspaceWrapper(workspace);
 }
 
 
