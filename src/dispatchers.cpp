@@ -20,7 +20,7 @@ void dispatch_movefocus(std::string value) {
 }
 
 void dispatch_split(std::string arg) {
-	auto workspace_wrapper = workspace_for_action(true);
+	auto workspace_wrapper = workspace_for_action(true).get();
 	if (workspace_wrapper == nullptr) return;
 
 	auto focused_frame = workspace_wrapper.getFocusedFrame();
