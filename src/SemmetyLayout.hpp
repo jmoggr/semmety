@@ -29,25 +29,25 @@ class SemmetyLayout: public IHyprLayout {
     // /*
     //     Return tiled status
     // */
-    // bool isWindowTiled(PHLWINDOW) = 0;
+    bool isWindowTiled(PHLWINDOW) override;
 
     // /*
     //     Called when a window is removed (unmapped)
     // */
     // void onWindowRemoved(PHLWINDOW);
-    // void onWindowRemovedTiling(PHLWINDOW) = 0;
+    void onWindowRemovedTiling(PHLWINDOW) override;
     // void onWindowRemovedFloating(PHLWINDOW);
     // /*
     //     Called when the monitor requires a layout recalculation
     //     this usually means reserved area changes
     // */
-    // void recalculateMonitor(const MONITORID&) = 0;
+    void recalculateMonitor(const MONITORID&) override;
 
     // /*
     //     Called when the compositor requests a window
     //     to be recalculated, e.g. when pseudo is toggled.
     // */
-    // void recalculateWindow(PHLWINDOW) = 0;
+    void recalculateWindow(PHLWINDOW) override;
 
     // /*
     //     Called when a window is requested to be floated
@@ -64,7 +64,7 @@ class SemmetyLayout: public IHyprLayout {
     //     Vector2D holds pixel values
     //     Optional pWindow for a specific window
     // */
-    // void resizeActiveWindow(const Vector2D&, eRectCorner corner = CORNER_NONE, PHLWINDOW pWindow = nullptr) = 0;
+    void resizeActiveWindow(const Vector2D&, eRectCorner corner = CORNER_NONE, PHLWINDOW pWindow = nullptr) override;
     // /*
     //     Called when a user requests a move of the current window by a vec
     //     Vector2D holds pixel values
@@ -88,44 +88,44 @@ class SemmetyLayout: public IHyprLayout {
     //     The layout sets all the fullscreen flags.
     //     It can either accept or ignore.
     // */
-    // void fullscreenRequestForWindow(PHLWINDOW pWindow, const eFullscreenMode CURRENT_EFFECTIVE_MODE, const eFullscreenMode EFFECTIVE_MODE) = 0;
+    void fullscreenRequestForWindow(PHLWINDOW pWindow, const eFullscreenMode CURRENT_EFFECTIVE_MODE, const eFullscreenMode EFFECTIVE_MODE) override;
 
     // /*
     //     Called when a dispatcher requests a custom message
     //     The layout is free to ignore.
     //     std::any is the reply. Can be empty.
     // */
-    // std::any layoutMessage(SLayoutMessageHeader, std::string) = 0;
+    std::any layoutMessage(SLayoutMessageHeader, std::string) override;
 
     // /*
     //     Required to be handled, but may return just SWindowRenderLayoutHints()
     //     Called when the renderer requests any special draw flags for
     //     a specific window, e.g. border color for groups.
     // */
-    // SWindowRenderLayoutHints requestRenderHints(PHLWINDOW) = 0;
+    SWindowRenderLayoutHints requestRenderHints(PHLWINDOW) override;
 
     // /*
     //     Called when the user requests two windows to be swapped places.
     //     The layout is free to ignore.
     // */
-    // void switchWindows(PHLWINDOW, PHLWINDOW) = 0;
+    void switchWindows(PHLWINDOW, PHLWINDOW) override;
 
     // /*
     //     Called when the user requests a window move in a direction.
     //     The layout is free to ignore.
     // */
-    // void moveWindowTo(PHLWINDOW, const std::string& direction, bool silent = false) = 0;
+    void moveWindowTo(PHLWINDOW, const std::string& direction, bool silent = false) override;
 
     // /*
     //     Called when the user requests to change the splitratio by or to X
     //     on a window
     // */
-    // void alterSplitRatio(PHLWINDOW, float, bool exact = false) = 0;
+    void alterSplitRatio(PHLWINDOW, float, bool exact = false) override;
 
     // /*
     //     Called when something wants the current layout's name
     // */
-    // std::string getLayoutName() = 0;
+    std::string getLayoutName() override;
 
     // /*
     //     Called for getting the next candidate for a focus
@@ -140,7 +140,7 @@ class SemmetyLayout: public IHyprLayout {
     // /*
     //     Called for replacing any data a layout has for a new window
     // */
-    // void replaceWindowDataWith(PHLWINDOW from, PHLWINDOW to) = 0;
+    void replaceWindowDataWith(PHLWINDOW from, PHLWINDOW to) override;
 
     // /*
     //     Determines if a window can be focused. If hidden this usually means the window is part of a group.
@@ -165,7 +165,7 @@ class SemmetyLayout: public IHyprLayout {
     //     Called to predict the size of a newly opened window to send it a configure.
     //     Return 0,0 if unpredictable
     // */
-    // Vector2D predictSizeForNewWindowTiled() = 0;
+    Vector2D predictSizeForNewWindowTiled() override;
 
     // /*
     //     Prefer not overriding, use predictSizeForNewWindowTiled.
