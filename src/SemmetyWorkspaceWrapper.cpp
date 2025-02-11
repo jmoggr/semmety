@@ -69,5 +69,23 @@ SemmetyFrame& SemmetyWorkspaceWrapper::getFocusedFrame() {
 }
 
 void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
-  //
+    auto& activeFrame = getFocusedFrame();
+
+    if (activeFrame.is_window()) {
+        if (activeFrame.getWindow() == window) {
+            return;
+        }
+
+        minimized_windows.push_back(activeFrame.getWindow());
+    }
+
+    auto frameWithWindow = getFrameForWindow(window);
+    if (frameWithWindow) {
+        frameWithWindow->clearWindow();
+    } else {
+        minimized_windows.remove(window);
+    }
+
+    activeFrame.setWindow(window);
+}
 }
