@@ -18,8 +18,8 @@ public:
     class Empty {
     public:
         Empty() = default;
-        bool operator==(const Window& other) const {
-            return window == other.window;
+        bool operator==(const Empty&) const {
+            return true; // All Empty instances are considered equal
         }
     };
 
