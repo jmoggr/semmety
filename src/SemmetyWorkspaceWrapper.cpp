@@ -22,8 +22,8 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
     	auto& monitor = w->m_pMonitor;
     auto frame = makeShared<SemmetyFrame>();
 
-    frame->position = monitor->vecPosition + monitor->vecReservedTopLeft;
-    frame->size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
+    frame->geometry.pos() = monitor->vecPosition + monitor->vecReservedTopLeft;
+    frame->geometry.size() = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
 
     this->root = frame;
     this->focused_frame = frame;
