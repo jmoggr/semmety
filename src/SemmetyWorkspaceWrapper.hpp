@@ -2,8 +2,9 @@
 
 #include <hyprutils/memory/SharedPtr.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
-#include "SemmetyFrame.hpp"
 
+#include "SemmetyFrame.hpp"
+#include "SemmetyLayout.hpp"
 #include <list>
 
 class SemmetyLayout; // Forward declaration
@@ -16,7 +17,7 @@ public:
 	SP<SemmetyFrame> root;
 	SP<SemmetyFrame> focused_frame;
 
-	SemmetyWorkspaceWrapper(PHLWORKSPACEREF w);
+	SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout&);
     void addWindow(PHLWINDOWREF w);
   void putWindowInFocusedFrame(PHLWINDOWREF w);
   SemmetyFrame& getFocusedFrame();
@@ -24,4 +25,5 @@ public:
     SP<SemmetyFrame> getFrameForWindow(PHLWINDOWREF window) const;
     void minimizeWindow(PHLWINDOWREF window);
     void removeWindow(PHLWINDOWREF window);
+    void apply();
 };
