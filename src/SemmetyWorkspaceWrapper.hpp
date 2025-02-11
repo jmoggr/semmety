@@ -4,10 +4,10 @@
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
 #include "SemmetyFrame.hpp"
-#include "SemmetyLayout.hpp"
 #include <list>
 
-class SemmetyLayout; // Forward declaration
+// Forward declaration
+class SemmetyLayout;
 
 class SemmetyWorkspaceWrapper {
 public:
