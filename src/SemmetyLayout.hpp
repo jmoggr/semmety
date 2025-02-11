@@ -11,17 +11,17 @@
 
 
 class SemmetyLayout: public IHyprLayout {
-    void onEnable()  = 0;
-    void onDisable() = 0;
+    void onEnable() override;
+    void onDisable() override;
 
     /*
         Called when a window is created (mapped)
         The layout HAS TO set the goal pos and size (anim mgr will use it)
         If !animationinprogress, then the anim mgr will not apply an anim.
     */
-    void onWindowCreatedTiling(PHLWINDOW, eDirection direction = DIRECTION_DEFAULT) = 0;
+    void onWindowCreatedTiling(PHLWINDOW, eDirection direction = DIRECTION_DEFAULT) override;
 
-    SemmetyWorkspaceWrapper& getOrCreateWorkspaceWrapper(PHLWORKSPACEREF workspace);
+    SemmetyWorkspaceWrapper& getOrCreateWorkspaceWrapper(PHLWORKSPACEREF workspace) override;
 
 		// std::list<SemmetyNode> nodes;
 		std::list<SemmetyWorkspaceWrapper> workspaceWrappers; 

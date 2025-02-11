@@ -12,6 +12,7 @@ void SemmetyLayout::onEnable() {
 }
 
 void SemmetyLayout::onDisable() {
+    // Implement the logic for disabling the layout
 }
 
 void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
@@ -26,16 +27,7 @@ void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
 
 	if (window->m_bIsFloating) return;
 
-	// auto* existing = this->getNodeFromWindow(window.get());
-	// if (existing != nullptr) {
-	// 	semmety_log(
-	// 	    ERR,
-	// 	    "onWindowCreatedTiling called with a window ({:x}) that is already tiled (node: {:x})",
-	// 	    (uintptr_t) window.get(),
-	// 	    (uintptr_t) existing
-	// 	);
-	// 	return;
-	// }
+    // Implement the logic for creating a window in tiling mode
 
 	
 
@@ -57,11 +49,7 @@ SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE
         throw std::runtime_error("getOrCreateWorkspaceWrapper called with null workspace");
     }
 
-    // for (auto& workspaceWrapper : this->workspaceWrappers) {
-    //     if (workspaceWrapper.workspace.get() == workspace) {
-    //         return &workspaceWrapper;
-    //     }
-    // }
+    // Implement the logic for getting or creating a workspace wrapper
 
     this->workspaceWrappers.emplace_back(workspace);
 
