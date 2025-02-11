@@ -9,6 +9,9 @@
 #include "SemmetyFrame.hpp"
 #include "log.hpp"
 
+// Forward declaration
+class SemmetyWorkspaceWrapper;
+
 
 PHLWORKSPACE workspace_for_action(bool allow_fullscreen = false);
 
