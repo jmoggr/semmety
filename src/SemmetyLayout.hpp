@@ -27,6 +27,7 @@ class SemmetyLayout: public IHyprLayout {
     */
     void onWindowCreatedTiling(PHLWINDOW, eDirection direction = DIRECTION_DEFAULT) override;
 
+public:
     SemmetyWorkspaceWrapper& getOrCreateWorkspaceWrapper(PHLWORKSPACE workspace);
     void applyFrameDataToWindow(SemmetyFrame*, bool no_animation = false);
     // SemmetyFrame* getWorkspaceRootFrame(const CWorkspace* workspace) {
