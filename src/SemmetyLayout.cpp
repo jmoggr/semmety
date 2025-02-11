@@ -85,7 +85,7 @@ SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE
         }
     }
 
-    this->workspaceWrappers.emplace_back(workspace);
+    this->workspaceWrappers.emplace_back(workspace, *this);
     return this->workspaceWrappers.back();
 }
 
