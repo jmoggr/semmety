@@ -26,26 +26,27 @@ void dispatch_split(std::string arg) {
 	auto& focused_frame = workspace_wrapper->getFocusedFrame();
 
     // Create a new parent frame data
-    SemmetyFrame::Parent parentData;
+    // SemmetyFrame::Parent parentData;
+    // auto child_a = focused_frame.data.is_window() ? 
 
-    // Determine the data for the first child
-    if (focused_frame.data.is_window()) {
-        // If the focused frame had a window, the first child should have that window
-        auto window = focused_frame.data.as_window();
-        auto firstChild = makeShared<SemmetyFrame>(window);
-        parentData.children.push_back(firstChild);
-    } else {
-        // Otherwise, the first child should be empty
-        auto firstChild = makeShared<SemmetyFrame>(SemmetyFrame::Empty{});
-        parentData.children.push_back(firstChild);
-    }
+    // // Determine the data for the first child
+    // if (focused_frame.data.is_window()) {
+    //     // If the focused frame had a window, the first child should have that window
+    //     auto window = focused_frame.data.as_window();
+    //     auto firstChild = makeShared<SemmetyFrame>(window);
+    //     parentData.children.push_back(firstChild);
+    // } else {
+    //     // Otherwise, the first child should be empty
+    //     auto firstChild = makeShared<SemmetyFrame>(SemmetyFrame::Empty{});
+    //     parentData.children.push_back(firstChild);
+    // }
 
     // The second child should always be empty
-    auto secondChild = makeShared<SemmetyFrame>(SemmetyFrame::Empty{});
-    parentData.children.push_back(secondChild);
+    // auto secondChild = makeShared<SemmetyFrame>(SemmetyFrame::Empty{});
+    // parentData.children.push_back(secondChild);
 
     // Set the focused frame's data to be the new parent
-    focused_frame.data = SemmetyFrame::FrameData(std::move(parentData));
+    focused_frame.data = { focused_frame.data, SemmetyFrame::Empty{} };
 
 }
 
