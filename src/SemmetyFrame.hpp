@@ -18,7 +18,6 @@ public:
     WP<SemmetyParentFrame> parent;
 
     virtual bool is_window() const { return false; }
-
     virtual bool is_empty() const { return false; }
     virtual bool is_leaf() const { return is_empty() || is_window(); }
     virtual void print() const = 0;
