@@ -8,7 +8,7 @@
 
 SDispatchResult dispatch_debug_v2(std::string arg) {
     semmety_log(LOG, "Semmety Debug");
-    return SDispatchResult::Success;
+    return SDispatchResult{.passEvent = false, .success = true, .error = ""};
 }
 
 void registerDispatchers() {
