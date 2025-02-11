@@ -23,5 +23,6 @@ shared_module(meson.project_name(), src,
     dependency('pixman-1'),
     dependency('libdrm'),
     dependency('fmt'),
+  ],
   install: true,
 )
