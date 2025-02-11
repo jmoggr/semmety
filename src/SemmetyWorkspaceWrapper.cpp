@@ -11,7 +11,7 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w) {
   this->focused_frame = frame;
 }
 
-SemmetyFrame& SemmetyWorkspaceWrapper::getActiveFrame() {
+SemmetyFrame& SemmetyWorkspaceWrapper::getFocusedFrame() {
   // assert that the frame is not a parent?
 }
 
