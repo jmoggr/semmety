@@ -7,10 +7,10 @@ SP<SemmetyFrame> SemmetyFrame::get_parent() const {
     if (!parentFrame) {
         return nullptr;
     }
-    if (parentFrame->data.is_parent()) {
-        return parentFrame;
+    if (!parentFrame->data.is_parent()) {
+        throw std::runtime_error("Parent frame is not of type Parent");
     }
-    return nullptr;
+    return parentFrame;
 }
 
 
