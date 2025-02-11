@@ -5,10 +5,9 @@
 #include <variant>
 #include <utility> // for std::move
 
-enum class SemmetyGroupLayout {
+enum class SemmetySplitDirection {
 	SplitH,
 	SplitV,
-	Tabbed,
 };
 
 class SemmetyParentFrame;
@@ -91,6 +90,7 @@ public:
     };
 
 
+    CBox getStandardWindowArea(SBoxExtents extents);
     FrameData data;
     WP<SemmetyFrame> parent;
 
@@ -98,6 +98,8 @@ public:
 
     void clearWindow();
     void print() const;
+
+    SemmetySplitDirection split_direction = SemmetySplitDirection::SplitV;
 
     SP<SemmetyFrame> get_parent() const;
     Vector2D position;
