@@ -6,6 +6,7 @@
 #include "SemmetyLayout.hpp"
 #include "globals.hpp"
 #include "SemmetyWorkspaceWrapper.hpp"
+#include "SemmetyWorkspaceWrapper.hpp"
 
 PHLWORKSPACE workspace_for_action(bool allow_fullscreen) {
 	if (g_pLayoutManager->getCurrentLayout() != g_SemmetyLayout.get()) return nullptr;
