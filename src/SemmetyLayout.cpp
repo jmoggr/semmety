@@ -85,10 +85,13 @@ SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE
         throw std::runtime_error("getOrCreateWorkspaceWrapper called with null workspace");
     }
 
-    // Logic for getting or creating a workspace wrapper
+    for (auto& wrapper : this->workspaceWrappers) {
+        if (wrapper.workspace.get() == wrkspc) {
+            return wrapper;
+        }
+    }
 
     this->workspaceWrappers.emplace_back(workspace);
-
     return this->workspaceWrappers.back();
 }
 
