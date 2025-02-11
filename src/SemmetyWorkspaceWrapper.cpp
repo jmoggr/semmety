@@ -12,7 +12,15 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w) {
 }
 
 SemmetyFrame& SemmetyWorkspaceWrapper::getFocusedFrame() {
-  // assert that the frame is not a parent?
+  if (!this->focused_frame) {
+      throw std::runtime_error("No active frame, were outputs added to the desktop?");
+  }
+
+  if (!this->focused_frame->isLeaf()) {
+      throw std::runtime_error("Active frame is not a leaf");
+  }
+
+  return *this->focused_frame;
 }
 
 void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
