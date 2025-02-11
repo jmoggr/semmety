@@ -6,10 +6,11 @@
 #include "dispatchers.hpp"
 #include "globals.hpp"
 
-void dispatch_debug(std::string arg) {
-	semmety_log(LOG, "Semmety Debug");
+SDispatchResult dispatch_debug_v2(std::string arg) {
+    semmety_log(LOG, "Semmety Debug");
+    return SDispatchResult::Success;
 }
 
 void registerDispatchers() {
-	HyprlandAPI::addDispatcher(PHANDLE, "semmety:debug", dispatch_debug);
+    HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:debug", dispatch_debug_v2);
 }
