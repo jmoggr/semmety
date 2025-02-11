@@ -1,6 +1,7 @@
 #include "SemmetyWorkspaceWrapper.hpp"
 #include <hyprutils/memory/SharedPtr.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
+#include <hyprland/src/desktop/Monitor.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
 
 #include <hyprland/src/plugins/PluginAPI.hpp>
