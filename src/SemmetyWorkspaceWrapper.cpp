@@ -6,7 +6,7 @@
 SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w) {
   workspace = w;
 
-  auto frame = makeShared<SemmetyEmptyFrame>();
+  auto frame = makeShared<SemmetyFrame>();
   this->root = frame;
   this->focused_frame = frame;
 
