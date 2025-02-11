@@ -36,13 +36,19 @@ public:
     class Parent {
     public:
         std::list<SP<SemmetyFrame>> children;
-        Parent(std::list<SP<SemmetyFrame>> childrenList = {}) : children(std::move(childrenList)) {}
+        // Parent(std::list<SP<SemmetyFrame>> childrenList = {}) : children(std::move(childrenList)) {}
 
-        Parent(std::list<SemmetyFrame::FrameData> frameDataList) {
-            for (auto& frameData : frameDataList) {
-                children.push_back(makeShared<SemmetyFrame>(std::move(frameData)));
-            }
+        // Parent(std::list<SemmetyFrame::FrameData> frameDataList) {
+        //     for (auto& frameData : frameDataList) {
+        //         children.push_back(makeShared<SemmetyFrame>(std::move(frameData)));
+        //     }
+        // }
+
+        Parent(SemmetyFrame::FrameData&& child_a, SemmetyFrame::FrameData&& child_b) {
+            children.push_back(makeShared<SemmetyFrame>(std::move(child_a)));
+            children.push_back(makeShared<SemmetyFrame>(std::move(child_b)));
         }
+        
 
         bool operator==(const Parent& other) const {
             return children == other.children;
