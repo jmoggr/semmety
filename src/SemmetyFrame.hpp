@@ -95,6 +95,7 @@ public:
     WP<SemmetyFrame> parent;
 
     SemmetyFrame() : data(Empty{}) {}
+    SemmetyFrame(FrameData frameData) : data(std::move(frameData)) {}
 
     void clearWindow();
     void print() const;
