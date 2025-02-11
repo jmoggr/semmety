@@ -36,6 +36,7 @@ public:
     SemmetyWindowFrame(PHLWINDOWREF w);
     bool is_window() const override;
     bool is_empty() const override { return true; }
+    bool is_empty() const override;
     void print() const override;
 };
 
