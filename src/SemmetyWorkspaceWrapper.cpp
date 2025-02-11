@@ -9,6 +9,7 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w) {
   auto frame = makeShared<SemmetyFrame>();
   this->root = frame;
   this->focused_frame = frame;
+}
 
 SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFrameForWindow(PHLWINDOWREF window) const
 {
@@ -19,12 +20,12 @@ SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFrameForWindow(PHLWINDOWREF window)
         auto current = stack.back();
         stack.pop_back();
 
-        if (current->is_window() && current->data.as_window() == window) {
+        if (current->data.is_window() && current->data.as_window() == window) {
             return current;
         }
 
-        if (current->is_parent()) {
-            for (const auto& child : current->data.as_group().children) {
+        if (current->data.is_parent()) {
+            for (const auto& child : current->data.as_parent().children) {
                 stack.push_back(child);
             }
         }
@@ -39,7 +40,7 @@ SemmetyFrame& SemmetyWorkspaceWrapper::getFocusedFrame()
       throw std::runtime_error("No active frame, were outputs added to the desktop?");
   }
 
-  if (!this->focused_frame->is_leaf()) {
+  if (!this->focused_frame->data.is_leaf()) {
       throw std::runtime_error("Active frame is not a leaf");
   }
 
@@ -65,6 +66,6 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window)
         minimized_windows.remove(window);
     }
 
-    focusedFrame.setWindow(window);
+    focusedFrame.data = window;
 }
-}
+
