@@ -7,6 +7,7 @@
 #include <list>
 
 #include "SemmetyFrame.hpp"
+#include "SemmetyWorkspaceWrapper.hpp"
 #include "log.hpp"
 
 // Forward declaration
