@@ -9,7 +9,6 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w) {
   auto frame = makeShared<SemmetyEmptyFrame>();
   this->root = frame;
   this->focused_frame = frame;
-}
 
 SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFrameForWindow(PHLWINDOWREF window) const {
     std::list<SP<SemmetyFrame>> stack;
