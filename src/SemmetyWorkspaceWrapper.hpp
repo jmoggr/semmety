@@ -6,9 +6,12 @@
 
 #include <list>
 
+class SemmetyLayout; // Forward declaration
+
 class SemmetyWorkspaceWrapper {
 public:
-	PHLWORKSPACEREF workspace;
+    PHLWORKSPACEREF workspace;
+    SemmetyLayout& layout;
 	std::list<PHLWINDOWREF> minimized_windows;
 	SP<SemmetyFrame> root;
 	SP<SemmetyFrame> focused_frame;

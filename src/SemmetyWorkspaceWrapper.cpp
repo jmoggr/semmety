@@ -3,8 +3,8 @@
 
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
-SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w) {
-  workspace = w;
+SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout& l) : layout(l) {
+    workspace = w;
 
   auto frame = makeShared<SemmetyFrame>();
   this->root = frame;
