@@ -21,7 +21,7 @@ class SemmetyLayout: public IHyprLayout {
     */
     void onWindowCreatedTiling(PHLWINDOW, eDirection direction = DIRECTION_DEFAULT) override;
 
-    SemmetyWorkspaceWrapper& getOrCreateWorkspaceWrapper(PHLWORKSPACEREF workspace) override;
+    SemmetyWorkspaceWrapper& getOrCreateWorkspaceWrapper(PHLWORKSPACEREF workspace);
 
 		// std::list<SemmetyNode> nodes;
 		std::list<SemmetyWorkspaceWrapper> workspaceWrappers; 
