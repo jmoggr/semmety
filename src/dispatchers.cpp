@@ -13,29 +13,17 @@ SDispatchResult dispatch_debug_v2(std::string arg) {
 
 
 void dispatch_movefocus(std::string value) {
-	auto workspace = workspace_for_action(true);
-	if (!valid(workspace)) return;
+	auto workspace_wrapper = workspace_for_action(true);
+	if (workspace_wrapper == nullptr) return;
 
-	// auto args = CVarList(value);
 
-	// static const auto no_cursor_warps = ConfigValue<Hyprlang::INT>("cursor:no_warps");
-	// auto warp_cursor = !*no_cursor_warps;
+}
 
-	// int argi = 0;
-	// auto shift = parseShiftArg(args[argi++]);
-	// if (!shift) return;
-	// if (workspace->m_bHasFullscreenWindow) {
-	// 	g_Hy3Layout->focusMonitor(shift.value());
-	// 	return;
-	// }
+void dispatch_split(std::string arg) {
+	auto workspace_wrapper = workspace_for_action(true);
+	if (workspace_wrapper == nullptr) return;
 
-	// auto visible = args[argi] == "visible";
-	// if (visible) argi++;
-
-	// if (args[argi] == "nowarp") warp_cursor = false;
-	// else if (args[argi] == "warp") warp_cursor = true;
-
-	// g_Hy3Layout->shiftFocus(workspace.get(), shift.value(), visible, warp_cursor);
+	auto focused_frame = workspace_wrapper.getFocusedFrame();
 }
 
 void registerDispatchers() {
