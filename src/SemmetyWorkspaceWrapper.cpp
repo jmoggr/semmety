@@ -27,6 +27,29 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 
     this->root = frame;
     this->focused_frame = frame;
+
+
+    
+	// static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
+	// static const auto p_gaps_out = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_out");
+	// static const auto group_inset = ConfigValue<Hyprlang::INT>("plugin:hy3:group_inset");
+	// static const auto tab_bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
+	// static const auto tab_bar_padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
+
+	// auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(this->workspace);
+	// auto gaps_in = workspace_rule.gapsIn.value_or(*p_gaps_in);
+	// auto gaps_out = workspace_rule.gapsOut.value_or(*p_gaps_out);
+
+	// auto gap_topleft_offset = Vector2D(
+	//     (int) -(gaps_in.left - gaps_out.left),
+	//     (int) -(gaps_in.top - gaps_out.top)
+	// );
+
+	// auto gap_bottomright_offset = Vector2D(
+	// 		(int) -(gaps_in.right - gaps_out.right),
+	// 		(int) -(gaps_in.bottom - gaps_out.bottom)
+	// );
+	// // clang-format on
 }
 
 void SemmetyWorkspaceWrapper::addWindow(PHLWINDOWREF window) {
@@ -109,5 +132,9 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window)
 
 void SemmetyWorkspaceWrapper::apply() {
       root->propagateGeometry();
-      root->applyRecursive();
+      root->applyRecursive(workspace.lock());
+
+    for (const auto& window : minimized_windows) {
+        window.lock().get().setHidden(true)
+    }
 }
