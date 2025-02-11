@@ -45,7 +45,8 @@ void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
 
 	if (window->m_bIsFloating) return;
 
-        auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+    auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+    workspace_wrapper.addWindow(window);
      
 
    //  	auto& monitor = workspace_wrapper.workspace->m_pMonitor;
@@ -65,7 +66,7 @@ void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
 
     
 	// node.markFocused();
-	opening_into->recalcSizePosRecursive();
+	// opening_into->recalcSizePosRecursive();
 
 	// this->nodes.push_back({
 	//     .parent = nullptr,
@@ -73,17 +74,10 @@ void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
 	// });
 
 	// this->insertNode(this->nodes.back());
-
-	// auto& workspaceWrapper = this->getOrCreateWorkspaceWrapper(window->m_pWorkspace);
-
-	
 }
 
-SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACEREF workspace) {
+SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE workspace) {
     auto* wrkspc = workspace.get();
-    if (wrkspc == nullptr) {
-        throw std::runtime_error("getOrCreateWorkspaceWrapper called with null workspace");
-    }
 
     for (auto& wrapper : this->workspaceWrappers) {
         if (wrapper.workspace.get() == wrkspc) {
