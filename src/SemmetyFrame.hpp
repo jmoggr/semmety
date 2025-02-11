@@ -31,14 +31,18 @@ public:
         }
     };
 
+    class FrameData;
+
     class Parent {
     public:
         std::list<SP<SemmetyFrame>> children;
-        Parent(FrameData child1, FrameData child2) {
-            children.push_back(makeShared<SemmetyFrame>(std::move(child1)));
-            children.push_back(makeShared<SemmetyFrame>(std::move(child2)));
-        }
         Parent(std::list<SP<SemmetyFrame>> childrenList = {}) : children(std::move(childrenList)) {}
+
+        Parent(std::list<SemmetyFrame::FrameData> frameDataList) {
+            for (auto& frameData : frameDataList) {
+                children.push_back(makeShared<SemmetyFrame>(std::move(frameData)));
+            }
+        }
 
         bool operator==(const Parent& other) const {
             return children == other.children;
@@ -52,7 +56,6 @@ public:
         FrameData(PHLWINDOWREF window) : data(window) {}
         FrameData(Empty empty) : data(empty) {}
         FrameData(FrameData&& other) noexcept : data(std::move(other.data)) {}
-        FrameData(const FrameData& other) : data(other.data) {}
         ~FrameData() = default;
 
         FrameData& operator=(PHLWINDOWREF window) {
