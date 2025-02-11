@@ -55,7 +55,7 @@
           inherit version;
           src = ./.;
 
-          nativeBuildInputs = hyprlandPkg.nativeBuildInputs;
+          nativeBuildInputs = hyprlandPkg.nativeBuildInputs ++ [ fmt ];
           buildInputs = [hyprlandPkg] ++ hyprlandPkg.buildInputs;
           dontUseCmakeConfigure = true;
 
