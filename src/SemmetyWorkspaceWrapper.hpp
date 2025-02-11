@@ -12,7 +12,6 @@ public:
 	std::list<PHLWINDOWREF> minimized_windows;
 	SP<SemmetyFrame> root;
 	SP<SemmetyFrame> focused_frame;
-	int test;
 
 	SemmetyWorkspaceWrapper(PHLWORKSPACEREF w);
 	void addWindow(PHLWINDOWREF w);
