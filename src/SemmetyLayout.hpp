@@ -6,9 +6,9 @@
 
 #include <list>
 
-#include "SemmetyWorkspaceWrapper.hpp"
 #include "SemmetyFrame.hpp"
 #include "log.hpp"
+#include "SemmetyWorkspaceWrapper.hpp"
 
 
 PHLWORKSPACE workspace_for_action(bool allow_fullscreen = false);
