@@ -92,7 +92,10 @@
 
 .PHONY: all clean
 
-all: build
+all:
+	mkdir -p build
+	cd build && meson setup --reconfigure ..
+	cd build && ninja
 
 build:
 	mkdir -p build
