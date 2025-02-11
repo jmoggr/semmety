@@ -16,7 +16,7 @@ SemmetyFrame& SemmetyWorkspaceWrapper::getFocusedFrame() {
       throw std::runtime_error("No active frame, were outputs added to the desktop?");
   }
 
-  if (!this->focused_frame->isLeaf()) {
+  if (!this->focused_frame->is_leaf()) {
       throw std::runtime_error("Active frame is not a leaf");
   }
 
