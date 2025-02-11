@@ -9,6 +9,9 @@
 #include "SemmetyWorkspaceWrapper.hpp"
 #include "log.hpp"
 
+
+PHLWORKSPACE workspace_for_action(bool allow_fullscreen = false);
+
 class SemmetyLayout: public IHyprLayout {
     void onEnable() override;
     void onDisable() override;
@@ -20,7 +23,9 @@ class SemmetyLayout: public IHyprLayout {
     */
     void onWindowCreatedTiling(PHLWINDOW, eDirection direction = DIRECTION_DEFAULT) override;
 
-    SemmetyWorkspaceWrapper& getOrCreateWorkspaceWrapper(PHLWORKSPACEREF workspace);
+    SemmetyWorkspaceWrapper& getOrCreateWorkspaceWrapper(PHLWORKSPACE workspace);
+    void applyFrameDataToWindow(SemmetyFrame*, bool no_animation = false);
+    // SemmetyFrame* getWorkspaceRootFrame(const CWorkspace* workspace) {
 
 		// std::list<SemmetyNode> nodes;
 		std::list<SemmetyWorkspaceWrapper> workspaceWrappers; 
