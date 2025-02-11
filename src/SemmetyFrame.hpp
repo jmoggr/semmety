@@ -15,12 +15,21 @@ class SemmetyParentFrame;
 
 class SemmetyFrame {
 public:
-    struct Empty {};
-    struct Window {
-        PHLWINDOWREF window;
+    class Empty {
+    public:
+        Empty() = default;
     };
-    struct Parent {
+
+    class Window {
+    public:
+        PHLWINDOWREF window;
+        Window(PHLWINDOWREF win) : window(win) {}
+    };
+
+    class Parent {
+    public:
         std::list<SP<SemmetyFrame>> children;
+        Parent() = default;
     };
 
     class Hy3NodeData {
