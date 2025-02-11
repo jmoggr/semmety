@@ -13,6 +13,22 @@ SP<SemmetyFrame> SemmetyFrame::get_parent() const {
     return parentFrame;
 }
 
+void SemmetyFrame::propagateGeometry(const std::optional<CBox>& geometry) {
+    if (geometry) {
+        this->position = geometry->pos();
+        this->size = geometry->size();
+    }
+
+    if (!this->data.is_parent()) {
+        return;
+    }
+
+    const auto childGeometries = this->getChildGeometries();
+    const auto& children = this->data.as_parent().children;
+    children.front()->propagateGeometry(childGeometries.first);
+    children.back()->propagateGeometry(childGeometries.second);
+}
+
 std::pair<CBox, CBox> SemmetyFrame::getChildGeometries() const {
     switch (this->split_direction) {
         case SemmetySplitDirection::SplitV: {

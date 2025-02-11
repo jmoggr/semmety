@@ -98,6 +98,7 @@ public:
 
     void clearWindow();
     void print() const;
+    void propagateGeometry(const std::optional<CBox>& geometry = std::nullopt);
 
     SemmetySplitDirection split_direction = SemmetySplitDirection::SplitV;
 
