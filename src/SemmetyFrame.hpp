@@ -90,7 +90,7 @@ public:
     };
 
 
-    CBox getStandardWindowArea(SBoxExtents extents);
+    CBox getStandardWindowArea(SBoxExtents extents, PHLWORKSPACE workspace);
     FrameData data;
     WP<SemmetyFrame> parent;
 
@@ -100,7 +100,7 @@ public:
     void print() const;
     void propagateGeometry(const std::optional<CBox>& geometry = std::nullopt);
     std::pair<CBox, CBox> getChildGeometries() const;
-    void applyRecursive();
+    void applyRecursive(PHLWORKSPACE workspace);
 
     SemmetySplitDirection split_direction = SemmetySplitDirection::SplitV;
 
