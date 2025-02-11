@@ -10,6 +10,10 @@ bool SemmetyWindowFrame::is_window() const {
     return true;
 }
 
+void SemmetyWindowFrame::setWindow(PHLWINDOWREF window) {
+    this->window = window;
+}
+
 void SemmetyWindowFrame::print() const {
     // std::cout << "SemmetyWindowFrame (WindowId: " << windowId << ")\n";
 }

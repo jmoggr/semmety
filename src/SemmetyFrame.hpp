@@ -21,6 +21,9 @@ public:
     virtual bool is_empty() const { return false; }
     virtual bool is_leaf() const { return is_empty() || is_window(); }
     virtual void print() const = 0;
+    virtual void setWindow(PHLWINDOWREF window) {
+        throw std::runtime_error("Cannot set window on non-window frame");
+    }
 
     SP<SemmetyParentFrame> get_parent() const;
   	Vector2D position;
@@ -42,6 +45,10 @@ class SemmetyEmptyFrame : public SemmetyFrame {
 public:
     void print() const override;
     bool is_empty() const { return false; }
+    void setWindow(PHLWINDOWREF window) override {
+        // Convert this empty frame into a window frame
+        this->window = window;
+    }
 };
 
 class SemmetyParentFrame : public SemmetyFrame {
