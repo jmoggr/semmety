@@ -22,11 +22,14 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         throw std::runtime_error("[MyPlugin] Version mismatch");
     }
 
+    	g_SemmetyLayout = std::make_unique<SemmetyLayout>();
+    	HyprlandAPI::addLayout(PHANDLE, "semmety", g_SemmetyLayout.get());
+
     registerDispatchers();
 
 		HyprlandAPI::reloadConfig();
 
-		return {"semmety", "Semi automatic tiling window manager", "jmoggr", "0.2"};
+		return {"semmety", "Semi automatic tiling window manager", "jmoggr", "0.4"};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {}

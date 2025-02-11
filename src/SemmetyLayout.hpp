@@ -6,9 +6,8 @@
 
 #include <list>
 
-#include "globals.hpp"
 #include "SemmetyWorkspaceWrapper.hpp"
-
+#include "log.hpp"
 
 class SemmetyLayout: public IHyprLayout {
     void onEnable() override;

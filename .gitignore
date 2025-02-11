@@ -14,3 +14,5 @@
 /.vscode/
 
 /*.log
+.aider*
+.env

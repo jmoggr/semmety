@@ -55,7 +55,7 @@
           inherit version;
           src = ./.;
 
-          nativeBuildInputs = hyprlandPkg.nativeBuildInputs ++ [ fmt ];
+          nativeBuildInputs = hyprlandPkg.nativeBuildInputs;
           buildInputs = [hyprlandPkg] ++ hyprlandPkg.buildInputs;
           dontUseCmakeConfigure = true;
 
@@ -72,7 +72,7 @@
     devShells = perSystem (system: pkgs: {
       default = pkgs.mkShell {
         name = "Semmety-shell";
-        nativeBuildInputs = with pkgs; [gcc14 clang-tools meson ninja pkg-config libpixman libdrm fmt];
+        nativeBuildInputs = with pkgs; [gcc14 clang-tools meson ninja pkg-config libdrm fmt];
         buildInputs = [hyprland.packages.${system}.hyprland];
         inputsFrom = [
           hyprland.packages.${system}.hyprland
@@ -88,19 +88,3 @@
     formatter = perSystem (_: pkgs: pkgs.alejandra);
   };
 }
-# Makefile for building the project using Meson and Ninja
-
-.PHONY: all clean
-
-all:
-	mkdir -p build
-	cd build && meson setup --reconfigure ..
-	cd build && ninja
-
-build:
-	mkdir -p build
-	cd build && meson setup ..
-	cd build && ninja
-
-clean:
-	rm -rf build
