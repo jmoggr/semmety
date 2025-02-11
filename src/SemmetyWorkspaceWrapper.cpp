@@ -3,10 +3,16 @@
 
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
-SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout& l) : layout(l) {
+SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACE w, SemmetyLayout& l) : layout(l) {
     workspace = w;
 
+    	auto& monitor = w->m_pMonitor;
   auto frame = makeShared<SemmetyFrame>();
+
+
+			    frame.position = monitor->vecPosition + monitor->vecReservedTopLeft;
+			    frame.size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
+  
   this->root = frame;
   this->focused_frame = frame;
 }
@@ -89,3 +95,7 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window)
     focusedFrame.data = window;
 }
 
+void SemmetyWorkspaceWrapper::apply() {
+      root.propagateGeometry();
+      root.applyRecursive();
+}
