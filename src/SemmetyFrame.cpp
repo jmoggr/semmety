@@ -7,11 +7,11 @@ SP<SemmetyParentFrame> SemmetyFrame::get_parent() const {
 }
 
 void SemmetyFrame::setWindow(PHLWINDOWREF window) {
-    data = Window{window};
+    data = Hy3NodeData(window);
 }
 
 void SemmetyFrame::clearWindow() {
-    data = Empty{};
+    data = Hy3NodeData();
 }
 
 void SemmetyFrame::print() const {
