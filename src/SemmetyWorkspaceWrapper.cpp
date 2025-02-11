@@ -80,7 +80,7 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
 
     auto frameWithWindow = getFrameForWindow(window);
     if (frameWithWindow) {
-        frameWithWindow->clearWindow();
+        frameWithWindow->data = SemmetyFrame::Empty{};
     } else {
         minimized_windows.remove(window);
     }

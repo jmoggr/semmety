@@ -6,13 +6,6 @@ SP<SemmetyParentFrame> SemmetyFrame::get_parent() const {
     return parent.lock();
 }
 
-void SemmetyFrame::setWindow(PHLWINDOWREF window) {
-    data = Hy3NodeData(window);
-}
-
-void SemmetyFrame::clearWindow() {
-    data = Hy3NodeData();
-}
 
 void SemmetyFrame::print() const {
     if (is_window()) {
