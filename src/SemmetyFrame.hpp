@@ -95,7 +95,7 @@ public:
     WP<SemmetyFrame> parent;
 
     SemmetyFrame() : data(Empty{}) {}
-    SemmetyFrame(FrameData frameData, CBox geometry) : data(std::move(frameData)), geometry(std::move(geometry)) {}
+    SemmetyFrame(FrameData frameData) : data(std::move(frameData)) {}
 
     void clearWindow();
     void print() const;
