@@ -32,44 +32,36 @@ public:
         Parent() = default;
     };
 
-    class Hy3NodeData {
+    class FrameData {
     public:
-        Hy3NodeData() = default;
-        Hy3NodeData(Parent parent) : data(std::move(parent)) {}
-        Hy3NodeData(PHLWINDOWREF window) : data(window) {}
-        Hy3NodeData(Hy3GroupLayout layout) : data(Parent{}) {}
-        Hy3NodeData(Hy3NodeData&& other) noexcept : data(std::move(other.data)) {}
-        ~Hy3NodeData() = default;
+        FrameData() = default;
+        FrameData(Parent parent) : data(std::move(parent)) {}
+        FrameData(PHLWINDOWREF window) : data(window) {}
+        FrameData(Hy3GroupLayout layout) : data(Parent{}) {}
+        FrameData(FrameData&& other) noexcept : data(std::move(other.data)) {}
+        ~FrameData() = default;
 
-        Hy3NodeData& operator=(PHLWINDOWREF window) {
+        FrameData& operator=(PHLWINDOWREF window) {
             data = window;
             return *this;
         }
 
-        Hy3NodeData& operator=(Hy3GroupLayout layout) {
+        FrameData& operator=(Hy3GroupLayout layout) {
             data = Parent{};
             return *this;
         }
 
-        Hy3NodeData& operator=(Hy3NodeData&& other) noexcept {
+        FrameData& operator=(FrameData&& other) noexcept {
             data = std::move(other.data);
             return *this;
         }
 
-        bool operator==(const Hy3NodeData& other) const {
+        bool operator==(const FrameData& other) const {
             return data == other.data;
         }
 
         bool valid() const {
             return !std::holds_alternative<Empty>(data);
-        }
-
-        bool is_window() const {
-            return std::holds_alternative<Window>(data);
-        }
-
-        bool is_group() const {
-            return std::holds_alternative<Parent>(data);
         }
 
         Parent& as_group() {
@@ -84,16 +76,17 @@ public:
         std::variant<Empty, Window, Parent> data;
     };
 
-    Hy3NodeData data;
+    FrameData data;
 
     FrameData data;
     WP<SemmetyFrame> parent;
 
     SemmetyFrame() : data(Empty{}) {}
 
-    bool is_window() const { return std::holds_alternative<Window>(data); }
-    bool is_empty() const { return std::holds_alternative<Empty>(data); }
+    bool is_window() const { return data.is_window(); }
+    bool is_empty() const { return std::holds_alternative<Empty>(data.data); }
     bool is_leaf() const { return is_empty() || is_window(); }
+    bool is_parent() const { return std::holds_alternative<Parent>(data.data); }
 
     void setWindow(PHLWINDOWREF window);
     void clearWindow();
