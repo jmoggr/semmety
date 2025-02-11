@@ -184,8 +184,8 @@ void SemmetyFrame::applyRecursive() {
     auto nodeBox = CBox(position, size);
     nodeBox.round();
 
-    window->m_vSize = nodeBox.size() - {(int) 10, (int) 10};
-    window->m_vPosition = nodeBox.pos() - {(int) 10, (int) 10};
+    window->m_vSize = nodeBox.size() - Vector2D(10, 10);
+    window->m_vPosition = nodeBox.pos() - Vector2D(10, 10);
 
     window->m_sWindowData.decorate = CWindowOverridableVar(true, PRIORITY_LAYOUT);
     window->m_sWindowData.noBorder = CWindowOverridableVar(true, PRIORITY_LAYOUT);
