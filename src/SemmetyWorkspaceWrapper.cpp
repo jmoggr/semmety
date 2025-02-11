@@ -135,6 +135,6 @@ void SemmetyWorkspaceWrapper::apply() {
       root->applyRecursive(workspace.lock());
 
     for (const auto& window : minimized_windows) {
-        window.lock().get().setHidden(true)
+        window.lock().get().setHidden(true);
     }
 }
