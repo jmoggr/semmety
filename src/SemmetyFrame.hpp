@@ -106,8 +106,7 @@ public:
     SemmetySplitDirection split_direction = SemmetySplitDirection::SplitV;
 
     SP<SemmetyFrame> get_parent() const;
-    Vector2D position;
-    Vector2D size;
+    CBox geometry;
     Vector2D gap_topleft_offset;
     Vector2D gap_bottomright_offset;
     int child0Offset = 0;

@@ -28,8 +28,7 @@ SP<SemmetyFrame> SemmetyFrame::get_parent() const {
 
 void SemmetyFrame::propagateGeometry(const std::optional<CBox>& geometry) {
     if (geometry) {
-        this->position = geometry->pos();
-        this->size = geometry->size();
+        this->geometry = *geometry;
     }
 
     if (!this->data.is_parent()) {
@@ -45,29 +44,29 @@ void SemmetyFrame::propagateGeometry(const std::optional<CBox>& geometry) {
 std::pair<CBox, CBox> SemmetyFrame::getChildGeometries() const {
     switch (this->split_direction) {
         case SemmetySplitDirection::SplitV: {
-            const auto new_width = static_cast<int>(this->size.x / 2);
+            const auto new_width = static_cast<int>(this->geometry.size().x / 2);
 
             CBox left_rect(
-                this->position,
-                Vector2D(static_cast<double>(new_width + this->child0Offset), static_cast<double>(this->size.y))
+                this->geometry.pos(),
+                Vector2D(static_cast<double>(new_width + this->child0Offset), static_cast<double>(this->geometry.size().y))
             );
             CBox right_rect(
-                Vector2D(this->position.x + new_width + this->gap_topleft_offset.x, this->position.y),
-                Vector2D(static_cast<double>(new_width - this->child0Offset), static_cast<double>(this->size.y))
+                Vector2D(this->geometry.pos().x + new_width + this->gap_topleft_offset.x, this->geometry.pos().y),
+                Vector2D(static_cast<double>(new_width - this->child0Offset), static_cast<double>(this->geometry.size().y))
             );
 
             return {left_rect, right_rect};
         }
         case SemmetySplitDirection::SplitH: {
-            const auto new_height = static_cast<int>(this->size.y / 2);
+            const auto new_height = static_cast<int>(this->geometry.size().y / 2);
 
             CBox top_rect(
-                this->position,
-                Vector2D(static_cast<double>(this->size.x), static_cast<double>(new_height + this->child0Offset))
+                this->geometry.pos(),
+                Vector2D(static_cast<double>(this->geometry.size().x), static_cast<double>(new_height + this->child0Offset))
             );
             CBox bottom_rect(
-                Vector2D(this->position.x, this->position.y + new_height + this->gap_topleft_offset.y),
-                Vector2D(static_cast<double>(this->size.x), static_cast<double>(new_height - this->child0Offset))
+                Vector2D(this->geometry.pos().x, this->geometry.pos().y + new_height + this->gap_topleft_offset.y),
+                Vector2D(static_cast<double>(this->geometry.size().x), static_cast<double>(new_height - this->child0Offset))
             );
 
             return {top_rect, bottom_rect};
@@ -123,7 +122,7 @@ CBox SemmetyFrame::getStandardWindowArea(SBoxExtents extents, PHLWORKSPACE works
 	combined_outer_extents.topLeft = -this->gap_topleft_offset;
 	combined_outer_extents.bottomRight = -this->gap_bottomright_offset;
 
-	auto area = CBox(this->position, this->size);
+	auto area = this->geometry;
 	area.addExtents(inner_gap_extents);
 	area.addExtents(combined_outer_extents);
 	area.addExtents(extents);
