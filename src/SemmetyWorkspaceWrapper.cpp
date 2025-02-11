@@ -8,14 +8,13 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
     workspace = w;
 
     	auto& monitor = w->m_pMonitor;
-  auto frame = makeShared<SemmetyFrame>();
+    auto frame = makeShared<SemmetyFrame>();
 
+    frame->position = monitor->vecPosition + monitor->vecReservedTopLeft;
+    frame->size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
 
-			    frame.position = monitor->vecPosition + monitor->vecReservedTopLeft;
-			    frame.size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
-  
-  this->root = frame;
-  this->focused_frame = frame;
+    this->root = frame;
+    this->focused_frame = frame;
 }
 
 void SemmetyWorkspaceWrapper::addWindow(PHLWINDOWREF window) {
