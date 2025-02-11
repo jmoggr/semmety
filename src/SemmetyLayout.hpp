@@ -14,7 +14,7 @@
 class SemmetyWorkspaceWrapper;
 
 
-PHLWORKSPACE workspace_for_action(bool allow_fullscreen = false);
+SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = false);
 
 class SemmetyLayout: public IHyprLayout {
     void onEnable() override;
