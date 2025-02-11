@@ -3,7 +3,7 @@
 
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
-SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACE w, SemmetyLayout& l) : layout(l) {
+SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout& l) : layout(l) {
     workspace = w;
 
     	auto& monitor = w->m_pMonitor;
