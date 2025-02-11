@@ -26,16 +26,10 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     auto res = HyprlandAPI::addLayout(PHANDLE, "semmety", g_SemmetyLayout.get());
 
     if (res) {
-        semmety_log(
-            ERR,
-            "success add layout",
-        );
+        semmety_log(ERR, "success add layout");
     } else {
         
-        semmety_log(
-            ERR,
-            "fail add layout",
-        );
+        semmety_log(ERR, "fail add layout");
     }
 
     registerDispatchers();
