@@ -72,7 +72,7 @@
     devShells = perSystem (system: pkgs: {
       default = pkgs.mkShell {
         name = "Semmety-shell";
-        nativeBuildInputs = with pkgs; [gcc14 clang-tools meson ninja pkg-config libpixman libdrm];
+        nativeBuildInputs = with pkgs; [gcc14 clang-tools meson ninja pkg-config libpixman libdrm fmt];
         buildInputs = [hyprland.packages.${system}.hyprland];
         inputsFrom = [
           hyprland.packages.${system}.hyprland
