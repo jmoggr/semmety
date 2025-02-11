@@ -37,17 +37,11 @@ public:
         FrameData() = default;
         FrameData(Parent parent) : data(std::move(parent)) {}
         FrameData(PHLWINDOWREF window) : data(window) {}
-        FrameData(Hy3GroupLayout layout) : data(Parent{}) {}
         FrameData(FrameData&& other) noexcept : data(std::move(other.data)) {}
         ~FrameData() = default;
 
         FrameData& operator=(PHLWINDOWREF window) {
             data = window;
-            return *this;
-        }
-
-        FrameData& operator=(Hy3GroupLayout layout) {
-            data = Parent{};
             return *this;
         }
 
