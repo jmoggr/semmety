@@ -1,6 +1,24 @@
 
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/managers/LayoutManager.hpp>
+#include <hyprland/src/config/ConfigManager.hpp>
+
 #include "SemmetyLayout.hpp"
+#include "globals.hpp"
+
+PHLWORKSPACE workspace_for_action(bool allow_fullscreen) {
+	if (g_pLayoutManager->getCurrentLayout() != g_SemmetyLayout.get()) return nullptr;
+
+	auto workspace = g_pCompositor->m_pLastMonitor->activeSpecialWorkspace;
+	if (!valid(workspace)) workspace = g_pCompositor->m_pLastMonitor->activeWorkspace;
+
+	if (!valid(workspace)) return nullptr;
+	if (!allow_fullscreen && workspace->m_bHasFullscreenWindow) return nullptr;
+
+	return workspace;
+}
+
+
 
 void SemmetyLayout::onEnable() {
     	for (auto& window: g_pCompositor->m_vWindows) {
@@ -27,9 +45,27 @@ void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
 
 	if (window->m_bIsFloating) return;
 
-    // Logic for creating a window in tiling mode
+        auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+     
 
-	
+   //  	auto& monitor = workspace_wrapper.workspace->m_pMonitor;
+
+			// auto width =
+			//     monitor->vecSize.x - monitor->vecReservedBottomRight.x - monitor->vecReservedTopLeft.x;
+			// auto height =
+			//     monitor->vecSize.y - monitor->vecReservedBottomRight.y - monitor->vecReservedTopLeft.y;
+
+			// this->nodes.push_back({
+			//     .data = height > width ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH,
+			//     .position = monitor->vecPosition + monitor->vecReservedTopLeft,
+			//     .size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight,
+			//     .workspace = node.workspace,
+			//     .layout = this,
+			// });
+
+    
+	// node.markFocused();
+	opening_into->recalcSizePosRecursive();
 
 	// this->nodes.push_back({
 	//     .parent = nullptr,
@@ -55,9 +91,99 @@ SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE
 
     return this->workspaceWrappers.back();
 }
+
+
+
+void SemmetyLayout::applyFrameDataToWindow(SemmetyFrame* frame, bool no_animation) {
+	if (frame->data.is_parent()) return;
+	auto window = frame->data.as_window().window;
+
+	auto root_frame = this->getWorkspaceRootFrame(window->m_pWorkspace.get());
+
+	auto& monitor = frame->workspace->m_pMonitor;
+
+	if (monitor == nullptr) {
+		semmety_log(
+		    ERR,
+		    "frame {:x}'s workspace has no associated monitor, cannot apply frame data",
+		    (uintptr_t) frame
+		);
+		errorNotif();
+		return;
+	}
+
+	if (!valid(window) || !window->m_bIsMapped) {
+		semmety_log(
+		    ERR,
+		    "semmety {:x} is an unmapped window ({:x}), cannot apply frame data, removing from tiled "
+		    "layout",
+		    (uintptr_t) node,
+		    (uintptr_t) window.get()
+		);
+		errorNotif();
+		this->onWindowRemovedTiling(window);
+		return;
+	}
+
+	window->unsetWindowData(PRIORITY_LAYOUT);
+
+	auto FrameBox = CBox(Frame->position, Frame->size);
+	FrameBox.round();
+
+	window->m_vSize = FrameBox.size();
+	window->m_vPosition = FrameBox.pos();
+
+	// auto only_Frame = root_Frame != nullptr && root_Frame->data.as_group().children.size() == 1
+	//               && root_Frame->data.as_group().children.front()->data.is_window();
+
+
+	// if (!window->m_pWorkspace->m_bIsSpecialWorkspace
+	//     && ((*no_gaps_when_only != 0 && (only_Frame || window->isFullscreen()))
+	//         || window->isEffectiveInternalFSMode(FSMODE_FULLSCREEN)))
+	// {
+	// 	window->m_sWindowData.decorate = CWindowOverridableVar(
+	// 	    true,
+	// 	    PRIORITY_LAYOUT
+	// 	); // a little curious but copying what dwindle does
+	// 	window->m_sWindowData.noBorder =
+	// 	    CWindowOverridableVar(*no_gaps_when_only != 2, PRIORITY_LAYOUT);
+	// 	window->m_sWindowData.noRounding = CWindowOverridableVar(true, PRIORITY_LAYOUT);
+	// 	window->m_sWindowData.noShadow = CWindowOverridableVar(true, PRIORITY_LAYOUT);
+
+	// 	window->updateWindowDecos();
+
+	// 	const auto reserved = window->getFullWindowReservedArea();
+
+	// 	*window->m_vRealPosition = window->m_vPosition + reserved.topLeft;
+	// 	*window->m_vRealSize = window->m_vSize - (reserved.topLeft + reserved.bottomRight);
+
+	// 	window->sendWindowSize(true);
+	// } else {
+		auto reserved = window->getFullWindowReservedArea();
+		auto wb = Frame->getStandardWindowArea({-reserved.topLeft, -reserved.bottomRight});
+
+		*window->m_vRealPosition = wb.pos();
+		*window->m_vRealSize = wb.size();
+
+		window->sendWindowSize(true);
+
+		if (no_animation) {
+			g_pHyprRenderer->damageWindow(window);
+
+			window->m_vRealPosition->warp();
+			window->m_vRealSize->warp();
+
+			g_pHyprRenderer->damageWindow(window);
+		}
+
+		window->updateWindowDecos();
+	// }
+}
+
+
 bool SemmetyLayout::isWindowTiled(PHLWINDOW) {
     // Logic to determine if a window is tiled
-    return false;
+    return true;
 }
 
 void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW) {
