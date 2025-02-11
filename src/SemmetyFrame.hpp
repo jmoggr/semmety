@@ -63,6 +63,7 @@ public:
         bool is_window() const { return std::holds_alternative<Window>(data); }
         bool is_empty() const { return std::holds_alternative<Empty>(data); }
         bool is_leaf() const { return is_empty() || is_window(); }
+        bool is_parent() const { return std::holds_alternative<Parent>(data); }
 
         Parent& as_group() {
             return std::get<Parent>(data);
@@ -83,7 +84,6 @@ public:
 
     SemmetyFrame() : data(Empty{}) {}
 
-    bool is_parent() const { return std::holds_alternative<Parent>(data.data); }
     void clearWindow();
     void print() const;
 
