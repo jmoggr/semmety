@@ -11,6 +11,14 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w) {
   this->focused_frame = frame;
 }
 
+void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
+    auto frameWithWindow = getFrameForWindow(window);
+    if (frameWithWindow) {
+        frameWithWindow->data = SemmetyFrame::Empty{};
+    }
+    minimized_windows.remove(window);
+}
+
 void SemmetyWorkspaceWrapper::minimizeWindow(PHLWINDOWREF window) {
     auto frameWithWindow = getFrameForWindow(window);
     if (frameWithWindow) {

@@ -20,4 +20,5 @@ public:
     std::list<SP<SemmetyFrame>> getWindowFrames() const;
     SP<SemmetyFrame> getFrameForWindow(PHLWINDOWREF window) const;
     void minimizeWindow(PHLWINDOWREF window);
+    void removeWindow(PHLWINDOWREF window);
 };
