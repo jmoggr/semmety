@@ -51,7 +51,7 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window)
 {
     auto& focusedFrame = getFocusedFrame();
 
-    if (focusedFrame.is_window()) {
+    if (focusedFrame.data.is_window()) {
         if (focusedFrame.data.as_window() == window) {
             return;
         }
