@@ -48,6 +48,7 @@ public:
         FrameData(PHLWINDOWREF window) : data(window) {}
         FrameData(Empty empty) : data(empty) {}
         FrameData(FrameData&& other) noexcept : data(std::move(other.data)) {}
+        FrameData(const FrameData& other) : data(other.data) {}
         ~FrameData() = default;
 
         FrameData& operator=(PHLWINDOWREF window) {
