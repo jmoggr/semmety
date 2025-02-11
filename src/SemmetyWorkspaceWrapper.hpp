@@ -17,4 +17,5 @@ public:
 	void addWindow(PHLWINDOWREF w);
   void putWindowInFocusedFrame(PHLWINDOWREF w);
   SemmetyFrame& getFocusedFrame();
+  std::list<SP<SemmetyFrame>> getWindowFrames() const;
 };
