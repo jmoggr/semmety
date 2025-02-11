@@ -14,7 +14,7 @@ void SemmetyFrame::print() const {
         // std::cout << "SemmetyFrame (Empty)\n";
     } else {
         // std::cout << "SemmetyFrame (Parent with children)\n";
-        for (const auto& child : std::get<SemmetyFrame::Parent>(data).children) {
+        for (const auto& child : std::get<Parent>(data).children) {
             child->print();
         }
     }
