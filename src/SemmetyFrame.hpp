@@ -22,7 +22,7 @@ public:
             return true; // All Empty instances are considered equal
         }
         bool operator==(const Window& other) const {
-            return window == other.window;
+            return window.get() == other.window.get();
         }
     };
 
