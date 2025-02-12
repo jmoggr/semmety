@@ -44,7 +44,13 @@ public:
         //     }
         // }
 
-        Parent(SemmetyFrame::FrameData&& child_a, SemmetyFrame::FrameData&& child_b) {
+        Parent(SP<SemmetyFrame> parentFrame, SemmetyFrame::FrameData&& child_a, SemmetyFrame::FrameData&& child_b) {
+            auto firstChild = makeShared<SemmetyFrame>(std::move(child_a));
+            auto secondChild = makeShared<SemmetyFrame>(std::move(child_b));
+            firstChild->parent = parentFrame;
+            secondChild->parent = parentFrame;
+            children.push_back(std::move(firstChild));
+            children.push_back(std::move(secondChild));
             children.push_back(makeShared<SemmetyFrame>(std::move(child_a)));
             children.push_back(makeShared<SemmetyFrame>(std::move(child_b)));
         }

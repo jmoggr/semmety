@@ -47,7 +47,7 @@ void dispatch_split(std::string arg) {
 
     // Set the focused frame's data to be the new parent
 
-    focused_frame.data = SemmetyFrame::Parent(std::move(focused_frame.data), SemmetyFrame::Empty{});
+    focused_frame.data = SemmetyFrame::Parent(makeShared<SemmetyFrame>(focused_frame), std::move(focused_frame.data), SemmetyFrame::Empty{});
 
 }
 
