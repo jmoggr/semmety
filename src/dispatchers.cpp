@@ -29,8 +29,36 @@ void dispatch_split(std::string arg) {
 }
 
 void dispatch_remove(std::string arg) {
-	auto* workspace_wrapper = workspace_for_action(true);
-	if (workspace_wrapper == nullptr) return;
+    auto* workspace_wrapper = workspace_for_action(true);
+    if (workspace_wrapper == nullptr) return;
+
+    auto focused_frame = workspace_wrapper->getFocusedFrame();
+
+    if (!focused_frame->data.is_leaf()) {
+        semmety_log(ERR, "Can only remove leaf frames");
+        return;
+    }
+
+    auto parent = focused_frame->get_parent();
+    if (!parent) {
+        semmety_log(DEBUG, "Frame has no parent, cannot remove the root frame!");
+        return;
+    }
+
+    auto& children = parent->data.as_parent().children;
+    auto remaining_child = std::find_if(children.begin(), children.end(),
+        [&focused_frame](const SP<SemmetyFrame>& child) {
+            return child != focused_frame;
+        });
+
+    if (focused_frame->data.is_window()) {
+        workspace_wrapper->minimized_windows.push_back(focused_frame->data.as_window());
+    }
+
+    if (remaining_child != children.end()) {
+        parent->data = (*remaining_child)->data;
+    }
+}
 }
 
 void registerDispatchers() {
