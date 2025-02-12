@@ -45,18 +45,18 @@ void dispatch_remove(std::string arg) {
         return;
     }
 
-    auto& children = parent->data.as_parent().children;
-    auto remaining_child = std::find_if(children.begin(), children.end(),
-        [&focused_frame](const SP<SemmetyFrame>& child) {
-            return child != focused_frame;
+    auto& siblings = parent->data.as_parent().children;
+    auto remaining_sibling = std::find_if(siblings.begin(), siblings.end(),
+        [&focused_frame](const SP<SemmetyFrame>& sibling) {
+            return sibling != focused_frame;
         });
 
     if (focused_frame->data.is_window()) {
         workspace_wrapper->minimized_windows.push_back(focused_frame->data.as_window());
     }
 
-    if (remaining_child != children.end()) {
-        parent->data = (*remaining_child)->data;
+    if (remaining_sibling != siblings.end()) {
+        parent->data = (*remaining_sibling)->data;
     }
 }
 
