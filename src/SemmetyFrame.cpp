@@ -82,17 +82,19 @@ std::string SemmetyFrame::print(int indentLevel) const {
     std::string indent(indentLevel * 2, ' '); // 2 spaces per indent level
     std::string result;
 
-
-    if (data.is_window()) {
-        result += indent + "SemmetyFrame (WindowId: " + data.as_window()->m_szTitle + "), " +
+    auto geometry_str = 
                   std::to_string(geometry.pos().x) + ", " +
                   std::to_string(geometry.pos().y) + ", " +
                   std::to_string(geometry.size().x) + ", " +
-                  std::to_string(geometry.size().y) + "\n";
+                  std::to_string(geometry.size().y);
+
+
+    if (data.is_window()) {
+        result += indent + "SemmetyFrame (WindowId: " + data.as_window()->m_szTitle + "), " + geometry_str + "\n";
     } else if (data.is_empty()) {
-        result += indent + "SemmetyFrame (Empty)\n";
+        result += indent + "SemmetyFrame (Empty) " + geometry_str + "\n";
     } else if (data.is_parent()) {
-        result += indent + "SemmetyFrame (Parent with children)\n";
+        result += indent + "SemmetyFrame (Parent with " + data.as_parent().children.size()+  " children) " + geometry_str + "\n";
         for (const auto& child : this->data.as_parent().children) {
             result += child->print(indentLevel + 1);
         }
