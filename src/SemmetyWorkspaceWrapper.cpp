@@ -28,7 +28,7 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
     frame->geometry.pos() = monitor->vecPosition + monitor->vecReservedTopLeft;
     frame->geometry.size() = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
 
-    semmety_log(ERR, "workspace has root frame: " + box_to_string(frame->geometry));
+    semmety_log(ERR, "workspace has root frame: {}", box_to_string(frame->geometry));
 
     this->root = frame;
     this->focused_frame = frame;
