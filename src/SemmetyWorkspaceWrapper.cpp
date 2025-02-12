@@ -110,14 +110,14 @@ SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFocusedFrame()
 
 void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window)
 {
-    auto& focusedFrame = getFocusedFrame();
+    auto focusedFrame = getFocusedFrame();
 
-    if (focusedFrame.data.is_window()) {
-        if (focusedFrame.data.as_window() == window) {
+    if (focusedFrame->data.is_window()) {
+        if (focusedFrame->data.as_window() == window) {
             return;
         }
 
-        minimized_windows.push_back(focusedFrame.data.as_window());
+        minimized_windows.push_back(focusedFrame->data.as_window());
     }
 
     auto frameWithWindow = getFrameForWindow(window);
@@ -127,7 +127,7 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window)
         minimized_windows.remove(window);
     }
 
-    focusedFrame.data = window;
+    focusedFrame->data = window;
 }
 
 void SemmetyWorkspaceWrapper::apply() {
