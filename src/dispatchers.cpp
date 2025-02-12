@@ -58,6 +58,8 @@ void dispatch_remove(std::string arg) {
     if (remaining_sibling != siblings.end()) {
         parent->data = (*remaining_sibling)->data;
     }
+
+    workspace_wrapper->setFocusedFrame(parent);
 }
 
 void registerDispatchers() {
