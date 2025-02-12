@@ -97,7 +97,7 @@ public:
             }
         }
 
-        PHLWINDOWREF as_window() {
+        PHLWINDOWREF as_window() const {
             if (std::holds_alternative<Window>(data)) {
                 return std::get<Window>(data).window;
             } else {
