@@ -94,7 +94,7 @@ std::string SemmetyFrame::print(int indentLevel) const {
     } else if (data.is_empty()) {
         result += indent + "SemmetyFrame (Empty) " + geometry_str + "\n";
     } else if (data.is_parent()) {
-        result += indent + "SemmetyFrame (Parent with " + data.as_parent().children.size()+  " children) " + geometry_str + "\n";
+        result += indent + "SemmetyFrame (Parent with " + std::to_string(data.as_parent().children.size()) + " children) " + geometry_str + "\n";
         for (const auto& child : this->data.as_parent().children) {
             result += child->print(indentLevel + 1);
         }
