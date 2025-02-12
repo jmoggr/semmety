@@ -118,7 +118,7 @@ public:
     SemmetyFrame(FrameData frameData) : data(std::move(frameData)) {}
 
     void clearWindow();
-    void print() const;
+    std::string print(int indentLevel = 0) const;
     void propagateGeometry(const std::optional<CBox>& geometry = std::nullopt);
     std::pair<CBox, CBox> getChildGeometries() const;
     void applyRecursive(PHLWORKSPACE workspace);

@@ -78,19 +78,23 @@ std::pair<CBox, CBox> SemmetyFrame::getChildGeometries() const {
 }
 
 
-void SemmetyFrame::print() const {
+std::string SemmetyFrame::print(int indentLevel) const {
+    std::string indent(indentLevel * 2, ' '); // 2 spaces per indent level
+    std::string result;
+
     if (data.is_window()) {
-        // std::cout << "SemmetyFrame (WindowId: " << std::get<Window>(data).window << ")\n";
+        result += indent + "SemmetyFrame (WindowId: " + std::to_string((uintptr_t)std::get<Window>(data).window.get()) + ")\n";
     } else if (data.is_empty()) {
-        // std::cout << "SemmetyFrame (Empty)\n";
-    } else {
-        // std::cout << "SemmetyFrame (Parent with children)\n";
-        if (data.is_parent()) {
-            for (const auto& child : this->data.as_parent().children) {
-                child->print();
-            }
+        result += indent + "SemmetyFrame (Empty)\n";
+    } else if (data.is_parent()) {
+        result += indent + "SemmetyFrame (Parent with children)\n";
+        for (const auto& child : this->data.as_parent().children) {
+            result += child->print(indentLevel + 1);
         }
     }
+
+    return result;
+}
 }
 
 
