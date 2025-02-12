@@ -23,7 +23,7 @@ void dispatch_split(std::string arg) {
 	auto* workspace_wrapper = workspace_for_action(true);
 	if (workspace_wrapper == nullptr) return;
 
-	auto& focused_frame = workspace_wrapper->getFocusedFrame();
+	auto focused_frame = workspace_wrapper->getFocusedFrame();
 
     // Create a new parent frame data
     // SemmetyFrame::Parent parentData;
@@ -47,7 +47,7 @@ void dispatch_split(std::string arg) {
 
     // Set the focused frame's data to be the new parent
 
-    focused_frame.data = SemmetyFrame::Parent(makeShared<SemmetyFrame>(focused_frame), std::move(focused_frame.data), SemmetyFrame::Empty{});
+    focused_frame.data = SemmetyFrame::Parent(focused_frame, std::move(focused_frame.data), SemmetyFrame::Empty{});
 
 }
 
