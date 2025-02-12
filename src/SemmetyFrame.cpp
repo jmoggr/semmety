@@ -82,6 +82,8 @@ std::string SemmetyFrame::print(int indentLevel) const {
     std::string indent(indentLevel * 2, ' '); // 2 spaces per indent level
     std::string result;
 
+    result += indent + "Geometry: " + geometry.toString() + "\n";
+
     if (data.is_window()) {
         result += indent + "SemmetyFrame (WindowId: " + data.as_window()->m_szTitle + ")\n";
     } else if (data.is_empty()) {
