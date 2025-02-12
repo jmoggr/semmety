@@ -156,9 +156,12 @@ void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
         return;
     }
 
+    if (window->isHidden()) {
+        window->setHidden(false);
+    }
+
     window->unsetWindowData(PRIORITY_LAYOUT);
 
-    
 		auto reserved = window->getFullWindowReservedArea();
 		auto wb = getStandardWindowArea({-reserved.topLeft, -reserved.bottomRight}, workspace);
 
