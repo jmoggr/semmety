@@ -16,18 +16,23 @@
 
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
+#include "globals.hpp"
+#include "log.hpp"
+
 SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout& l) : layout(l) {
     workspace = w;
 
-    	auto& monitor = w->m_pMonitor;
+    auto& monitor = w->m_pMonitor;
     auto frame = makeShared<SemmetyFrame>();
 
     frame->geometry.pos() = monitor->vecPosition + monitor->vecReservedTopLeft;
     frame->geometry.size() = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
 
+    semmety_log(ERR, "workspace has root frame: " + box_to_string(frame->geometry));
+
     this->root = frame;
     this->focused_frame = frame;
-
+}
 
     
 	// static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
@@ -50,7 +55,6 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 	// 		(int) -(gaps_in.bottom - gaps_out.bottom)
 	// );
 	// // clang-format on
-}
 
 void SemmetyWorkspaceWrapper::addWindow(PHLWINDOWREF window) {
     putWindowInFocusedFrame(window);
@@ -120,25 +124,27 @@ void SemmetyWorkspaceWrapper::setFocusedFrame(SP<SemmetyFrame> frame)
 
     this->focused_frame = frame;
 }
-{
-    auto focusedFrame = getFocusedFrame();
 
-    if (focusedFrame->data.is_window()) {
-        if (focusedFrame->data.as_window() == window) {
-            return;
-        }
+void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
+    
+ auto focusedFrame = getFocusedFrame();
 
-        minimized_windows.push_back(focusedFrame->data.as_window());
-    }
+ if (focusedFrame->data.is_window()) {
+     if (focusedFrame->data.as_window() == window) {
+         return;
+     }
 
-    auto frameWithWindow = getFrameForWindow(window);
-    if (frameWithWindow) {
-        frameWithWindow->data = SemmetyFrame::Empty{};
-    } else {
-        minimized_windows.remove(window);
-    }
+     minimized_windows.push_back(focusedFrame->data.as_window());
+ }
 
-    focusedFrame->data = window;
+ auto frameWithWindow = getFrameForWindow(window);
+ if (frameWithWindow) {
+     frameWithWindow->data = SemmetyFrame::Empty{};
+ } else {
+     minimized_windows.remove(window);
+ }
+
+ focusedFrame->data = window;
 }
 
 void SemmetyWorkspaceWrapper::apply() {
@@ -146,6 +152,6 @@ void SemmetyWorkspaceWrapper::apply() {
       root->applyRecursive(workspace.lock());
 
     // for (const auto& window : minimized_windows) {
-    //     window.lock().get().setHidden(true);
+    //     window.lock().get()->setHidden(true);
     // }
 }
