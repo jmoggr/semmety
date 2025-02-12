@@ -25,30 +25,12 @@ void dispatch_split(std::string arg) {
 
 	auto focused_frame = workspace_wrapper->getFocusedFrame();
 
-    // Create a new parent frame data
-    // SemmetyFrame::Parent parentData;
-    // auto child_a = focused_frame.data.is_window() ? 
+  focused_frame->data = SemmetyFrame::Parent(focused_frame, std::move(focused_frame->data), SemmetyFrame::Empty{});
+}
 
-    // // Determine the data for the first child
-    // if (focused_frame.data.is_window()) {
-    //     // If the focused frame had a window, the first child should have that window
-    //     auto window = focused_frame.data.as_window();
-    //     auto firstChild = makeShared<SemmetyFrame>(window);
-    //     parentData.children.push_back(firstChild);
-    // } else {
-    //     // Otherwise, the first child should be empty
-    //     auto firstChild = makeShared<SemmetyFrame>(SemmetyFrame::Empty{});
-    //     parentData.children.push_back(firstChild);
-    // }
-
-    // The second child should always be empty
-    // auto secondChild = makeShared<SemmetyFrame>(SemmetyFrame::Empty{});
-    // parentData.children.push_back(secondChild);
-
-    // Set the focused frame's data to be the new parent
-
-    focused_frame->data = SemmetyFrame::Parent(focused_frame, std::move(focused_frame->data), SemmetyFrame::Empty{});
-
+void dispatch_remove(std::string arg) {
+	auto* workspace_wrapper = workspace_for_action(true);
+	if (workspace_wrapper == nullptr) return;
 }
 
 void registerDispatchers() {
