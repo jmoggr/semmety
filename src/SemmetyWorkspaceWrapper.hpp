@@ -20,7 +20,7 @@ public:
 	SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout&);
     void addWindow(PHLWINDOWREF w);
   void putWindowInFocusedFrame(PHLWINDOWREF w);
-  SemmetyFrame& getFocusedFrame();
+  SP<SemmetyFrame> getFocusedFrame();
     std::list<SP<SemmetyFrame>> getWindowFrames() const;
     SP<SemmetyFrame> getFrameForWindow(PHLWINDOWREF window) const;
     void minimizeWindow(PHLWINDOWREF window);

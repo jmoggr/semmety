@@ -95,7 +95,7 @@ SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFrameForWindow(PHLWINDOWREF window)
     return nullptr; // Return null if no matching window frame is found
 }
 
-SemmetyFrame& SemmetyWorkspaceWrapper::getFocusedFrame()
+SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFocusedFrame()
 {
   if (!this->focused_frame) {
       throw std::runtime_error("No active frame, were outputs added to the desktop?");
@@ -105,7 +105,7 @@ SemmetyFrame& SemmetyWorkspaceWrapper::getFocusedFrame()
       throw std::runtime_error("Active frame is not a leaf");
   }
 
-  return *this->focused_frame;
+  return this->focused_frame;
 }
 
 void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window)
