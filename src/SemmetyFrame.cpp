@@ -24,7 +24,6 @@ SP<SemmetyFrame> SemmetyFrame::get_parent() const {
         throw std::runtime_error("Parent frame is not of type Parent");
     }
     return parentFrame;
-}
 
 void SemmetyFrame::propagateGeometry(const std::optional<CBox>& geometry) {
     if (geometry) {
