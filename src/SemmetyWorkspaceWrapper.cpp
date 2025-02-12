@@ -134,7 +134,7 @@ void SemmetyWorkspaceWrapper::apply() {
       root->propagateGeometry();
       root->applyRecursive(workspace.lock());
 
-    for (const auto& window : minimized_windows) {
-        window.lock().get().setHidden(true);
-    }
+    // for (const auto& window : minimized_windows) {
+    //     window.lock().get().setHidden(true);
+    // }
 }
