@@ -21,6 +21,7 @@ public:
     void addWindow(PHLWINDOWREF w);
   void putWindowInFocusedFrame(PHLWINDOWREF w);
   SP<SemmetyFrame> getFocusedFrame();
+  void setFocusedFrame(SP<SemmetyFrame> frame);
     std::list<SP<SemmetyFrame>> getWindowFrames() const;
     SP<SemmetyFrame> getFrameForWindow(PHLWINDOWREF window) const;
     void minimizeWindow(PHLWINDOWREF window);

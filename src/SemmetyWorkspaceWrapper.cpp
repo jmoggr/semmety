@@ -108,7 +108,18 @@ SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFocusedFrame()
   return this->focused_frame;
 }
 
-void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window)
+void SemmetyWorkspaceWrapper::setFocusedFrame(SP<SemmetyFrame> frame)
+{
+    if (!frame) {
+        throw std::runtime_error("Cannot set a null frame as focused");
+    }
+
+    if (!frame->data.is_leaf()) {
+        throw std::runtime_error("Focused frame must be a leaf");
+    }
+
+    this->focused_frame = frame;
+}
 {
     auto focusedFrame = getFocusedFrame();
 
