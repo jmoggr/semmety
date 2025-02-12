@@ -9,6 +9,7 @@
 SDispatchResult dispatch_debug_v2(std::string arg) {
 	auto* workspace_wrapper = workspace_for_action(true);
 	if (workspace_wrapper == nullptr)
+    semmety_log(ERR, "{}", workspace_wrapper->root->print());
     return SDispatchResult{.passEvent = false, .success = true, .error = ""};
 
         semmety_log(ERR, workspace_wrapper->root->print());
