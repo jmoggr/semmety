@@ -59,7 +59,6 @@ void dispatch_remove(std::string arg) {
         parent->data = (*remaining_child)->data;
     }
 }
-}
 
 void registerDispatchers() {
     HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:debug", dispatch_debug_v2);
