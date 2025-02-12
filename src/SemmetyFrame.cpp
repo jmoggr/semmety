@@ -24,6 +24,7 @@ SP<SemmetyFrame> SemmetyFrame::get_parent() const {
         throw std::runtime_error("Parent frame is not of type Parent");
     }
     return parentFrame;
+}
 
 void SemmetyFrame::propagateGeometry(const std::optional<CBox>& geometry) {
     if (geometry) {
@@ -82,7 +83,7 @@ std::string SemmetyFrame::print(int indentLevel) const {
     std::string result;
 
     if (data.is_window()) {
-        result += indent + "SemmetyFrame (WindowId: " + std::to_string((uintptr_t)std::get<Window>(data).window.get()) + ")\n";
+        result += indent + "SemmetyFrame (WindowId: " + data.as_window()->m_szTitle + ")\n";
     } else if (data.is_empty()) {
         result += indent + "SemmetyFrame (Empty)\n";
     } else if (data.is_parent()) {
@@ -93,7 +94,6 @@ std::string SemmetyFrame::print(int indentLevel) const {
     }
 
     return result;
-}
 }
 
 
@@ -169,7 +169,7 @@ void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
 		auto wb = getStandardWindowArea({-reserved.topLeft, -reserved.bottomRight}, workspace);
 
 		*window->m_vRealPosition = wb.pos();
-		*window->m_vRealSize = wb.size();		
+		*window->m_vRealSize = wb.size();
     window->updateWindowDecos();
 
 
