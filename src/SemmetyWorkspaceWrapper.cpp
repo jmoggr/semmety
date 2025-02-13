@@ -212,7 +212,7 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
 }
 
 void SemmetyWorkspaceWrapper::apply() {
-    rebalance();
+    // rebalance();
 
 
       root->propagateGeometry();
