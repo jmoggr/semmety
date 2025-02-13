@@ -27,6 +27,7 @@ public:
     void minimizeWindow(PHLWINDOWREF window);
     void removeWindow(PHLWINDOWREF window);
     std::list<SP<SemmetyFrame>> getEmptyFrames() const;
+    std::list<SP<SemmetyFrame>> getLeafFrames() const;
     void apply();
     void rebalance();
 };
