@@ -45,7 +45,6 @@ void SemmetyWorkspaceWrapper::rebalance() {
     for (auto windowIt = minimized_windows.begin(); windowIt != minimized_windows.end() && frameIt != emptyFrames.end(); ++windowIt, ++frameIt) {
         (*frameIt)->data = *windowIt;
     }
-
 }
 
 std::list<SP<SemmetyFrame>> SemmetyWorkspaceWrapper::getEmptyFrames() const {
@@ -146,7 +145,7 @@ SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFocusedFrame()
   }
 
   if (!this->focused_frame->data.is_leaf()) {
-      throw semmety_critical_error("Active frame is not a leaf");
+      throw *semmety_critical_error("Active frame is not a leaf");
       // semmety_log(ERR, "Active frame is not a leaf");
       // throw std::runtime_error("Active frame is not a leaf");
   }
@@ -192,7 +191,7 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
 }
 
 void SemmetyWorkspaceWrapper::apply() {
-
+    rebalance();
 
 
       root->propagateGeometry();
