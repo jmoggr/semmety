@@ -5,6 +5,8 @@
 #include <variant>
 #include <utility> // for std::move
 
+#include "log.hpp"
+
 enum class SemmetySplitDirection {
 	SplitH,
 	SplitV,
