@@ -115,6 +115,7 @@ public:
     CBox getStandardWindowArea(SBoxExtents extents, PHLWORKSPACE workspace);
     FrameData data;
     WP<SemmetyFrame> parent;
+    bool validateParentReferences() const;
 
     SemmetyFrame() : data(Empty{}) {}
     SemmetyFrame(Vector2D pos, Vector2D size) : data(Empty{}), geometry(CBox{pos, size}) {}
