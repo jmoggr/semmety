@@ -50,9 +50,9 @@ public:
             firstChild->parent = parentFrame;
             secondChild->parent = parentFrame;
             children.push_back(std::move(firstChild));
-            children.push_back(std::move(secondChild));
-            children.push_back(makeShared<SemmetyFrame>(std::move(child_a)));
-            children.push_back(makeShared<SemmetyFrame>(std::move(child_b)));
+
+                        children.push_back(std::move(secondChild));
+
         }
         
 
@@ -115,6 +115,7 @@ public:
     WP<SemmetyFrame> parent;
 
     SemmetyFrame() : data(Empty{}) {}
+    SemmetyFrame(Vector2D pos, Vector2D size) : data(Empty{}), geometry(CBox{pos, size}) {}
     SemmetyFrame(FrameData frameData) : data(std::move(frameData)) {}
 
     void clearWindow();
