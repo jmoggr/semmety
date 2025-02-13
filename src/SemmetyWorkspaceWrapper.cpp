@@ -53,6 +53,7 @@ std::list<SP<SemmetyFrame>> SemmetyWorkspaceWrapper::getLeafFrames() const {
                 stack.push_back(child);
             }
         }
+        minimized_windows.remove(*windowIt);
     }
 
     return leafFrames;
