@@ -35,6 +35,17 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
     this->focused_frame = frame;
 }
 
+void SemmetyWorkspaceWrapper::rebalance() {
+    auto emptyFrames = getEmptyFrames();
+    auto frameIt = emptyFrames.begin();
+
+    for (auto windowIt = minimized_windows.begin(); windowIt != minimized_windows.end() && frameIt != emptyFrames.end(); ++windowIt, ++frameIt) {
+        (*frameIt)->data = *windowIt;
+    }
+
+    minimized_windows.clear();
+}
+
 std::list<SP<SemmetyFrame>> SemmetyWorkspaceWrapper::getEmptyFrames() const {
     std::list<SP<SemmetyFrame>> emptyFrames;
     std::list<SP<SemmetyFrame>> stack;

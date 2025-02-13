@@ -28,4 +28,5 @@ public:
     void removeWindow(PHLWINDOWREF window);
     std::list<SP<SemmetyFrame>> getEmptyFrames() const;
     void apply();
+    void rebalance();
 };
