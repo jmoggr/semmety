@@ -95,7 +95,7 @@ public:
             if (std::holds_alternative<Parent>(data)) {
                 return std::get<Parent>(data);
             } else {
-                throw *semmety_critical_error("Attempted to get parent value of a non-parent FrameData");
+                semmety_critical_error("Attempted to get parent value of a non-parent FrameData");
             }
         }
 
@@ -103,7 +103,7 @@ public:
             if (std::holds_alternative<Window>(data)) {
                 return std::get<Window>(data).window;
             } else {
-                throw *semmety_critical_error("Attempted to get window value of a non-window FrameData");
+                semmety_critical_error("Attempted to get window value of a non-window FrameData");
             }
         }
 

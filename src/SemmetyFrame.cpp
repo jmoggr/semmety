@@ -21,7 +21,7 @@ SP<SemmetyFrame> SemmetyFrame::get_parent() const {
         return nullptr;
     }
     if (!parentFrame->data.is_parent()) {
-        throw *semmety_critical_error("Parent frame is not of type Parent");
+        semmety_critical_error("Parent frame is not of type Parent");
     }
     return parentFrame;
 }
@@ -72,7 +72,7 @@ std::pair<CBox, CBox> SemmetyFrame::getChildGeometries() const {
             return {top_rect, bottom_rect};
         }
         default: {
-            throw *semmety_critical_error("Invalid split direction");
+            semmety_critical_error("Invalid split direction");
         }
     }
 }
