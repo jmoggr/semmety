@@ -122,6 +122,8 @@ SDispatchResult dispatch_remove(std::string arg) {
     }
 
     if (remaining_sibling != siblings.end() && parent->data.is_parent()) {
+        semmety_log(ERR, "remaining_sibling data: {}", (*remaining_sibling)->print());
+        semmety_log(ERR, "parent data before move: {}", parent->print());
         parent->data = std::move((*remaining_sibling)->data);
     }
 
