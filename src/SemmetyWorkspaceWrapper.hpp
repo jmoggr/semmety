@@ -26,5 +26,6 @@ public:
     SP<SemmetyFrame> getFrameForWindow(PHLWINDOWREF window) const;
     void minimizeWindow(PHLWINDOWREF window);
     void removeWindow(PHLWINDOWREF window);
+    std::list<SP<SemmetyFrame>> getEmptyFrames() const;
     void apply();
 };

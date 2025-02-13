@@ -35,6 +35,29 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
     this->focused_frame = frame;
 }
 
+std::list<SP<SemmetyFrame>> SemmetyWorkspaceWrapper::getEmptyFrames() const {
+    std::list<SP<SemmetyFrame>> emptyFrames;
+    std::list<SP<SemmetyFrame>> stack;
+    stack.push_back(root);
+
+    while (!stack.empty()) {
+        auto current = stack.back();
+        stack.pop_back();
+
+        if (current->data.is_empty()) {
+            emptyFrames.push_back(current);
+        }
+
+        if (current->data.is_parent()) {
+            for (const auto& child : current->data.as_parent().children) {
+                stack.push_back(child);
+            }
+        }
+    }
+
+    return emptyFrames;
+}
+
     
 	// static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
 	// static const auto p_gaps_out = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_out");
