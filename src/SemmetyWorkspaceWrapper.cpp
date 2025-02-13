@@ -35,6 +35,29 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
     this->focused_frame = frame;
 }
 
+std::list<SP<SemmetyFrame>> SemmetyWorkspaceWrapper::getLeafFrames() const {
+    std::list<SP<SemmetyFrame>> leafFrames;
+    std::list<SP<SemmetyFrame>> stack;
+    stack.push_back(root);
+
+    while (!stack.empty()) {
+        auto current = stack.back();
+        stack.pop_back();
+
+        if (current->data.is_leaf()) {
+            leafFrames.push_back(current);
+        }
+
+        if (current->data.is_parent()) {
+            for (const auto& child : current->data.as_parent().children) {
+                stack.push_back(child);
+            }
+        }
+    }
+
+    return leafFrames;
+}
+
 void SemmetyWorkspaceWrapper::rebalance() {
     auto emptyFrames = getEmptyFrames();
     emptyFrames.sort([](const SP<SemmetyFrame>& a, const SP<SemmetyFrame>& b) {
