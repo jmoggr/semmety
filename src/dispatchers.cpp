@@ -90,23 +90,28 @@ SDispatchResult dispatch_remove(std::string arg) {
     auto parent = focused_frame->get_parent();
     if (!parent || !parent->data.is_parent()) {
         semmety_log(ERR, "Frame has no parent, cannot remove the root frame!");
-    return SDispatchResult{.passEvent = false, .success = true, .error = ""};
+        return SDispatchResult{.passEvent = false, .success = true, .error = ""};
     }
 
+    semmety_log(ERR, "here1");
     auto& siblings = parent->data.as_parent().children;
     auto remaining_sibling = std::find_if(siblings.begin(), siblings.end(),
         [&focused_frame](const SP<SemmetyFrame>& sibling) {
             return sibling != focused_frame;
         });
 
+    semmety_log(ERR, "here2");
     if (focused_frame->data.is_window()) {
+    semmety_log(ERR, "here3");
         workspace_wrapper->minimized_windows.push_back(focused_frame->data.as_window());
     }
 
+    semmety_log(ERR, "here4");
     if (remaining_sibling != siblings.end() && parent->data.is_parent()) {
         parent->data = std::move((*remaining_sibling)->data);
     }
 
+    semmety_log(ERR, "here5");
     workspace_wrapper->setFocusedFrame(parent);
     semmety_log(ERR, "post remove:\n{}", workspace_wrapper->root->print());
     workspace_wrapper->apply();
