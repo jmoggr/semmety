@@ -107,6 +107,20 @@ SDispatchResult dispatch_remove(std::string arg) {
     }
 
     semmety_log(ERR, "here4");
+    semmety_log(ERR, "Checking remaining_sibling validity");
+    if (remaining_sibling != siblings.end()) {
+        semmety_log(ERR, "remaining_sibling is valid");
+    } else {
+        semmety_log(ERR, "remaining_sibling is invalid (end iterator)");
+    }
+
+    semmety_log(ERR, "Checking parent validity");
+    if (parent->data.is_parent()) {
+        semmety_log(ERR, "parent is valid and is a parent");
+    } else {
+        semmety_log(ERR, "parent is invalid or not a parent");
+    }
+
     if (remaining_sibling != siblings.end() && parent->data.is_parent()) {
         parent->data = std::move((*remaining_sibling)->data);
     }
