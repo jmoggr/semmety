@@ -2,6 +2,20 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprutils/string/String.hpp>
+#include <hyprutils/memory/SharedPtr.hpp>
+#include <hyprland/src/desktop/DesktopTypes.hpp>
+#include <hyprland/src/desktop/Workspace.hpp>
+#include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/config/ConfigManager.hpp>
+#include <hyprland/src/desktop/DesktopTypes.hpp>
+#include <hyprland/src/desktop/Workspace.hpp>
+#include <hyprland/src/managers/LayoutManager.hpp>
+#include <hyprland/src/managers/PointerManager.hpp>
+#include <hyprland/src/managers/SeatManager.hpp>
+#include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprland/src/plugins/PluginSystem.hpp>
+#include <hyprutils/math/Vector2D.hpp>
 
 #include "dispatchers.hpp"
 #include "globals.hpp"
@@ -9,10 +23,29 @@
 SDispatchResult dispatch_debug_v2(std::string arg) {
 	auto* workspace_wrapper = workspace_for_action(true);
 	if (workspace_wrapper == nullptr)
-    semmety_log(ERR, "{}", workspace_wrapper->root->print());
     return SDispatchResult{.passEvent = false, .success = true, .error = ""};
 
-        semmety_log(ERR, workspace_wrapper->root->print());
+    if (!valid(workspace_wrapper->workspace.lock())) {
+        semmety_log(ERR, "workspace is not valid");
+    }
+
+    auto p = workspace_wrapper->workspace.lock().get();
+    if (p == nullptr) {
+        
+        semmety_log(ERR, "workspace is null");
+    }
+
+    auto w = workspace_wrapper->workspace;
+    	auto m = g_pCompositor->m_pLastMonitor;
+    auto& monitor = w->m_pMonitor;
+
+    semmety_log(ERR, "monitor size {} {}", m->vecSize.x, m->vecSize.y);
+    semmety_log(ERR, "workspace monitor size {} {}", monitor->vecSize.x, monitor->vecSize.y);
+
+    // frame->geometry.pos() = monitor->vecPosition + monitor->vecReservedTopLeft;
+    // frame->geometry.size() = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
+
+    semmety_log(ERR, "{}", workspace_wrapper->root->print());
 
     return SDispatchResult{.passEvent = false, .success = true, .error = ""};
 }
@@ -29,10 +62,16 @@ SDispatchResult split(std::string arg) {
 	if (workspace_wrapper == nullptr)
     return SDispatchResult{.passEvent = false, .success = true, .error = ""};
 
-	auto focused_frame = workspace_wrapper->getFocusedFrame();
+	  auto focused_frame = workspace_wrapper->getFocusedFrame();
 
-  focused_frame->data = SemmetyFrame::Parent(focused_frame, std::move(focused_frame->data), SemmetyFrame::Empty{});
+	  
+    
+    focused_frame->data = SemmetyFrame::Parent(focused_frame, std::move(focused_frame->data), SemmetyFrame::Empty{});
+
+    workspace_wrapper->focused_frame = *focused_frame->data.as_parent().children.begin();
     workspace_wrapper->apply();
+
+    semmety_log(ERR, "post pslit:\n{}", workspace_wrapper->root->print());
     return SDispatchResult{.passEvent = false, .success = true, .error = ""};
 }
 
@@ -45,7 +84,7 @@ SDispatchResult dispatch_remove(std::string arg) {
 
     if (!focused_frame->data.is_leaf()) {
         semmety_log(ERR, "Can only remove leaf frames");
-    return SDispatchResult{.passEvent = false, .success = true, .error = ""};
+        return SDispatchResult{.passEvent = false, .success = true, .error = ""};
     }
 
     auto parent = focused_frame->get_parent();
@@ -69,6 +108,7 @@ SDispatchResult dispatch_remove(std::string arg) {
     }
 
     workspace_wrapper->setFocusedFrame(parent);
+    semmety_log(ERR, "post remove:\n{}", workspace_wrapper->root->print());
     workspace_wrapper->apply();
     return SDispatchResult{.passEvent = false, .success = true, .error = ""};
 }
