@@ -37,13 +37,15 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 
 void SemmetyWorkspaceWrapper::rebalance() {
     auto emptyFrames = getEmptyFrames();
+    emptyFrames.sort([](const SP<SemmetyFrame>& a, const SP<SemmetyFrame>& b) {
+        return a->geometry.size().x * a->geometry.size().y > b->geometry.size().x * b->geometry.size().y;
+    });
     auto frameIt = emptyFrames.begin();
 
     for (auto windowIt = minimized_windows.begin(); windowIt != minimized_windows.end() && frameIt != emptyFrames.end(); ++windowIt, ++frameIt) {
         (*frameIt)->data = *windowIt;
     }
 
-    minimized_windows.clear();
 }
 
 std::list<SP<SemmetyFrame>> SemmetyWorkspaceWrapper::getEmptyFrames() const {
