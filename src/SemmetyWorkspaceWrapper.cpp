@@ -23,12 +23,13 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
     workspace = w;
 
     auto& monitor = w->m_pMonitor;
-    auto frame = makeShared<SemmetyFrame>();
+    auto pos = monitor->vecPosition + monitor->vecReservedTopLeft;
+    auto size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
+    auto frame = makeShared<SemmetyFrame>(pos, size);
 
-    frame->geometry.pos() = monitor->vecPosition + monitor->vecReservedTopLeft;
-    frame->geometry.size() = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
 
-    semmety_log(ERR, "workspace has root frame: {}", box_to_string(frame->geometry));
+    semmety_log(ERR, "init workspace monitor size {} {}", monitor->vecSize.x, monitor->vecSize.y);
+    semmety_log(ERR, "workspace has root frame: {}", frame->print());
 
     this->root = frame;
     this->focused_frame = frame;
@@ -99,14 +100,19 @@ SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFrameForWindow(PHLWINDOWREF window)
     return nullptr; // Return null if no matching window frame is found
 }
 
+
+
 SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFocusedFrame()
 {
   if (!this->focused_frame) {
+      semmety_log(ERR, "No active frame, were outputs added to the desktop?");
       throw std::runtime_error("No active frame, were outputs added to the desktop?");
   }
 
   if (!this->focused_frame->data.is_leaf()) {
-      throw std::runtime_error("Active frame is not a leaf");
+      throw semmety_critical_error("Active frame is not a leaf");
+      // semmety_log(ERR, "Active frame is not a leaf");
+      // throw std::runtime_error("Active frame is not a leaf");
   }
 
   return this->focused_frame;
@@ -115,10 +121,12 @@ SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFocusedFrame()
 void SemmetyWorkspaceWrapper::setFocusedFrame(SP<SemmetyFrame> frame)
 {
     if (!frame) {
+        semmety_log(ERR, "Cannot set a null frame as focused");
         throw std::runtime_error("Cannot set a null frame as focused");
     }
 
     if (!frame->data.is_leaf()) {
+        semmety_log(ERR, "Focused frame must be a leaf");
         throw std::runtime_error("Focused frame must be a leaf");
     }
 
@@ -148,6 +156,9 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
 }
 
 void SemmetyWorkspaceWrapper::apply() {
+
+
+
       root->propagateGeometry();
       root->applyRecursive(workspace.lock());
 
@@ -155,3 +166,4 @@ void SemmetyWorkspaceWrapper::apply() {
     //     window.lock().get()->setHidden(true);
     // }
 }
+
