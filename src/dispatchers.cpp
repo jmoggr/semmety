@@ -82,13 +82,13 @@ SDispatchResult dispatch_remove(std::string arg) {
 
     auto focused_frame = workspace_wrapper->getFocusedFrame();
 
-    if (!focused_frame->data.is_leaf()) {
+    if (!focused_frame || !focused_frame->data.is_leaf()) {
         semmety_log(ERR, "Can only remove leaf frames");
         return SDispatchResult{.passEvent = false, .success = true, .error = ""};
     }
 
     auto parent = focused_frame->get_parent();
-    if (!parent) {
+    if (!parent || !parent->data.is_parent()) {
         semmety_log(ERR, "Frame has no parent, cannot remove the root frame!");
     return SDispatchResult{.passEvent = false, .success = true, .error = ""};
     }
@@ -103,7 +103,7 @@ SDispatchResult dispatch_remove(std::string arg) {
         workspace_wrapper->minimized_windows.push_back(focused_frame->data.as_window());
     }
 
-    if (remaining_sibling != siblings.end()) {
+    if (remaining_sibling != siblings.end() && parent->data.is_parent()) {
         parent->data = std::move((*remaining_sibling)->data);
     }
 
