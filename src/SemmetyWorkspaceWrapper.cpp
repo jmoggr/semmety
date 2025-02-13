@@ -146,8 +146,6 @@ SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFocusedFrame()
 
   if (!this->focused_frame->data.is_leaf()) {
       throw *semmety_critical_error("Active frame is not a leaf");
-      // semmety_log(ERR, "Active frame is not a leaf");
-      // throw std::runtime_error("Active frame is not a leaf");
   }
 
   return this->focused_frame;
