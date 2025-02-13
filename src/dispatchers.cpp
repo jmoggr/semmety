@@ -27,6 +27,7 @@ SDispatchResult dispatch_debug_v2(std::string arg) {
 
     if (!valid(workspace_wrapper->workspace.lock())) {
         semmety_log(ERR, "workspace is not valid");
+        semmety_log(ERR, "parent data after move: {}", parent->print());
     }
 
     auto p = workspace_wrapper->workspace.lock().get();
