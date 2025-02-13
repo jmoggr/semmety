@@ -141,7 +141,7 @@ SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFocusedFrame()
 {
   if (!this->focused_frame) {
       semmety_log(ERR, "No active frame, were outputs added to the desktop?");
-      throw std::runtime_error("No active frame, were outputs added to the desktop?");
+      throw *semmety_critical_error("No active frame, were outputs added to the desktop?");
   }
 
   if (!this->focused_frame->data.is_leaf()) {
@@ -157,12 +157,12 @@ void SemmetyWorkspaceWrapper::setFocusedFrame(SP<SemmetyFrame> frame)
 {
     if (!frame) {
         semmety_log(ERR, "Cannot set a null frame as focused");
-        throw std::runtime_error("Cannot set a null frame as focused");
+        throw *semmety_critical_error("Cannot set a null frame as focused");
     }
 
     if (!frame->data.is_leaf()) {
         semmety_log(ERR, "Focused frame must be a leaf");
-        throw std::runtime_error("Focused frame must be a leaf");
+        throw *semmety_critical_error("Focused frame must be a leaf");
     }
 
     this->focused_frame = frame;
