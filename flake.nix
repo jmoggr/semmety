@@ -9,9 +9,8 @@
       repo = "default-linux";
     };
     hyprland = {
-      owner = "hyprwm";
-      repo = "Hyprland";
-      type = "github";
+
+      url =  "github:hyprwm/Hyprland/68bb3e7";
       inputs.systems.follows = "systems";
     };
   };
@@ -48,7 +47,7 @@
   in {
     packages = perSystem (system: pkgs: {
       Hyprspace = let
-        hyprlandPkg = hyprland.packages.${system}.hyprland;
+        hyprlandPkg = hyprland.packages.${system}.hyprland-debug;
       in
         pkgs.gcc14Stdenv.mkDerivation {
           pname = "Semmety";
@@ -75,7 +74,7 @@
         nativeBuildInputs = with pkgs; [gcc14 clang-tools meson ninja pkg-config libdrm fmt];
         buildInputs = [hyprland.packages.${system}.hyprland];
         inputsFrom = [
-          hyprland.packages.${system}.hyprland
+          hyprland.packages.${system}.hyprland-debug
           self.packages.${system}.Hyprspace
         ];
         shellHook = ''

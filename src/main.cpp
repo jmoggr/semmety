@@ -7,6 +7,7 @@
 #include "globals.hpp"
 #include "dispatchers.hpp"
 
+
 APICALL EXPORT std::string PLUGIN_API_VERSION() {
     return HYPRLAND_API_VERSION;
 }

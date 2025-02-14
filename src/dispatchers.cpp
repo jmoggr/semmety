@@ -47,6 +47,13 @@ SDispatchResult dispatch_debug_v2(std::string arg) {
 
     semmety_log(ERR, "{}", workspace_wrapper->root->print());
 
+
+
+        for (const auto& window : workspace_wrapper->minimized_windows) {
+            semmety_log(ERR, "    {}", window.lock()->m_szTitle);
+            
+        }
+
     return SDispatchResult{.passEvent = false, .success = true, .error = ""};
 }
 
@@ -71,7 +78,6 @@ SDispatchResult split(std::string arg) {
     workspace_wrapper->focused_frame = *focused_frame->data.as_parent().children.begin();
     workspace_wrapper->apply();
 
-    semmety_log(ERR, "post pslit:\n{}", workspace_wrapper->root->print());
     return SDispatchResult{.passEvent = false, .success = true, .error = ""};
 }
 
@@ -93,43 +99,29 @@ SDispatchResult dispatch_remove(std::string arg) {
         return SDispatchResult{.passEvent = false, .success = true, .error = ""};
     }
 
-    semmety_log(ERR, "here1");
+    parent->validateParentReferences();
+
     auto& siblings = parent->data.as_parent().children;
     auto remaining_sibling = std::find_if(siblings.begin(), siblings.end(),
         [&focused_frame](const SP<SemmetyFrame>& sibling) {
             return sibling != focused_frame;
         });
 
-    semmety_log(ERR, "here2");
+    
+        semmety_log(ERR, "focus {}", focused_frame->print());
+        semmety_log(ERR, "remaining {}", (*remaining_sibling)->print());
+
     if (focused_frame->data.is_window()) {
-    semmety_log(ERR, "here3");
         workspace_wrapper->minimized_windows.push_back(focused_frame->data.as_window());
     }
 
-    semmety_log(ERR, "here4");
-    semmety_log(ERR, "Checking remaining_sibling validity");
     if (remaining_sibling != siblings.end()) {
-        semmety_log(ERR, "remaining_sibling is valid");
-    } else {
-        semmety_log(ERR, "remaining_sibling is invalid (end iterator)");
+        // TODO: figure out why this can cause a crash
+        auto data = std::move((*remaining_sibling)->data);
+        parent->data = std::move(data);
     }
 
-    semmety_log(ERR, "Checking parent validity");
-    if (parent->data.is_parent()) {
-        semmety_log(ERR, "parent is valid and is a parent");
-    } else {
-        semmety_log(ERR, "parent is invalid or not a parent");
-    }
-
-    if (remaining_sibling != siblings.end() && parent->data.is_parent()) {
-        semmety_log(ERR, "remaining_sibling data: {}", (*remaining_sibling)->print());
-        semmety_log(ERR, "parent data before move: {}", parent->print());
-        parent->data = std::move((*remaining_sibling)->data);
-    }
-
-    semmety_log(ERR, "here5");
     workspace_wrapper->setFocusedFrame(parent);
-    semmety_log(ERR, "post remove:\n{}", workspace_wrapper->root->print());
     workspace_wrapper->apply();
     return SDispatchResult{.passEvent = false, .success = true, .error = ""};
 }

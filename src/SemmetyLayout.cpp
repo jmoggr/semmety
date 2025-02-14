@@ -18,6 +18,8 @@ SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
 	if (!valid(workspace)) return nullptr;
 	if (!allow_fullscreen && workspace->m_bHasFullscreenWindow) return nullptr;
 
+	semmety_log(ERR, "getting workspace for action {}", workspace->m_iID);
+
 	return &layout->getOrCreateWorkspaceWrapper(workspace);
 }
 
@@ -85,10 +87,12 @@ SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE
 
     for (auto& wrapper : this->workspaceWrappers) {
         if (wrapper.workspace.get() == wrkspc) {
+        	semmety_log(LOG, "using existing workspace");
             return wrapper;
         }
     }
 
+	semmety_log(LOG, "creating new workspace");
     this->workspaceWrappers.emplace_back(workspace, *this);
     return this->workspaceWrappers.back();
 }

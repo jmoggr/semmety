@@ -1,6 +1,6 @@
 project('Semmety', 'cpp',
   version: '0.1',
-  default_options: ['buildtype=release'],
+  default_options: ['buildtype=debug'],
 )
 
 cpp_compiler = meson.get_compiler('cpp')

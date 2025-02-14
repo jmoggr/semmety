@@ -53,7 +53,6 @@ std::list<SP<SemmetyFrame>> SemmetyWorkspaceWrapper::getLeafFrames() const {
                 stack.push_back(child);
             }
         }
-        minimized_windows.remove(*windowIt);
     }
 
     return leafFrames;
@@ -66,8 +65,14 @@ void SemmetyWorkspaceWrapper::rebalance() {
     });
     auto frameIt = emptyFrames.begin();
 
-    for (auto windowIt = minimized_windows.begin(); windowIt != minimized_windows.end() && frameIt != emptyFrames.end(); ++windowIt, ++frameIt) {
+
+    for (auto windowIt = minimized_windows.begin(); 
+         windowIt != minimized_windows.end() && frameIt != emptyFrames.end();) {
+    
         (*frameIt)->data = *windowIt;
+        windowIt = minimized_windows.erase(windowIt);
+    
+        ++frameIt;
     }
 }
 
@@ -213,10 +218,9 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
 }
 
 void SemmetyWorkspaceWrapper::apply() {
-    // rebalance();
-
-
       root->propagateGeometry();
+      rebalance();
+
       root->applyRecursive(workspace.lock());
 
     // for (const auto& window : minimized_windows) {
