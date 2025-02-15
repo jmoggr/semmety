@@ -15,7 +15,7 @@ enum class SemmetySplitDirection {
 	SplitV,
 };
 
-class SemmetyParentFrame;
+class SemmetyWorkspaceWrapper;
 
 class SemmetyFrame {
 public:
@@ -120,7 +120,7 @@ public:
 	SemmetyFrame(FrameData frameData): data(std::move(frameData)) {}
 
 	void clearWindow();
-	std::string print(int indentLevel = 0) const;
+	std::string print(int indentLevel = 0, SemmetyWorkspaceWrapper* = nullptr) const;
 	void propagateGeometry(const std::optional<CBox>& geometry = std::nullopt);
 	std::pair<CBox, CBox> getChildGeometries() const;
 	void applyRecursive(PHLWORKSPACE workspace);

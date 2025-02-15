@@ -4,6 +4,7 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
+#include <hyprland/src/managers/AnimationManager.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/managers/PointerManager.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
@@ -51,7 +52,13 @@ SDispatchResult dispatch_debug_v2(std::string arg) {
 	// frame->geometry.size() = monitor->vecSize - monitor->vecReservedTopLeft -
 	// monitor->vecReservedBottomRight;
 
-	semmety_log(ERR, "{}", workspace_wrapper->root->print());
+	semmety_log(
+	    ERR,
+	    "focus frame {}\n{}",
+	    std::to_string(reinterpret_cast<uintptr_t>(workspace_wrapper->focused_frame.get())),
+	    workspace_wrapper->focused_frame->print(0, workspace_wrapper)
+	);
+	semmety_log(ERR, "\n{}", workspace_wrapper->root->print(0, workspace_wrapper));
 
 	for (const auto& window: workspace_wrapper->minimized_windows) {
 		semmety_log(ERR, "    {}", window.lock()->m_szTitle);
@@ -73,6 +80,7 @@ SDispatchResult split(std::string arg) {
 
 	auto focused_frame = workspace_wrapper->getFocusedFrame();
 
+	semmety_log(ERR, "pre split: {}", focused_frame->print());
 	focused_frame->data =
 	    SemmetyFrame::Parent(focused_frame, std::move(focused_frame->data), SemmetyFrame::Empty {});
 
@@ -83,9 +91,15 @@ SDispatchResult split(std::string arg) {
 		focused_frame->split_direction = SemmetySplitDirection::SplitH;
 	}
 
-	workspace_wrapper->focused_frame = *focused_frame->data.as_parent().children.begin();
+	semmety_log(ERR, "after split: {}", focused_frame->print());
+	workspace_wrapper->setFocusedFrame(*focused_frame->data.as_parent().children.begin());
+	semmety_log(ERR, "after set focus: {}", focused_frame->print());
+	dispatch_debug_v2("test");
 	workspace_wrapper->apply();
 
+	const auto layout = g_SemmetyLayout.get();
+
+	g_pAnimationManager->scheduleTick();
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
 
@@ -131,6 +145,7 @@ SDispatchResult dispatch_remove(std::string arg) {
 
 	workspace_wrapper->setFocusedFrame(parent);
 	workspace_wrapper->apply();
+	g_pAnimationManager->scheduleTick();
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
 
@@ -195,6 +210,8 @@ SDispatchResult dispatch_focus(std::string value) {
 
 	semmety_log(ERR, "focus {}", direction_to_string(direction.value()));
 	workspace_wrapper->setFocusedFrame(neighbor);
+	workspace_wrapper->apply();
+	g_pAnimationManager->scheduleTick();
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
 void registerDispatchers() {

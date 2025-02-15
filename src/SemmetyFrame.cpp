@@ -8,6 +8,7 @@
 #include <hyprutils/math/Box.hpp>
 
 #include "globals.hpp"
+#include "src/SemmetyWorkspaceWrapper.hpp"
 #include "src/desktop/Workspace.hpp"
 
 bool SemmetyFrame::validateParentReferences() const {
@@ -111,7 +112,7 @@ std::pair<CBox, CBox> SemmetyFrame::getChildGeometries() const {
 	}
 }
 
-std::string SemmetyFrame::print(int indentLevel) const {
+std::string SemmetyFrame::print(int indentLevel, SemmetyWorkspaceWrapper* workspace) const {
 	std::string indent(indentLevel * 2, ' '); // 2 spaces per indent level
 	std::string result;
 
@@ -119,15 +120,21 @@ std::string SemmetyFrame::print(int indentLevel) const {
 	                  + ", " + std::to_string(geometry.size().x) + ", "
 	                  + std::to_string(geometry.size().y);
 
+	const auto isFocus = workspace != nullptr && &*workspace->focused_frame == this;
+	const auto focusIndicator = isFocus ? " [Focus] " : " ";
+
+	const auto ptrString = std::to_string(reinterpret_cast<uintptr_t>(this));
+
 	if (data.is_window()) {
-		result += indent + "SemmetyFrame (WindowId: " + data.as_window()->m_szTitle + "), "
-		        + geometry_str + "\n";
+		result += indent + "SemmetyFrame " + ptrString + " (WindowId: " + data.as_window()->m_szTitle
+		        + ")" + focusIndicator + geometry_str + "\n";
 	} else if (data.is_empty()) {
-		result += indent + "SemmetyFrame (Empty) " + geometry_str + "\n";
+		result +=
+		    indent + "SemmetyFrame " + ptrString + " (Empty)" + focusIndicator + geometry_str + "\n";
 	} else if (data.is_parent()) {
-		result += indent + "SemmetyFrame (Parent with "
-		        + std::to_string(data.as_parent().children.size()) + " children) " + geometry_str
-		        + "\n";
+		result += indent + "SemmetyFrame " + ptrString + " (Parent with "
+		        + std::to_string(data.as_parent().children.size()) + " children)" + focusIndicator
+		        + geometry_str + "\n";
 		for (const auto& child: this->data.as_parent().children) {
 			result += child->print(indentLevel + 1);
 		}
@@ -249,5 +256,6 @@ void SemmetyFrame::damageEmptyFrameBox(const CMonitor& monitor) {
 	CRegion borderRegion(frameBox);
 	borderRegion.subtract(surfaceBoxShrunkRounding);
 
-	g_pHyprRenderer->damageRegion(borderRegion);
+	// g_pHyprRenderer->damageRegion(borderRegion);
+	g_pHyprRenderer->damageRegion(this->geometry);
 }

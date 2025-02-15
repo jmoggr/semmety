@@ -221,6 +221,7 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 			CBorderPassElement::SBorderData borderData;
 			if (ww.focused_frame == frame) {
 				borderData.grad1 = *ACTIVECOL;
+				semmety_log(ERR, "rendering active frame");
 			} else {
 				borderData.grad1 = *INACTIVECOL;
 			}
