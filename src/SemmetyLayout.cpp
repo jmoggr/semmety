@@ -170,7 +170,26 @@ Vector2D SemmetyLayout::predictSizeForNewWindowTiled() {
 	return Vector2D();
 }
 
-void SemmetyLayout::tickHook(void*, SCallbackInfo&, std::any) {}
+void SemmetyLayout::tickHook(void*, SCallbackInfo&, std::any) {
+	// semmety_log(LOG, "calling tick hook");
+	auto layout = g_SemmetyLayout.get();
+	if (g_pLayoutManager->getCurrentLayout() != layout) return;
+
+	for (const auto& monitor: g_pCompositor->m_vMonitors) {
+		if (monitor->activeWorkspace == nullptr) {
+			continue;
+		}
+		// semmety_log(LOG, "monitor tick hook");
+
+		const auto ww = layout->getOrCreateWorkspaceWrapper(monitor->activeWorkspace);
+		auto emptyFrames = ww.getEmptyFrames();
+
+		for (const auto& frame: emptyFrames) {
+			// semmety_log(LOG, "empty frame tick hook");
+			frame->damageEmptyFrameBox(*monitor);
+		}
+	}
+}
 
 void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 	auto render_stage = std::any_cast<eRenderStage>(data);
@@ -191,52 +210,26 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 	}
 
 	auto layout = g_SemmetyLayout.get();
-	auto w = layout->getOrCreateWorkspaceWrapper(monitor->activeWorkspace);
-	auto emptyFrames = w.getEmptyFrames();
-
-	// :
+	auto ww = layout->getOrCreateWorkspaceWrapper(monitor->activeWorkspace);
+	auto emptyFrames = ww.getEmptyFrames();
 
 	switch (render_stage) {
 	case RENDER_PRE_WINDOWS:
 
 		for (const auto& frame: emptyFrames) {
 
-			CBorderPassElement::SBorderData box;
-			if (w.focused_frame == frame) {
-
-				box.grad1 = *ACTIVECOL;
+			CBorderPassElement::SBorderData borderData;
+			if (ww.focused_frame == frame) {
+				borderData.grad1 = *ACTIVECOL;
 			} else {
-				box.grad1 = *INACTIVECOL;
+				borderData.grad1 = *INACTIVECOL;
 			}
-			// box.box = {20, 20, 100, 100};
-			// box.box = frame->geometry;
+			borderData.box = frame->getEmptyFrameBox(*monitor);
 
-			// auto geo = frame->geometry;
-
-			// geo.translate(g_pDecorationPositioner->getEdgeDefinedPoint(DECORATION_EDGE_BOTTOM |
-			// DECORATION_EDGE_LEFT | DECORATION_EDGE_RIGHT | DECORATION_EDGE_TOP, m_pWindow.lock()));
-
-			// const auto PWORKSPACE = m_pWindow->m_pWorkspace;
-
-			// if (!PWORKSPACE)
-			//     return box;
-
-			// const auto WORKSPACEOFFSET = PWORKSPACE && !m_pWindow->m_bPinned ?
-			// PWORKSPACE->m_vRenderOffset->value() : Vector2D(); return box.translate(WORKSPACEOFFSET);
-			//
-
-			// auto reserved = window->getFullWindowReservedArea();
-			auto geo = frame->getStandardWindowArea(frame->geometry, {}, monitor->activeWorkspace);
-			// auto geo = frame.
-
-			CBox windowBox = geo.translate(-monitor->vecPosition).scale(monitor->scale).round();
-			box.box = windowBox;
-			//.expand(m_pWindow->getRealBorderSize())
-
-			box.borderSize = *PBORDERSIZE;
-			box.roundingPower = *PROUNDINGPOWER;
-			box.round = *PROUNDING;
-			auto element = CBorderPassElement(box);
+			borderData.borderSize = *PBORDERSIZE;
+			borderData.roundingPower = *PROUNDINGPOWER;
+			borderData.round = *PROUNDING;
+			auto element = CBorderPassElement(borderData);
 			auto pass = makeShared<CBorderPassElement>(element);
 			g_pHyprRenderer->m_sRenderPass.add(pass);
 		}

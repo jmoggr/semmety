@@ -1,11 +1,14 @@
 #include "SemmetyFrame.hpp"
 
 #include <hyprland/src/config/ConfigManager.hpp>
+#include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Window.hpp>
+#include <hyprland/src/render/Renderer.hpp>
 #include <hyprutils/math/Box.hpp>
 
 #include "globals.hpp"
+#include "src/desktop/Workspace.hpp"
 
 bool SemmetyFrame::validateParentReferences() const {
 	if (data.is_parent()) {
@@ -203,14 +206,6 @@ void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
 	window->unsetWindowData(PRIORITY_LAYOUT);
 
 	auto reserved = window->getFullWindowReservedArea();
-	semmety_log(
-	    ERR,
-	    "reserved: {} {} {} {}",
-	    reserved.topLeft.x,
-	    reserved.topLeft.y,
-	    reserved.bottomRight.x,
-	    reserved.bottomRight.y
-	);
 	auto wb =
 	    getStandardWindowArea(this->geometry, {-reserved.topLeft, -reserved.bottomRight}, workspace);
 
@@ -219,4 +214,40 @@ void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
 	window->updateWindowDecos();
 
 	window->sendWindowSize(true);
+}
+
+// from CHyprBorderDecoration::draw
+CBox SemmetyFrame::getEmptyFrameBox(const CMonitor& monitor) {
+	static auto PBORDERSIZE = CConfigValue<Hyprlang::INT>("general:border_size");
+
+	const auto borderSize = static_cast<int>(-*PBORDERSIZE);
+	const auto borderOffset = Vector2D(borderSize, borderSize);
+	const auto borderExtent = SBoxExtents {borderOffset, borderOffset};
+
+	const auto workspace = monitor.activeWorkspace;
+	// do we need to worry about m_vRenderOffset being animated if we are getting the frame box for
+	// damage?
+	// PWINDOWWORKSPACE->m_vRenderOffset->isBeingAnimated()
+	const auto workspaceOffset = workspace ? workspace->m_vRenderOffset->value() : Vector2D();
+
+	auto frameBox = this->getStandardWindowArea(this->geometry, borderExtent, workspace);
+
+	return frameBox.translate(-monitor.vecPosition + workspaceOffset).scale(monitor.scale).round();
+}
+
+void SemmetyFrame::damageEmptyFrameBox(const CMonitor& monitor) {
+	static auto PROUNDING = CConfigValue<Hyprlang::INT>("decoration:rounding");
+
+	const auto rounding = static_cast<float>(*PROUNDING);
+	const auto roundingSize = rounding - M_SQRT1_2 * rounding + 2;
+
+	const auto frameBox = this->getEmptyFrameBox(monitor);
+
+	CBox surfaceBoxShrunkRounding = frameBox;
+	surfaceBoxShrunkRounding.expand(-roundingSize);
+
+	CRegion borderRegion(frameBox);
+	borderRegion.subtract(surfaceBoxShrunkRounding);
+
+	g_pHyprRenderer->damageRegion(borderRegion);
 }
