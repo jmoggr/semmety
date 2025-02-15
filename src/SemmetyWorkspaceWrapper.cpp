@@ -1,4 +1,5 @@
 #include "SemmetyWorkspaceWrapper.hpp"
+#include <numeric>
 
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
@@ -12,7 +13,6 @@
 #include <hyprland/src/plugins/PluginSystem.hpp>
 #include <hyprutils/math/Vector2D.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
-#include <numeric>
 
 #include "globals.hpp"
 #include "log.hpp"
@@ -41,11 +41,11 @@ SemmetyWorkspaceWrapper::getNeighborByDirection(SP<SemmetyFrame> basis, Directio
 	bool vertical;
 	int sign;
 	switch (dir) {
-	case Direction::Above:
+	case Direction::Up:
 		vertical = true;
 		sign = -1;
 		break;
-	case Direction::Below:
+	case Direction::Down:
 		vertical = true;
 		sign = 1;
 		break;
@@ -89,8 +89,9 @@ SemmetyWorkspaceWrapper::getNeighborByDirection(SP<SemmetyFrame> basis, Directio
 	               candidates.end(),
 	               std::numeric_limits<int>::max(),
 	               [&](int prevMin, const SP<SemmetyFrame>& tile) {
-		               return vertical ? std::min(tile->geometry.pos().y * sign, static_cast<double>(prevMin))
-		                               : std::min(tile->geometry.pos().x * sign, static_cast<double>(prevMin));
+		               return vertical
+		                        ? std::min(tile->geometry.pos().y * sign, static_cast<double>(prevMin))
+		                        : std::min(tile->geometry.pos().x * sign, static_cast<double>(prevMin));
 	               }
 	         );
 

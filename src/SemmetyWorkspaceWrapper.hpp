@@ -11,7 +11,7 @@
 // Forward declaration
 class SemmetyLayout;
 
-enum class Direction { Above, Below, Left, Right };
+enum class Direction { Up, Down, Left, Right };
 
 class SemmetyWorkspaceWrapper {
 public:

@@ -16,7 +16,15 @@
 
 #include "globals.hpp"
 #include "src/SemmetyFrame.hpp"
+#include "src/SharedDefs.hpp"
 
+std::optional<Direction> parseDirectionArg(std::string arg) {
+	if (arg == "l" || arg == "left") return Direction::Left;
+	else if (arg == "r" || arg == "right") return Direction::Right;
+	else if (arg == "u" || arg == "up") return Direction::Up;
+	else if (arg == "d" || arg == "down") return Direction::Down;
+	else return {};
+}
 SDispatchResult dispatch_debug_v2(std::string arg) {
 	auto* workspace_wrapper = workspace_for_action(true);
 	if (workspace_wrapper == nullptr)
@@ -153,9 +161,46 @@ SDispatchResult cycle_hidden(std::string arg) {
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
 
+std::string direction_to_string(Direction dir) {
+	switch (dir) {
+	case Direction::Up: return "Up";
+	case Direction::Down: return "Down";
+	case Direction::Left: return "Left";
+	case Direction::Right: return "Right";
+	default: return "Unknown";
+	}
+}
+
+SDispatchResult dispatch_focus(std::string value) {
+	auto workspace_wrapper = workspace_for_action();
+	if (workspace_wrapper == nullptr) {
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	auto args = CVarList(value);
+
+	const auto direction = parseDirectionArg(args[0]);
+	if (!direction.has_value()) {
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	const auto neighbor = workspace_wrapper->getNeighborByDirection(
+	    workspace_wrapper->focused_frame,
+	    direction.value()
+	);
+
+	if (neighbor == nullptr) {
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	semmety_log(ERR, "focus {}", direction_to_string(direction.value()));
+	workspace_wrapper->setFocusedFrame(neighbor);
+	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+}
 void registerDispatchers() {
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:debug", dispatch_debug_v2);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:cycle_hidden", cycle_hidden);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:split", split);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:remove", dispatch_remove);
+	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:focus", dispatch_focus);
 }
