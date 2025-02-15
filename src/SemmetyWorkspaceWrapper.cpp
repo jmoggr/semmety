@@ -1,5 +1,6 @@
 #include "SemmetyWorkspaceWrapper.hpp"
 #include <numeric>
+#include <ranges>
 
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
@@ -95,12 +96,16 @@ SemmetyWorkspaceWrapper::getNeighborByDirection(SP<SemmetyFrame> basis, Directio
 	               }
 	         );
 
-	auto closest =
-	    std::find_if(candidates.begin(), candidates.end(), [&](const SP<SemmetyFrame>& tile) {
-		    return vertical ? tile->geometry.pos().y == min : tile->geometry.pos().x == min;
-	    });
+	std::list<SP<SemmetyFrame>> closest;
+	std::copy_if(candidates.begin(), candidates.end(), std::back_inserter(closest), [&](const SP<SemmetyFrame>& tile) {
+		return vertical ? tile->geometry.pos().y == min : tile->geometry.pos().x == min;
+	});
 
-	return closest != candidates.end() ? *closest : nullptr;
+	auto maxFocusOrderLeaf = std::max_element(closest.begin(), closest.end(), [](const SP<SemmetyFrame>& a, const SP<SemmetyFrame>& b) {
+		return a->focusOrder < b->focusOrder;
+	});
+
+	return maxFocusOrderLeaf != closest.end() ? *maxFocusOrderLeaf : nullptr;
 }
 
 std::list<SP<SemmetyFrame>> SemmetyWorkspaceWrapper::getLeafFrames() const {
@@ -232,7 +237,6 @@ SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFrameForWindow(PHLWINDOWREF window)
 
 SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFocusedFrame() {
 	if (!this->focused_frame) {
-		semmety_log(ERR, "No active frame, were outputs added to the desktop?");
 		semmety_critical_error("No active frame, were outputs added to the desktop?");
 	}
 
@@ -244,17 +248,31 @@ SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFocusedFrame() {
 }
 
 void SemmetyWorkspaceWrapper::setFocusedFrame(SP<SemmetyFrame> frame) {
+	static int focusOrder = 0;
 	if (!frame) {
-		semmety_log(ERR, "Cannot set a null frame as focused");
 		semmety_critical_error("Cannot set a null frame as focused");
 	}
 
-	if (!frame->data.is_leaf()) {
-		semmety_log(ERR, "Focused frame must be a leaf");
-		semmety_critical_error("Focused frame must be a leaf");
+	frame->focusOrder = ++focusOrder;
+
+	if (frame->data.is_leaf()) {
+		this->focused_frame = frame;
+		return;
 	}
 
-	this->focused_frame = frame;
+	const auto descendantLeafs = SemmetyFrame::getLeafDescendants(frame);
+	auto maxFocusOrderLeaf = std::max_element(
+	    descendantLeafs.begin(),
+	    descendantLeafs.end(),
+	    [](const SP<SemmetyFrame>& a, const SP<SemmetyFrame>& b) {
+		    return a->focusOrder < b->focusOrder;
+	    }
+	);
+
+	if (maxFocusOrderLeaf == descendantLeafs.end()) {
+		semmety_critical_error("No non parent descendant leafs");
+	}
+	this->focused_frame = *maxFocusOrderLeaf;
 }
 
 void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {

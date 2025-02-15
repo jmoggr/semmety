@@ -105,9 +105,9 @@ SDispatchResult split(std::string arg) {
 
 SDispatchResult dispatch_remove(std::string arg) {
 	auto* workspace_wrapper = workspace_for_action(true);
-	if (workspace_wrapper == nullptr)
+	if (workspace_wrapper == nullptr) {
 		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-
+	}
 	auto focused_frame = workspace_wrapper->getFocusedFrame();
 
 	if (!focused_frame || !focused_frame->data.is_leaf()) {

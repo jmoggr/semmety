@@ -119,6 +119,7 @@ public:
 	SemmetyFrame(Vector2D pos, Vector2D size): data(Empty {}), geometry(CBox {pos, size}) {}
 	SemmetyFrame(FrameData frameData): data(std::move(frameData)) {}
 
+	static std::list<SP<SemmetyFrame>> getLeafDescendants(const SP<SemmetyFrame>& frame);
 	void clearWindow();
 	std::string print(int indentLevel = 0, SemmetyWorkspaceWrapper* = nullptr) const;
 	void propagateGeometry(const std::optional<CBox>& geometry = std::nullopt);
@@ -127,6 +128,7 @@ public:
 
 	SemmetySplitDirection split_direction = SemmetySplitDirection::SplitV;
 
+	int focusOrder = 0;
 	SP<SemmetyFrame> get_parent() const;
 	CBox geometry;
 	Vector2D gap_topleft_offset;

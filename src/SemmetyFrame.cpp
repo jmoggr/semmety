@@ -32,6 +32,29 @@ bool SemmetyFrame::validateParentReferences() const {
 	return true;
 }
 
+std::list<SP<SemmetyFrame>> SemmetyFrame::getLeafDescendants(const SP<SemmetyFrame>& frame) {
+    std::list<SP<SemmetyFrame>> leafFrames;
+    std::list<SP<SemmetyFrame>> stack;
+    stack.push_back(frame);
+
+    while (!stack.empty()) {
+        auto current = stack.back();
+        stack.pop_back();
+
+        if (current->data.is_leaf()) {
+            leafFrames.push_back(current);
+        }
+
+        if (current->data.is_parent()) {
+            for (const auto& child: current->data.as_parent().children) {
+                stack.push_back(child);
+            }
+        }
+    }
+
+    return leafFrames;
+}
+
 SP<SemmetyFrame> SemmetyFrame::get_parent() const {
 	auto parentFrame = parent.lock();
 	if (!parentFrame) {
