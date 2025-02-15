@@ -15,6 +15,7 @@
 #include <hyprutils/string/String.hpp>
 
 #include "globals.hpp"
+#include "src/SemmetyFrame.hpp"
 
 SDispatchResult dispatch_debug_v2(std::string arg) {
 	auto* workspace_wrapper = workspace_for_action(true);
@@ -66,6 +67,13 @@ SDispatchResult split(std::string arg) {
 
 	focused_frame->data =
 	    SemmetyFrame::Parent(focused_frame, std::move(focused_frame->data), SemmetyFrame::Empty {});
+
+	const auto frameSize = focused_frame->geometry.size();
+	if (frameSize.x > frameSize.y) {
+		focused_frame->split_direction = SemmetySplitDirection::SplitV;
+	} else {
+		focused_frame->split_direction = SemmetySplitDirection::SplitH;
+	}
 
 	workspace_wrapper->focused_frame = *focused_frame->data.as_parent().children.begin();
 	workspace_wrapper->apply();
