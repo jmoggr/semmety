@@ -12,6 +12,5 @@ template <typename... Args>
 [[noreturn]] void semmety_critical_error(std::format_string<Args...> fmt, Args&&... args) {
 	auto msg = std::vformat(fmt.get(), std::make_format_args(args...));
 	Debug::log(CRIT, "[semmety] {}", msg);
-  throw std::runtime_error(msg);
+	throw std::runtime_error(msg);
 }
-

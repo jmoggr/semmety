@@ -5,12 +5,12 @@
 #include <hyprland/src/desktop/Workspace.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprlang.hpp>
+
 #include "SemmetyLayout.hpp"
 #include "log.hpp"
 
 inline HANDLE PHANDLE = nullptr;
 inline std::unique_ptr<SemmetyLayout> g_SemmetyLayout;
-
 
 class HyprlangUnspecifiedCustomType {};
 
