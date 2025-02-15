@@ -112,7 +112,7 @@ public:
     };
 
 
-    CBox getStandardWindowArea(SBoxExtents extents, PHLWORKSPACE workspace);
+    CBox getStandardWindowArea(CBox area, SBoxExtents extents, PHLWORKSPACE workspace);
     FrameData data;
     WP<SemmetyFrame> parent;
     bool validateParentReferences() const;

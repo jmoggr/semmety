@@ -3,10 +3,18 @@
 #include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 
+
+#include <hyprland/src/render/pass/BorderPassElement.hpp>
+
 #include "SemmetyLayout.hpp"
 #include "globals.hpp"
 #include "SemmetyWorkspaceWrapper.hpp"
+#include <hyprland/src/render/Renderer.hpp>
+#include <hyprland/src/config/ConfigValue.hpp>
 #include "SemmetyWorkspaceWrapper.hpp"
+
+
+SP<HOOK_CALLBACK_FN> renderHookPtr;
 
 SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
   auto layout = g_SemmetyLayout.get();
@@ -32,6 +40,9 @@ void SemmetyLayout::onEnable() {
 
 		      this->onWindowCreatedTiling(window);
 	    }
+
+	    
+	renderHookPtr = HyprlandAPI::registerCallbackDynamic(PHANDLE, "render", &SemmetyLayout::renderHook);
 }
 
 void SemmetyLayout::onDisable() {
@@ -87,7 +98,7 @@ SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE
 
     for (auto& wrapper : this->workspaceWrappers) {
         if (wrapper.workspace.get() == wrkspc) {
-        	semmety_log(LOG, "using existing workspace");
+        	// semmety_log(LOG, "using existing workspace");
             return wrapper;
         }
     }
@@ -161,3 +172,81 @@ Vector2D SemmetyLayout::predictSizeForNewWindowTiled() {
     // Logic for predicting size for new window
     return Vector2D();
 }
+
+void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
+	auto render_stage = std::any_cast<eRenderStage>(data);
+
+    static auto PACTIVECOL              = CConfigValue<Hyprlang::CUSTOMTYPE>("general:col.active_border");
+    static auto PINACTIVECOL            = CConfigValue<Hyprlang::CUSTOMTYPE>("general:col.inactive_border");
+    static auto PBORDERSIZE       = CConfigValue<Hyprlang::INT>("general:border_size");
+
+    static auto PROUNDING      = CConfigValue<Hyprlang::INT>("decoration:rounding");
+    static auto PROUNDINGPOWER = CConfigValue<Hyprlang::FLOAT>("decoration:rounding_power");
+
+    auto* const ACTIVECOL              = (CGradientValueData*)(PACTIVECOL.ptr())->getData();
+    auto* const INACTIVECOL            = (CGradientValueData*)(PINACTIVECOL.ptr())->getData();    
+
+
+  auto monitor = g_pHyprOpenGL->m_RenderData.pMonitor.lock();
+  if (monitor == nullptr) {
+      return;
+  }
+ 
+    auto layout = g_SemmetyLayout.get();
+    auto w = layout->getOrCreateWorkspaceWrapper(monitor->activeWorkspace);
+    auto emptyFrames = w.getEmptyFrames();
+  
+  // :
+
+	switch (render_stage) {
+	case RENDER_PRE_WINDOWS:
+
+	    
+for (const auto& frame : emptyFrames)    {
+        
+    CBorderPassElement::SBorderData box;
+    if (w.focused_frame == frame) {
+        
+    box.grad1 = *ACTIVECOL;
+    } else {
+        box.grad1 = *INACTIVECOL;
+    }
+    // box.box = {20, 20, 100, 100};
+    // box.box = frame->geometry;
+
+    // auto geo = frame->geometry;
+
+     // geo.translate(g_pDecorationPositioner->getEdgeDefinedPoint(DECORATION_EDGE_BOTTOM | DECORATION_EDGE_LEFT | DECORATION_EDGE_RIGHT | DECORATION_EDGE_TOP, m_pWindow.lock()));
+
+    // const auto PWORKSPACE = m_pWindow->m_pWorkspace;
+
+    // if (!PWORKSPACE)
+    //     return box;
+
+    // const auto WORKSPACEOFFSET = PWORKSPACE && !m_pWindow->m_bPinned ? PWORKSPACE->m_vRenderOffset->value() : Vector2D();
+    // return box.translate(WORKSPACEOFFSET);    
+    // 
+
+		// auto reserved = window->getFullWindowReservedArea();
+		auto geo = frame->getStandardWindowArea(frame->geometry, {}, monitor->activeWorkspace);
+    // auto geo = frame.
+
+     CBox windowBox = geo.translate(-monitor->vecPosition).scale(monitor->scale).round();   
+     box.box = windowBox;
+     //.expand(m_pWindow->getRealBorderSize())
+
+     box.borderSize = *PBORDERSIZE;
+    box.roundingPower = *PROUNDINGPOWER;
+    box.round = *PROUNDING;
+    auto element = CBorderPassElement(box);
+    auto pass = makeShared<CBorderPassElement>(element);
+    g_pHyprRenderer->m_sRenderPass.add(pass);
+    }
+    
+
+    	
+		break;
+	default: break;
+	}
+}
+

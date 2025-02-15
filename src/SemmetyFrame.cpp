@@ -134,7 +134,7 @@ std::string SemmetyFrame::print(int indentLevel) const {
 // 	}
 // }
 
-CBox SemmetyFrame::getStandardWindowArea(SBoxExtents extents, PHLWORKSPACE workspace) {
+CBox SemmetyFrame::getStandardWindowArea(CBox area, SBoxExtents extents, PHLWORKSPACE workspace) {
 	static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
 
 	auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(workspace);
@@ -148,7 +148,7 @@ CBox SemmetyFrame::getStandardWindowArea(SBoxExtents extents, PHLWORKSPACE works
 	combined_outer_extents.topLeft = -this->gap_topleft_offset;
 	combined_outer_extents.bottomRight = -this->gap_bottomright_offset;
 
-	auto area = this->geometry;
+	// auto area = this->geometry;
 	area.addExtents(inner_gap_extents);
 	area.addExtents(combined_outer_extents);
 	area.addExtents(extents);
@@ -189,7 +189,8 @@ void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
     window->unsetWindowData(PRIORITY_LAYOUT);
 
 		auto reserved = window->getFullWindowReservedArea();
-		auto wb = getStandardWindowArea({-reserved.topLeft, -reserved.bottomRight}, workspace);
+		semmety_log(ERR, "reserved: {} {} {} {}", reserved.topLeft.x, reserved.topLeft.y, reserved.bottomRight.x, reserved.bottomRight.y);
+		auto wb = getStandardWindowArea(this->geometry, {-reserved.topLeft, -reserved.bottomRight}, workspace);
 
 		*window->m_vRealPosition = wb.pos();
 		*window->m_vRealSize = wb.size();
