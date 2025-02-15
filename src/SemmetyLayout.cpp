@@ -12,6 +12,7 @@
 #include "globals.hpp"
 
 SP<HOOK_CALLBACK_FN> renderHookPtr;
+SP<HOOK_CALLBACK_FN> tickHookPtr;
 
 SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
 	auto layout = g_SemmetyLayout.get();
@@ -38,10 +39,13 @@ void SemmetyLayout::onEnable() {
 
 	renderHookPtr =
 	    HyprlandAPI::registerCallbackDynamic(PHANDLE, "render", &SemmetyLayout::renderHook);
+
+	tickHookPtr = HyprlandAPI::registerCallbackDynamic(PHANDLE, "tick", &SemmetyLayout::tickHook);
 }
 
 void SemmetyLayout::onDisable() {
-	// Logic for disabling the layout
+	renderHookPtr.reset();
+	tickHookPtr.reset();
 }
 
 void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
@@ -165,6 +169,8 @@ Vector2D SemmetyLayout::predictSizeForNewWindowTiled() {
 	// Logic for predicting size for new window
 	return Vector2D();
 }
+
+void SemmetyLayout::tickHook(void*, SCallbackInfo&, std::any) {}
 
 void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 	auto render_stage = std::any_cast<eRenderStage>(data);
