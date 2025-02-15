@@ -12,6 +12,7 @@
 #include <hyprland/src/plugins/PluginSystem.hpp>
 #include <hyprutils/math/Vector2D.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
+#include <numeric>
 
 #include "globals.hpp"
 #include "log.hpp"
@@ -29,6 +30,76 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 
 	this->root = frame;
 	this->focused_frame = frame;
+}
+bool overlap(int start1, int end1, int start2, int end2) {
+	const int dx = std::max(0, std::min(end1, end2) - std::max(start1, start2));
+	return dx > 0;
+}
+
+SP<SemmetyFrame>
+SemmetyWorkspaceWrapper::getNeighborByDirection(SP<SemmetyFrame> basis, Direction dir) {
+	bool vertical;
+	int sign;
+	switch (dir) {
+	case Direction::Above:
+		vertical = true;
+		sign = -1;
+		break;
+	case Direction::Below:
+		vertical = true;
+		sign = 1;
+		break;
+	case Direction::Left:
+		vertical = false;
+		sign = -1;
+		break;
+	case Direction::Right:
+		vertical = false;
+		sign = 1;
+		break;
+	default: return nullptr;
+	}
+
+	auto candidates = getLeafFrames();
+	candidates.remove_if([&](const SP<SemmetyFrame>& tile) {
+		return vertical ? tile->geometry.pos().y * sign <= basis->geometry.pos().y * sign
+		                : tile->geometry.pos().x * sign <= basis->geometry.pos().x * sign;
+	});
+
+	candidates.remove_if([&](const SP<SemmetyFrame>& tile) {
+		return vertical ? !overlap(
+		                      basis->geometry.pos().x,
+		                      basis->geometry.pos().x + basis->geometry.size().x,
+		                      tile->geometry.pos().x,
+		                      tile->geometry.pos().x + tile->geometry.size().x
+		                  )
+		                : !overlap(
+		                      basis->geometry.pos().y,
+		                      basis->geometry.pos().y + basis->geometry.size().y,
+		                      tile->geometry.pos().y,
+		                      tile->geometry.pos().y + tile->geometry.size().y
+		                  );
+	});
+
+	if (candidates.empty()) return nullptr;
+
+	auto min = sign
+	         * std::accumulate(
+	               candidates.begin(),
+	               candidates.end(),
+	               std::numeric_limits<int>::max(),
+	               [&](int prevMin, const SP<SemmetyFrame>& tile) {
+		               return vertical ? std::min(tile->geometry.pos().y * sign, static_cast<double>(prevMin))
+		                               : std::min(tile->geometry.pos().x * sign, static_cast<double>(prevMin));
+	               }
+	         );
+
+	auto closest =
+	    std::find_if(candidates.begin(), candidates.end(), [&](const SP<SemmetyFrame>& tile) {
+		    return vertical ? tile->geometry.pos().y == min : tile->geometry.pos().x == min;
+	    });
+
+	return closest != candidates.end() ? *closest : nullptr;
 }
 
 std::list<SP<SemmetyFrame>> SemmetyWorkspaceWrapper::getLeafFrames() const {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <list>
 
 #include <hyprland/src/plugins/PluginAPI.hpp>
@@ -9,6 +10,8 @@
 
 // Forward declaration
 class SemmetyLayout;
+
+enum class Direction { Above, Below, Left, Right };
 
 class SemmetyWorkspaceWrapper {
 public:
@@ -29,6 +32,7 @@ public:
 	void removeWindow(PHLWINDOWREF window);
 	std::list<SP<SemmetyFrame>> getEmptyFrames() const;
 	std::list<SP<SemmetyFrame>> getLeafFrames() const;
+	SP<SemmetyFrame> getNeighborByDirection(SP<SemmetyFrame> basis, Direction dir);
 	void apply();
 	void rebalance();
 };
