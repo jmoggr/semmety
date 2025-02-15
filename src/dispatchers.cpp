@@ -141,6 +141,12 @@ SDispatchResult dispatch_remove(std::string arg) {
 		// TODO: figure out why this can cause a crash
 		auto data = std::move((*remaining_sibling)->data);
 		parent->data = std::move(data);
+		if (parent->data.is_parent()) {
+			auto children = parent->data.as_parent().children;
+			for (auto& child: children) {
+				child->parent = parent;
+			}
+		}
 	}
 
 	workspace_wrapper->setFocusedFrame(parent);
