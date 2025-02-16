@@ -12,9 +12,11 @@
 #include "globals.hpp"
 #include "src/desktop/Workspace.hpp"
 #include "src/log.hpp"
+#include "src/plugins/PluginAPI.hpp"
 
 SP<HOOK_CALLBACK_FN> renderHookPtr;
 SP<HOOK_CALLBACK_FN> tickHookPtr;
+SP<HOOK_CALLBACK_FN> activeWindowHookPtr;
 
 SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
 	auto layout = g_SemmetyLayout.get();
@@ -55,6 +57,12 @@ void SemmetyLayout::onEnable() {
 	    HyprlandAPI::registerCallbackDynamic(PHANDLE, "render", &SemmetyLayout::renderHook);
 
 	tickHookPtr = HyprlandAPI::registerCallbackDynamic(PHANDLE, "tick", &SemmetyLayout::tickHook);
+
+	activeWindowHookPtr = HyprlandAPI::registerCallbackDynamic(
+	    PHANDLE,
+	    "activeWindow",
+	    &SemmetyLayout::activeWindowHook
+	);
 }
 
 void SemmetyLayout::onDisable() {
@@ -269,4 +277,9 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 		break;
 	default: break;
 	}
+}
+
+void SemmetyLayout::activeWindowHook(void*, SCallbackInfo&, std::any data) {
+	const auto PWINDOW = std::any_cast<PHLWINDOW>(data);
+	semmety_log(ERR, "active window changed");
 }

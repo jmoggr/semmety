@@ -191,4 +191,5 @@ public:
 
 	static void renderHook(void*, SCallbackInfo&, std::any);
 	static void tickHook(void*, SCallbackInfo&, std::any);
+	static void activeWindowHook(void*, SCallbackInfo&, std::any);
 };

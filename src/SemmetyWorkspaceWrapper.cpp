@@ -314,11 +314,11 @@ void SemmetyWorkspaceWrapper::apply() {
 		const auto window = this->focused_frame->data.as_window().lock();
 		if (window != g_pCompositor->m_pLastWindow) {
 			semmety_log(ERR, "setting focus window");
-			g_pCompositor->focusWindow(window);
+			// g_pCompositor->focusWindow(window);
 		}
 	} else {
 		if (g_pCompositor->m_pLastWindow != nullptr) {
-			g_pCompositor->focusWindow(nullptr);
+			// g_pCompositor->focusWindow(nullptr);
 		}
 	}
 
