@@ -156,29 +156,28 @@ SDispatchResult dispatch_remove(std::string arg) {
 }
 
 SDispatchResult cycle_hidden(std::string arg) {
-	// semmety_log(ERR, "cycle hidden");
-	// auto* workspace_wrapper = workspace_for_action(true);
-	// if (workspace_wrapper == nullptr) {
-	// 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	// }
-	// auto focused_frame = workspace_wrapper->getFocusedFrame();
+	auto* workspace_wrapper = workspace_for_action(true);
+	if (workspace_wrapper == nullptr) {
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+	auto focused_frame = workspace_wrapper->getFocusedFrame();
 
-	// if (!focused_frame->data.is_leaf()) {
-	// 	semmety_log(ERR, "Can only remove leaf frames");
-	// 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	// }
+	if (!focused_frame->is_leaf()) {
+		semmety_log(ERR, "Can only cycle leaf frames");
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
 
-	// if (workspace_wrapper->minimized_windows.empty()) {
-	// 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	// }
+	if (workspace_wrapper->minimized_windows.empty()) {
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
 
-	// if (focused_frame->data.is_window()) {
-	// 	workspace_wrapper->minimized_windows.push_back(focused_frame->data.as_window());
-	// }
+	if (focused_frame->is_window()) {
+		workspace_wrapper->minimized_windows.push_back(focused_frame->as_window());
+	}
 
-	// focused_frame->data = workspace_wrapper->minimized_windows.front();
-	// workspace_wrapper->minimized_windows.pop_front();
-	// workspace_wrapper->apply();
+	focused_frame->makeWindow(workspace_wrapper->minimized_windows.front());
+	workspace_wrapper->minimized_windows.pop_front();
+	workspace_wrapper->apply();
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
 
