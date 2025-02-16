@@ -12,10 +12,9 @@
 #include "src/desktop/Workspace.hpp"
 
 bool SemmetyFrame::validateParentReferences() const {
-	if (data.is_parent()) {
-		for (const auto& child: data.as_parent().children) {
-			auto childParent = child->get_parent();
-			if (childParent.get() != this) {
+	if (this->is_parent()) {
+		for (const auto& child: this->as_parent().children) {
+			if (child->parent.get() != this) {
 				semmety_log(
 				    ERR,
 				    "Parent reference mismatch: child {} does not point back to parent {}",
@@ -33,37 +32,26 @@ bool SemmetyFrame::validateParentReferences() const {
 }
 
 std::list<SP<SemmetyFrame>> SemmetyFrame::getLeafDescendants(const SP<SemmetyFrame>& frame) {
-    std::list<SP<SemmetyFrame>> leafFrames;
-    std::list<SP<SemmetyFrame>> stack;
-    stack.push_back(frame);
+	std::list<SP<SemmetyFrame>> leafFrames;
+	std::list<SP<SemmetyFrame>> stack;
+	stack.push_back(frame);
 
-    while (!stack.empty()) {
-        auto current = stack.back();
-        stack.pop_back();
+	while (!stack.empty()) {
+		auto current = stack.back();
+		stack.pop_back();
 
-        if (current->data.is_leaf()) {
-            leafFrames.push_back(current);
-        }
+		if (current->is_leaf()) {
+			leafFrames.push_back(current);
+		}
 
-        if (current->data.is_parent()) {
-            for (const auto& child: current->data.as_parent().children) {
-                stack.push_back(child);
-            }
-        }
-    }
-
-    return leafFrames;
-}
-
-SP<SemmetyFrame> SemmetyFrame::get_parent() const {
-	auto parentFrame = parent.lock();
-	if (!parentFrame) {
-		return nullptr;
+		if (current->is_parent()) {
+			for (const auto& child: current->as_parent().children) {
+				stack.push_back(child);
+			}
+		}
 	}
-	if (!parentFrame->data.is_parent()) {
-		semmety_critical_error("Parent frame is not of type Parent");
-	}
-	return parentFrame;
+
+	return leafFrames;
 }
 
 void SemmetyFrame::propagateGeometry(const std::optional<CBox>& geometry) {
@@ -71,12 +59,12 @@ void SemmetyFrame::propagateGeometry(const std::optional<CBox>& geometry) {
 		this->geometry = *geometry;
 	}
 
-	if (!this->data.is_parent()) {
+	if (!this->is_parent()) {
 		return;
 	}
 
 	const auto childGeometries = this->getChildGeometries();
-	const auto& children = this->data.as_parent().children;
+	const auto& children = this->as_parent().children;
 	children.front()->propagateGeometry(childGeometries.first);
 	children.back()->propagateGeometry(childGeometries.second);
 }
@@ -143,42 +131,29 @@ std::string SemmetyFrame::print(int indentLevel, SemmetyWorkspaceWrapper* worksp
 	                  + ", " + std::to_string(geometry.size().x) + ", "
 	                  + std::to_string(geometry.size().y);
 
-	const auto isFocus = workspace != nullptr && &*workspace->focused_frame == this;
+	const auto isFocus = workspace != nullptr && workspace->focused_frame.get() == this;
 	const auto focusIndicator = isFocus ? " [Focus] " : " ";
 
 	const auto ptrString = std::to_string(reinterpret_cast<uintptr_t>(this));
 
-	if (data.is_window()) {
-		result += indent + "SemmetyFrame " + ptrString + " (WindowId: " + data.as_window()->m_szTitle
-		        + ")" + focusIndicator + geometry_str + "\n";
-	} else if (data.is_empty()) {
+	if (is_window()) {
+		result += indent + "SemmetyFrame " + ptrString + " (WindowId: " + as_window()->m_szTitle + ")"
+		        + focusIndicator + geometry_str + "\n";
+	} else if (is_empty()) {
 		result +=
 		    indent + "SemmetyFrame " + ptrString + " (Empty)" + focusIndicator + geometry_str + "\n";
-	} else if (data.is_parent()) {
+	} else if (is_parent()) {
 		result += indent + "SemmetyFrame " + ptrString + " (Parent with "
-		        + std::to_string(data.as_parent().children.size()) + " children)" + focusIndicator
+		        + std::to_string(as_parent().children.size()) + " children)" + focusIndicator
 		        + geometry_str + "\n";
-		for (const auto& child: this->data.as_parent().children) {
-			result += child->print(indentLevel + 1);
+
+		for (const auto& child: as_parent().children) {
+			result += child->print(indentLevel + 1, workspace);
 		}
 	}
 
 	return result;
 }
-
-// void Hy3Node::updateDecos() {
-// 	switch (this->data.type()) {
-// 	case Hy3NodeType::Window:
-// 		g_pCompositor->updateWindowAnimatedDecorationValues(this->data.as_window());
-// 		break;
-// 	case Hy3NodeType::Group:
-// 		for (auto* child: this->data.as_group().children) {
-// 			child->updateDecos();
-// 		}
-
-// 		this->updateTabBar();
-// 	}
-// }
 
 CBox SemmetyFrame::getStandardWindowArea(CBox area, SBoxExtents extents, PHLWORKSPACE workspace) {
 	static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
@@ -204,18 +179,18 @@ CBox SemmetyFrame::getStandardWindowArea(CBox area, SBoxExtents extents, PHLWORK
 }
 
 void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
-	if (this->data.is_empty()) {
+	if (this->is_empty()) {
 		return;
 	}
 
-	if (this->data.is_parent()) {
-		for (const auto& child: this->data.as_parent().children) {
+	if (this->is_parent()) {
+		for (const auto& child: this->as_parent().children) {
 			child->applyRecursive(workspace);
 		}
 		return;
 	}
 
-	auto window = this->data.as_window();
+	auto window = this->as_window();
 
 	if (!valid(window) || !window->m_bIsMapped) {
 		semmety_log(
@@ -236,8 +211,11 @@ void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
 	window->unsetWindowData(PRIORITY_LAYOUT);
 
 	auto reserved = window->getFullWindowReservedArea();
-	auto wb =
-	    getStandardWindowArea(this->geometry, {-reserved.topLeft, -reserved.bottomRight}, workspace);
+	auto wb = this->getStandardWindowArea(
+	    this->geometry,
+	    {-reserved.topLeft, -reserved.bottomRight},
+	    workspace
+	);
 
 	*window->m_vRealPosition = wb.pos();
 	*window->m_vRealSize = wb.size();
@@ -279,6 +257,7 @@ void SemmetyFrame::damageEmptyFrameBox(const CMonitor& monitor) {
 	CRegion borderRegion(frameBox);
 	borderRegion.subtract(surfaceBoxShrunkRounding);
 
+	// TODO: try to damage less
 	// g_pHyprRenderer->damageRegion(borderRegion);
 	g_pHyprRenderer->damageRegion(this->geometry);
 }

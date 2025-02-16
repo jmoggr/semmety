@@ -24,7 +24,8 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 	auto& monitor = w->m_pMonitor;
 	auto pos = monitor->vecPosition + monitor->vecReservedTopLeft;
 	auto size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
-	auto frame = makeShared<SemmetyFrame>(pos, size);
+	auto frame = makeShared<SemmetyFrame>();
+	frame->geometry = {pos, size};
 
 	semmety_log(ERR, "init workspace monitor size {} {}", monitor->vecSize.x, monitor->vecSize.y);
 	semmety_log(ERR, "workspace has root frame: {}", frame->print());
@@ -127,12 +128,12 @@ std::list<SP<SemmetyFrame>> SemmetyWorkspaceWrapper::getLeafFrames() const {
 		auto current = stack.back();
 		stack.pop_back();
 
-		if (current->data.is_leaf()) {
+		if (current->is_leaf()) {
 			leafFrames.push_back(current);
 		}
 
-		if (current->data.is_parent()) {
-			for (const auto& child: current->data.as_parent().children) {
+		if (current->is_parent()) {
+			for (const auto& child: current->as_parent().children) {
 				stack.push_back(child);
 			}
 		}
@@ -153,7 +154,7 @@ void SemmetyWorkspaceWrapper::rebalance() {
 	     windowIt != minimized_windows.end() && frameIt != emptyFrames.end();)
 	{
 
-		(*frameIt)->data = *windowIt;
+		(*frameIt)->makeWindow(*windowIt);
 		windowIt = minimized_windows.erase(windowIt);
 
 		++frameIt;
@@ -169,12 +170,12 @@ std::list<SP<SemmetyFrame>> SemmetyWorkspaceWrapper::getEmptyFrames() const {
 		auto current = stack.back();
 		stack.pop_back();
 
-		if (current->data.is_empty()) {
+		if (current->is_empty()) {
 			emptyFrames.push_back(current);
 		}
 
-		if (current->data.is_parent()) {
-			for (const auto& child: current->data.as_parent().children) {
+		if (current->is_parent()) {
+			for (const auto& child: current->as_parent().children) {
 				stack.push_back(child);
 			}
 		}
@@ -210,7 +211,7 @@ void SemmetyWorkspaceWrapper::addWindow(PHLWINDOWREF window) { putWindowInFocuse
 void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
 	auto frameWithWindow = getFrameForWindow(window);
 	if (frameWithWindow) {
-		frameWithWindow->data = SemmetyFrame::Empty {};
+		frameWithWindow->makeEmpty();
 	}
 	minimized_windows.remove(window);
 }
@@ -218,7 +219,7 @@ void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
 void SemmetyWorkspaceWrapper::minimizeWindow(PHLWINDOWREF window) {
 	auto frameWithWindow = getFrameForWindow(window);
 	if (frameWithWindow) {
-		frameWithWindow->data = SemmetyFrame::Empty {};
+		frameWithWindow->makeEmpty();
 		minimized_windows.push_back(window);
 	}
 }
@@ -231,12 +232,12 @@ SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFrameForWindow(PHLWINDOWREF window)
 		auto current = stack.back();
 		stack.pop_back();
 
-		if (current->data.is_window() && current->data.as_window() == window) {
+		if (current->is_window() && current->as_window() == window) {
 			return current;
 		}
 
-		if (current->data.is_parent()) {
-			for (const auto& child: current->data.as_parent().children) {
+		if (current->is_parent()) {
+			for (const auto& child: current->as_parent().children) {
 				stack.push_back(child);
 			}
 		}
@@ -250,7 +251,7 @@ SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFocusedFrame() {
 		semmety_critical_error("No active frame, were outputs added to the desktop?");
 	}
 
-	if (!this->focused_frame->data.is_leaf()) {
+	if (!this->focused_frame->is_leaf()) {
 		semmety_critical_error("Active frame is not a leaf");
 	}
 
@@ -265,7 +266,7 @@ void SemmetyWorkspaceWrapper::setFocusedFrame(SP<SemmetyFrame> frame) {
 
 	frame->focusOrder = ++focusOrder;
 
-	if (frame->data.is_leaf()) {
+	if (frame->is_leaf()) {
 		this->focused_frame = frame;
 		return;
 	}
@@ -289,36 +290,36 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
 
 	auto focusedFrame = getFocusedFrame();
 
-	if (focusedFrame->data.is_window()) {
-		if (focusedFrame->data.as_window() == window) {
+	if (focusedFrame->is_window()) {
+		if (focusedFrame->as_window() == window) {
 			return;
 		}
 
-		minimized_windows.push_back(focusedFrame->data.as_window());
+		minimized_windows.push_back(focusedFrame->as_window());
 	}
 
 	auto frameWithWindow = getFrameForWindow(window);
 	if (frameWithWindow) {
-		frameWithWindow->data = SemmetyFrame::Empty {};
+		frameWithWindow->makeEmpty();
 	} else {
 		minimized_windows.remove(window);
 	}
 
-	focusedFrame->data = window;
+	focusedFrame->makeWindow(window);
 }
 
 void SemmetyWorkspaceWrapper::apply() {
 	root->propagateGeometry();
 	rebalance();
-	if (this->focused_frame->data.is_window()) {
-		const auto window = this->focused_frame->data.as_window().lock();
+	if (this->focused_frame->is_window()) {
+		const auto window = this->focused_frame->as_window().lock();
 		if (window != g_pCompositor->m_pLastWindow) {
 			semmety_log(ERR, "setting focus window");
-			// g_pCompositor->focusWindow(window);
+			g_pCompositor->focusWindow(window);
 		}
 	} else {
 		if (g_pCompositor->m_pLastWindow != nullptr) {
-			// g_pCompositor->focusWindow(nullptr);
+			g_pCompositor->focusWindow(nullptr);
 		}
 	}
 

@@ -41,23 +41,6 @@ SDispatchResult dispatch_debug_v2(std::string arg) {
 		semmety_log(ERR, "workspace is null");
 	}
 
-	auto w = workspace_wrapper->workspace;
-	auto m = g_pCompositor->m_pLastMonitor;
-	auto& monitor = w->m_pMonitor;
-
-	semmety_log(ERR, "monitor size {} {}", m->vecSize.x, m->vecSize.y);
-	semmety_log(ERR, "workspace monitor size {} {}", monitor->vecSize.x, monitor->vecSize.y);
-
-	// frame->geometry.pos() = monitor->vecPosition + monitor->vecReservedTopLeft;
-	// frame->geometry.size() = monitor->vecSize - monitor->vecReservedTopLeft -
-	// monitor->vecReservedBottomRight;
-
-	semmety_log(
-	    ERR,
-	    "focus frame {}\n{}",
-	    std::to_string(reinterpret_cast<uintptr_t>(workspace_wrapper->focused_frame.get())),
-	    workspace_wrapper->focused_frame->print(0, workspace_wrapper)
-	);
 	semmety_log(ERR, "\n{}", workspace_wrapper->root->print(0, workspace_wrapper));
 
 	for (const auto& window: workspace_wrapper->minimized_windows) {
@@ -67,22 +50,24 @@ SDispatchResult dispatch_debug_v2(std::string arg) {
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
 
-SDispatchResult dispatch_movefocus(std::string value) {
-	// auto* workspace_wrapper = workspace_for_action(true);
-	// if (workspace_wrapper == nullptr) return;
-	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-}
-
 SDispatchResult split(std::string arg) {
 	auto* workspace_wrapper = workspace_for_action(true);
-	if (workspace_wrapper == nullptr)
+	if (workspace_wrapper == nullptr) {
 		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
 
 	auto focused_frame = workspace_wrapper->getFocusedFrame();
+	if (!focused_frame->is_leaf()) {
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+	semmety_log(ERR, "split before \n{}", focused_frame->print(0, workspace_wrapper));
 
-	semmety_log(ERR, "pre split: {}", focused_frame->print());
-	focused_frame->data =
-	    SemmetyFrame::Parent(focused_frame, std::move(focused_frame->data), SemmetyFrame::Empty {});
+	const auto childA = makeShared<SemmetyFrame>(focused_frame);
+	const auto childB = makeShared<SemmetyFrame>(SemmetyFrame());
+	focused_frame->makeParent(childA, childB);
+	for (auto& child: focused_frame->as_parent().children) {
+		child->parent = focused_frame;
+	}
 
 	const auto frameSize = focused_frame->geometry.size();
 	if (frameSize.x > frameSize.y) {
@@ -91,10 +76,8 @@ SDispatchResult split(std::string arg) {
 		focused_frame->split_direction = SemmetySplitDirection::SplitH;
 	}
 
-	semmety_log(ERR, "after split: {}", focused_frame->print());
-	workspace_wrapper->setFocusedFrame(*focused_frame->data.as_parent().children.begin());
-	semmety_log(ERR, "after set focus: {}", focused_frame->print());
-	dispatch_debug_v2("test");
+	semmety_log(ERR, "split after \n{}", focused_frame->print(0, workspace_wrapper));
+	workspace_wrapper->setFocusedFrame(focused_frame);
 	workspace_wrapper->apply();
 
 	g_pAnimationManager->scheduleTick();
@@ -108,40 +91,33 @@ SDispatchResult dispatch_remove(std::string arg) {
 	}
 	auto focused_frame = workspace_wrapper->getFocusedFrame();
 
-	if (!focused_frame || !focused_frame->data.is_leaf()) {
+	if (!focused_frame->is_leaf()) {
 		semmety_log(ERR, "Can only remove leaf frames");
 		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 	}
 
-	auto parent = focused_frame->get_parent();
-	if (!parent || !parent->data.is_parent()) {
+	auto parent = focused_frame->parent.lock();
+	if (!parent) {
 		semmety_log(ERR, "Frame has no parent, cannot remove the root frame!");
 		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 	}
 
-	parent->validateParentReferences();
-
-	auto& siblings = parent->data.as_parent().children;
+	auto& siblings = parent->as_parent().children;
 	auto remaining_sibling = std::find_if(
 	    siblings.begin(),
 	    siblings.end(),
 	    [&focused_frame](const SP<SemmetyFrame>& sibling) { return sibling != focused_frame; }
 	);
 
-	semmety_log(ERR, "focus {}", focused_frame->print());
-	semmety_log(ERR, "remaining {}", (*remaining_sibling)->print());
-
-	if (focused_frame->data.is_window()) {
-		workspace_wrapper->minimized_windows.push_back(focused_frame->data.as_window());
+	if (focused_frame->is_window()) {
+		workspace_wrapper->minimized_windows.push_back(focused_frame->as_window());
 	}
 
 	if (remaining_sibling != siblings.end()) {
-		// TODO: figure out why this can cause a crash
-		auto data = std::move((*remaining_sibling)->data);
-		parent->data = std::move(data);
-		if (parent->data.is_parent()) {
-			auto children = parent->data.as_parent().children;
-			for (auto& child: children) {
+		parent->makeOther(*remaining_sibling);
+
+		if (parent->is_parent()) {
+			for (auto& child: parent->as_parent().children) {
 				child->parent = parent;
 			}
 		}
@@ -154,29 +130,29 @@ SDispatchResult dispatch_remove(std::string arg) {
 }
 
 SDispatchResult cycle_hidden(std::string arg) {
-	semmety_log(ERR, "cycle hidden");
-	auto* workspace_wrapper = workspace_for_action(true);
-	if (workspace_wrapper == nullptr) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-	auto focused_frame = workspace_wrapper->getFocusedFrame();
+	// semmety_log(ERR, "cycle hidden");
+	// auto* workspace_wrapper = workspace_for_action(true);
+	// if (workspace_wrapper == nullptr) {
+	// 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	// }
+	// auto focused_frame = workspace_wrapper->getFocusedFrame();
 
-	if (!focused_frame->data.is_leaf()) {
-		semmety_log(ERR, "Can only remove leaf frames");
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
+	// if (!focused_frame->data.is_leaf()) {
+	// 	semmety_log(ERR, "Can only remove leaf frames");
+	// 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	// }
 
-	if (workspace_wrapper->minimized_windows.empty()) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
+	// if (workspace_wrapper->minimized_windows.empty()) {
+	// 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	// }
 
-	if (focused_frame->data.is_window()) {
-		workspace_wrapper->minimized_windows.push_back(focused_frame->data.as_window());
-	}
+	// if (focused_frame->data.is_window()) {
+	// 	workspace_wrapper->minimized_windows.push_back(focused_frame->data.as_window());
+	// }
 
-	focused_frame->data = workspace_wrapper->minimized_windows.front();
-	workspace_wrapper->minimized_windows.pop_front();
-	workspace_wrapper->apply();
+	// focused_frame->data = workspace_wrapper->minimized_windows.front();
+	// workspace_wrapper->minimized_windows.pop_front();
+	// workspace_wrapper->apply();
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
 

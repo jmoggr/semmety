@@ -69,6 +69,7 @@ void SemmetyLayout::onEnable() {
 void SemmetyLayout::onDisable() {
 	renderHookPtr.reset();
 	tickHookPtr.reset();
+	activeWindowHookPtr.reset();
 }
 
 void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
@@ -243,7 +244,6 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 			CBorderPassElement::SBorderData borderData;
 			if (ww.focused_frame == frame) {
 				borderData.grad1 = *ACTIVECOL;
-				semmety_log(ERR, "rendering active frame");
 			} else {
 				borderData.grad1 = *INACTIVECOL;
 			}
@@ -264,5 +264,28 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 
 void SemmetyLayout::activeWindowHook(void*, SCallbackInfo&, std::any data) {
 	const auto PWINDOW = std::any_cast<PHLWINDOW>(data);
-	semmety_log(ERR, "active window changed");
+	if (PWINDOW == nullptr) {
+		return;
+	}
+
+	if (PWINDOW->m_pWorkspace == nullptr) {
+		return;
+	}
+
+	auto layout = g_SemmetyLayout.get();
+	if (layout == nullptr) {
+		return;
+	}
+	auto ww = layout->getOrCreateWorkspaceWrapper(PWINDOW->m_pWorkspace);
+	const auto frame = ww.getFrameForWindow(PWINDOW);
+
+	if (frame == nullptr) {
+		return;
+	}
+
+	ww.setFocusedFrame(frame);
+	semmety_log(ERR, "active window changed \n{}", ww.root->print(0, &ww));
+	ww.apply();
+	semmety_log(ERR, "active window after \n{}\n", ww.root->print(0, &ww));
+	g_pAnimationManager->scheduleTick();
 }
