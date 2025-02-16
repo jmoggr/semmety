@@ -7,9 +7,7 @@
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprutils/math/Box.hpp>
 
-#include "globals.hpp"
-#include "src/SemmetyWorkspaceWrapper.hpp"
-#include "src/desktop/Workspace.hpp"
+#include "utils.hpp"
 
 bool SemmetyFrame::validateParentReferences() const {
 	if (this->is_parent()) {
@@ -131,7 +129,8 @@ std::string SemmetyFrame::print(int indentLevel, SemmetyWorkspaceWrapper* worksp
 	                  + ", " + std::to_string(geometry.size().x) + ", "
 	                  + std::to_string(geometry.size().y);
 
-	const auto isFocus = workspace != nullptr && workspace->focused_frame.get() == this;
+	// const auto isFocus = workspace != nullptr && workspace->focused_frame.get() == this;
+	const auto isFocus = false;
 	const auto focusIndicator = isFocus ? " [Focus] " : " ";
 
 	const auto ptrString = std::to_string(reinterpret_cast<uintptr_t>(this));
@@ -209,6 +208,11 @@ void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
 	}
 
 	window->unsetWindowData(PRIORITY_LAYOUT);
+	window->updateWindowData();
+
+	window->m_vSize = geometry.size();
+	window->m_vPosition = geometry.pos();
+	window->updateWindowDecos();
 
 	auto reserved = window->getFullWindowReservedArea();
 	auto wb = this->getStandardWindowArea(
@@ -219,9 +223,9 @@ void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
 
 	*window->m_vRealPosition = wb.pos();
 	*window->m_vRealSize = wb.size();
-	window->updateWindowDecos();
 
-	window->sendWindowSize(true);
+	window->updateWindowDecos();
+	// window->sendWindowSize(true);
 }
 
 // from CHyprBorderDecoration::draw

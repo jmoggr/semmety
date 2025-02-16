@@ -14,7 +14,7 @@ endif
 
 add_project_arguments([ '-DWLR_USE_UNSTABLE' ], language: 'cpp')
 
-globber = run_command('find', '.', '-name', '*.cpp', check: true)
+globber = run_command('find', './src', '-name', '*.cpp', check: true)
 src = globber.stdout().strip().split('\n')
 
 shared_module(meson.project_name(), src,

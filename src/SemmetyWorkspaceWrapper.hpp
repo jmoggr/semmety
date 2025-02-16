@@ -8,10 +8,9 @@
 
 #include "SemmetyFrame.hpp"
 
+enum class Direction { Up, Down, Left, Right };
 // Forward declaration
 class SemmetyLayout;
-
-enum class Direction { Up, Down, Left, Right };
 
 class SemmetyWorkspaceWrapper {
 public:

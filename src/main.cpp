@@ -4,6 +4,7 @@
 #include <hyprland/src/version.h>
 #include <hyprlang.hpp>
 
+#include "SemmetyLayout.hpp"
 #include "dispatchers.hpp"
 #include "globals.hpp"
 
@@ -27,16 +28,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	g_SemmetyLayout = std::make_unique<SemmetyLayout>();
 	auto res = HyprlandAPI::addLayout(PHANDLE, "semmety", g_SemmetyLayout.get());
 
-	if (res) {
-		semmety_log(ERR, "success add layout");
-	} else {
-
-		semmety_log(ERR, "fail add layout");
-	}
-
-	semmety_log(ERR, "in init");
 	registerDispatchers();
-
 	HyprlandAPI::reloadConfig();
 
 	return {"semmety", "Semi automatic tiling window manager", "jmoggr", "0.4"};

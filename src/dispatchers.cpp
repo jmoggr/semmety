@@ -15,9 +15,35 @@
 #include <hyprutils/memory/SharedPtr.hpp>
 #include <hyprutils/string/String.hpp>
 
+#include "SemmetyFrame.hpp"
 #include "globals.hpp"
-#include "src/SemmetyFrame.hpp"
-#include "src/SharedDefs.hpp"
+
+SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = true) {
+	auto layout = g_SemmetyLayout.get();
+	if (layout == nullptr) {
+		return nullptr;
+	}
+
+	if (g_pLayoutManager->getCurrentLayout() != layout) {
+		return nullptr;
+	}
+
+	auto workspace = g_pCompositor->m_pLastMonitor->activeSpecialWorkspace;
+	if (!valid(workspace)) {
+		workspace = g_pCompositor->m_pLastMonitor->activeWorkspace;
+	}
+
+	if (!valid(workspace)) {
+		return nullptr;
+	}
+	if (!allow_fullscreen && workspace->m_bHasFullscreenWindow) {
+		return nullptr;
+	}
+
+	semmety_log(ERR, "getting workspace for action {}", workspace->m_iID);
+
+	return &layout->getOrCreateWorkspaceWrapper(workspace);
+}
 
 std::optional<Direction> parseDirectionArg(std::string arg) {
 	if (arg == "l" || arg == "left") return Direction::Left;
