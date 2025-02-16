@@ -4,6 +4,7 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
+#include <hyprland/src/managers/AnimationManager.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/render/pass/BorderPassElement.hpp>
@@ -90,31 +91,7 @@ void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
 	auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
 	workspace_wrapper.addWindow(window);
 	workspace_wrapper.apply();
-
-	//  	auto& monitor = workspace_wrapper.workspace->m_pMonitor;
-
-	// auto width =
-	//     monitor->vecSize.x - monitor->vecReservedBottomRight.x - monitor->vecReservedTopLeft.x;
-	// auto height =
-	//     monitor->vecSize.y - monitor->vecReservedBottomRight.y - monitor->vecReservedTopLeft.y;
-
-	// this->nodes.push_back({
-	//     .data = height > width ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH,
-	//     .position = monitor->vecPosition + monitor->vecReservedTopLeft,
-	//     .size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight,
-	//     .workspace = node.workspace,
-	//     .layout = this,
-	// });
-
-	// node.markFocused();
-	// opening_into->recalcSizePosRecursive();
-
-	// this->nodes.push_back({
-	//     .parent = nullptr,
-	//     .data = window,
-	// });
-
-	// this->insertNode(this->nodes.back());
+	g_pAnimationManager->scheduleTick();
 }
 
 SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE workspace) {
@@ -137,8 +114,14 @@ bool SemmetyLayout::isWindowTiled(PHLWINDOW) {
 	return true;
 }
 
-void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW) {
-	// Logic for handling window removal in tiling mode
+void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW window) {
+	if (window->m_pWorkspace == nullptr) {
+		return;
+	}
+	auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+	workspace_wrapper.removeWindow(window);
+	workspace_wrapper.apply();
+	g_pAnimationManager->scheduleTick();
 }
 
 void SemmetyLayout::recalculateMonitor(const MONITORID&) {
