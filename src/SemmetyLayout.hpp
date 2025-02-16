@@ -43,6 +43,7 @@ public:
 	static void tickHook(void*, SCallbackInfo&, std::any);
 	static void activeWindowHook(void*, SCallbackInfo&, std::any);
 
+	void recalculateWorkspace(const PHLWORKSPACE& workspace);
 	SemmetyWorkspaceWrapper& getOrCreateWorkspaceWrapper(PHLWORKSPACE workspace);
 
 	std::list<SemmetyWorkspaceWrapper> workspaceWrappers;

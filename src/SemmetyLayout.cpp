@@ -58,6 +58,7 @@ SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE
 		}
 	}
 
+	semmety_log(ERR, "Creating new workspace wrapper for workspace {}", workspace->m_iID);
 	auto ww = SemmetyWorkspaceWrapper(workspace, *this);
 
 	const auto childA = makeShared<SemmetyFrame>(SemmetyFrame());
@@ -66,8 +67,6 @@ SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE
 	for (auto& child: ww.root->as_parent().children) {
 		child->parent = ww.root;
 	}
-
-	ww.root->split_direction = SemmetySplitDirection::SplitV;
 
 	// semmety_log(ERR, "split after \n{}", focused_frame->print(0, workspace_wrapper));
 	ww.setFocusedFrame(ww.root);
@@ -78,7 +77,49 @@ SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE
 	return this->workspaceWrappers.back();
 }
 
-void SemmetyLayout::recalculateMonitor(const MONITORID& monid) {}
+void SemmetyLayout::recalculateMonitor(const MONITORID& monid) {
+	const auto PMONITOR = g_pCompositor->getMonitorFromID(monid);
+
+	if (!PMONITOR || !PMONITOR->activeWorkspace) {
+		return;
+	}
+	g_pHyprRenderer->damageMonitor(PMONITOR);
+
+	// if (PMONITOR->activeSpecialWorkspace) {
+	// 	recalculateWorkspace(PMONITOR->activeSpecialWorkspace);
+	// }
+
+	recalculateWorkspace(PMONITOR->activeWorkspace);
+}
+
+void SemmetyLayout::recalculateWorkspace(const PHLWORKSPACE& workspace) {
+	if (workspace == nullptr) {
+		return;
+	}
+
+	semmety_log(ERR, "recalculate workspace {}", workspace->m_iID);
+
+	const auto monitor = workspace->m_pMonitor;
+
+	if (g_SemmetyLayout == nullptr) {
+		semmety_critical_error("semmety layout is bad");
+	}
+
+	if (g_SemmetyLayout->workspaceWrappers.empty()) {
+		semmety_log(ERR, "no workspace wrappers");
+	}
+
+	auto ww = g_SemmetyLayout->getOrCreateWorkspaceWrapper(workspace);
+
+	ww.root->geometry = {
+	    monitor->vecPosition + monitor->vecReservedTopLeft,
+	    monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight
+	};
+
+	// TODO: figure out why this breaks, maybe re-entry?
+	// DO NOT apply here, it breaks mouse focus, result is that first render has incorrectly sized
+	// frames ww.apply(); g_pAnimationManager->scheduleTick();
+}
 
 bool SemmetyLayout::isWindowTiled(PHLWINDOW pWindow) {
 	return true;
@@ -112,6 +153,7 @@ void SemmetyLayout::alterSplitRatio(PHLWINDOW pWindow, float ratio, bool exact) 
 std::any SemmetyLayout::layoutMessage(SLayoutMessageHeader header, std::string message) {}
 
 void SemmetyLayout::replaceWindowDataWith(PHLWINDOW from, PHLWINDOW to) {}
+
 Vector2D SemmetyLayout::predictSizeForNewWindowTiled() { return {}; }
 
 std::string SemmetyLayout::getLayoutName() { return "dwindle"; }
@@ -228,6 +270,7 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 }
 
 void SemmetyLayout::activeWindowHook(void*, SCallbackInfo&, std::any data) {
+	semmety_log(ERR, "activate window");
 	// const auto PWINDOW = std::any_cast<PHLWINDOW>(data);
 	// if (PWINDOW == nullptr) {
 	// 	return;

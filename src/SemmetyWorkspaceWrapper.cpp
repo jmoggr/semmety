@@ -309,6 +309,11 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
 }
 
 void SemmetyWorkspaceWrapper::apply() {
+	auto& monitor = workspace->m_pMonitor;
+	auto pos = monitor->vecPosition + monitor->vecReservedTopLeft;
+	auto size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
+	root->geometry = {pos, size};
+
 	root->propagateGeometry();
 	rebalance();
 	if (this->focused_frame->is_window()) {
