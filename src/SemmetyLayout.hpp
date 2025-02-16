@@ -9,6 +9,7 @@
 #include "SemmetyFrame.hpp"
 #include "SemmetyWorkspaceWrapper.hpp"
 #include "log.hpp"
+#include "src/desktop/Workspace.hpp"
 
 // Forward declaration
 class SemmetyWorkspaceWrapper;

@@ -1,6 +1,5 @@
 #include "SemmetyWorkspaceWrapper.hpp"
 #include <numeric>
-#include <ranges>
 
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
@@ -14,6 +13,7 @@
 #include <hyprland/src/plugins/PluginSystem.hpp>
 #include <hyprutils/math/Vector2D.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
+#include <ranges>
 
 #include "globals.hpp"
 #include "log.hpp"
@@ -32,6 +32,7 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 	this->root = frame;
 	this->focused_frame = frame;
 }
+
 bool overlap(int start1, int end1, int start2, int end2) {
 	const int dx = std::max(0, std::min(end1, end2) - std::max(start1, start2));
 	return dx > 0;
@@ -97,13 +98,22 @@ SemmetyWorkspaceWrapper::getNeighborByDirection(SP<SemmetyFrame> basis, Directio
 	         );
 
 	std::list<SP<SemmetyFrame>> closest;
-	std::copy_if(candidates.begin(), candidates.end(), std::back_inserter(closest), [&](const SP<SemmetyFrame>& tile) {
-		return vertical ? tile->geometry.pos().y == min : tile->geometry.pos().x == min;
-	});
+	std::copy_if(
+	    candidates.begin(),
+	    candidates.end(),
+	    std::back_inserter(closest),
+	    [&](const SP<SemmetyFrame>& tile) {
+		    return vertical ? tile->geometry.pos().y == min : tile->geometry.pos().x == min;
+	    }
+	);
 
-	auto maxFocusOrderLeaf = std::max_element(closest.begin(), closest.end(), [](const SP<SemmetyFrame>& a, const SP<SemmetyFrame>& b) {
-		return a->focusOrder < b->focusOrder;
-	});
+	auto maxFocusOrderLeaf = std::max_element(
+	    closest.begin(),
+	    closest.end(),
+	    [](const SP<SemmetyFrame>& a, const SP<SemmetyFrame>& b) {
+		    return a->focusOrder < b->focusOrder;
+	    }
+	);
 
 	return maxFocusOrderLeaf != closest.end() ? *maxFocusOrderLeaf : nullptr;
 }

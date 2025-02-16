@@ -10,19 +10,33 @@
 
 #include "SemmetyWorkspaceWrapper.hpp"
 #include "globals.hpp"
+#include "src/desktop/Workspace.hpp"
+#include "src/log.hpp"
 
 SP<HOOK_CALLBACK_FN> renderHookPtr;
 SP<HOOK_CALLBACK_FN> tickHookPtr;
 
 SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
 	auto layout = g_SemmetyLayout.get();
-	if (g_pLayoutManager->getCurrentLayout() != layout) return nullptr;
+	if (layout == nullptr) {
+		return nullptr;
+	}
+
+	if (g_pLayoutManager->getCurrentLayout() != layout) {
+		return nullptr;
+	}
 
 	auto workspace = g_pCompositor->m_pLastMonitor->activeSpecialWorkspace;
-	if (!valid(workspace)) workspace = g_pCompositor->m_pLastMonitor->activeWorkspace;
+	if (!valid(workspace)) {
+		workspace = g_pCompositor->m_pLastMonitor->activeWorkspace;
+	}
 
-	if (!valid(workspace)) return nullptr;
-	if (!allow_fullscreen && workspace->m_bHasFullscreenWindow) return nullptr;
+	if (!valid(workspace)) {
+		return nullptr;
+	}
+	if (!allow_fullscreen && workspace->m_bHasFullscreenWindow) {
+		return nullptr;
+	}
 
 	semmety_log(ERR, "getting workspace for action {}", workspace->m_iID);
 
@@ -49,6 +63,11 @@ void SemmetyLayout::onDisable() {
 }
 
 void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
+	if (window->m_pWorkspace == nullptr) {
+		semmety_log(ERR, "onWindowCreatedTiling called with a window that has an invalid workspace");
+		return;
+	}
+
 	semmety_log(
 	    LOG,
 	    "onWindowCreatedTiling called with window {:x} (floating: {}, monitor: {}, workspace: {})",
@@ -91,16 +110,16 @@ void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
 }
 
 SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE workspace) {
-	auto* wrkspc = workspace.get();
+	if (workspace == nullptr) {
+		semmety_critical_error("Tring to get or create a workspace wrapper with an invalid workspace");
+	}
 
 	for (auto& wrapper: this->workspaceWrappers) {
-		if (wrapper.workspace.get() == wrkspc) {
-			// semmety_log(LOG, "using existing workspace");
+		if (wrapper.workspace.get() == &*workspace) {
 			return wrapper;
 		}
 	}
 
-	semmety_log(LOG, "creating new workspace");
 	this->workspaceWrappers.emplace_back(workspace, *this);
 	return this->workspaceWrappers.back();
 }
@@ -171,21 +190,26 @@ Vector2D SemmetyLayout::predictSizeForNewWindowTiled() {
 }
 
 void SemmetyLayout::tickHook(void*, SCallbackInfo&, std::any) {
-	// semmety_log(LOG, "calling tick hook");
 	auto layout = g_SemmetyLayout.get();
+	if (layout == nullptr) {
+		return;
+	}
 	if (g_pLayoutManager->getCurrentLayout() != layout) return;
 
 	for (const auto& monitor: g_pCompositor->m_vMonitors) {
 		if (monitor->activeWorkspace == nullptr) {
 			continue;
 		}
-		// semmety_log(LOG, "monitor tick hook");
+
+		const auto activeWorkspace = monitor->activeWorkspace;
+		if (activeWorkspace == nullptr) {
+			continue;
+		}
 
 		const auto ww = layout->getOrCreateWorkspaceWrapper(monitor->activeWorkspace);
 		auto emptyFrames = ww.getEmptyFrames();
 
 		for (const auto& frame: emptyFrames) {
-			// semmety_log(LOG, "empty frame tick hook");
 			frame->damageEmptyFrameBox(*monitor);
 		}
 	}
@@ -209,7 +233,14 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 		return;
 	}
 
+	if (monitor->activeWorkspace == nullptr) {
+		return;
+	}
+
 	auto layout = g_SemmetyLayout.get();
+	if (layout == nullptr) {
+		return;
+	}
 	auto ww = layout->getOrCreateWorkspaceWrapper(monitor->activeWorkspace);
 	auto emptyFrames = ww.getEmptyFrames();
 

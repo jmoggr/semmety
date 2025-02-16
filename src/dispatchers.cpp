@@ -97,8 +97,6 @@ SDispatchResult split(std::string arg) {
 	dispatch_debug_v2("test");
 	workspace_wrapper->apply();
 
-	const auto layout = g_SemmetyLayout.get();
-
 	g_pAnimationManager->scheduleTick();
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
