@@ -63,15 +63,10 @@ SDispatchResult dispatch_debug_v2(std::string arg) {
 
 	auto p = workspace_wrapper->workspace.lock().get();
 	if (p == nullptr) {
-
 		semmety_log(ERR, "workspace is null");
 	}
 
-	semmety_log(ERR, "\n{}", workspace_wrapper->root->print(0, workspace_wrapper));
-
-	for (const auto& window: workspace_wrapper->minimized_windows) {
-		semmety_log(ERR, "    {}", window.lock()->m_szTitle);
-	}
+	workspace_wrapper->printDebug();
 
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
@@ -219,6 +214,7 @@ SDispatchResult dispatch_focus(std::string value) {
 	g_pAnimationManager->scheduleTick();
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
+
 void registerDispatchers() {
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:debug", dispatch_debug_v2);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:cycle_hidden", cycle_hidden);

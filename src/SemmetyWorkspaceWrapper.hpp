@@ -34,4 +34,5 @@ public:
 	SP<SemmetyFrame> getNeighborByDirection(SP<SemmetyFrame> basis, Direction dir);
 	void apply();
 	void rebalance();
+	void printDebug();
 };

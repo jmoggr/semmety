@@ -13,6 +13,7 @@
 #include "SemmetyWorkspaceWrapper.hpp"
 #include "globals.hpp"
 #include "log.hpp"
+#include "src/desktop/DesktopTypes.hpp"
 
 void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection direction) {
 	if (window->m_pWorkspace == nullptr) {
@@ -45,6 +46,29 @@ void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW window) {
 	workspace_wrapper.removeWindow(window);
 	workspace_wrapper.apply();
 	g_pAnimationManager->scheduleTick();
+}
+
+void SemmetyLayout::onWindowFocusChange(PHLWINDOW window) {
+	if (window == nullptr) {
+		return;
+	}
+
+	if (window->m_pWorkspace == nullptr) {
+		return;
+	}
+
+	const auto ptrString = std::to_string(reinterpret_cast<uintptr_t>(&*window));
+	auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+	semmety_log(ERR, "focus changed for window {} {}", ptrString, window->fetchTitle());
+	workspace_wrapper.printDebug();
+
+	const auto frame = workspace_wrapper.getFrameForWindow(window);
+	if (frame == nullptr) {
+		return;
+	}
+
+	workspace_wrapper.setFocusedFrame(frame);
+	workspace_wrapper.printDebug();
 }
 
 SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE workspace) {
@@ -270,30 +294,33 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 }
 
 void SemmetyLayout::activeWindowHook(void*, SCallbackInfo&, std::any data) {
-	semmety_log(ERR, "activate window");
-	// const auto PWINDOW = std::any_cast<PHLWINDOW>(data);
-	// if (PWINDOW == nullptr) {
-	// 	return;
-	// }
+	const auto PWINDOW = std::any_cast<PHLWINDOW>(data);
+	if (PWINDOW == nullptr) {
+		return;
+	}
 
-	// if (PWINDOW->m_pWorkspace == nullptr) {
-	// 	return;
-	// }
+	if (PWINDOW->m_pWorkspace == nullptr) {
+		return;
+	}
 
-	// auto layout = g_SemmetyLayout.get();
-	// if (layout == nullptr) {
-	// 	return;
-	// }
-	// auto ww = layout->getOrCreateWorkspaceWrapper(PWINDOW->m_pWorkspace);
-	// const auto frame = ww.getFrameForWindow(PWINDOW);
+	semmety_log(ERR, "activate window {}", PWINDOW->fetchTitle());
+	auto layout = g_SemmetyLayout.get();
+	if (layout == nullptr) {
+		return;
+	}
+	auto ww = layout->getOrCreateWorkspaceWrapper(PWINDOW->m_pWorkspace);
+	semmety_log(ERR, "activate window before");
+	ww.printDebug();
 
-	// if (frame == nullptr) {
-	// 	return;
-	// }
+	const auto frame = ww.getFrameForWindow(PWINDOW);
+	if (frame) {
+		ww.setFocusedFrame(frame);
+	} else {
+		ww.putWindowInFocusedFrame(PWINDOW);
+	}
+	// PWINDOW->setHidden(false);
+	ww.printDebug();
 
-	// ww.setFocusedFrame(frame);
-	// semmety_log(ERR, "active window changed \n{}", ww.root->print(0, &ww));
-	// ww.apply();
-	// semmety_log(ERR, "active window after \n{}\n", ww.root->print(0, &ww));
-	// g_pAnimationManager->scheduleTick();
+	ww.apply();
+	g_pAnimationManager->scheduleTick();
 }

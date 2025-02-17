@@ -11,11 +11,10 @@
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/plugins/PluginSystem.hpp>
+#include <hyprland/src/xwayland/XSurface.hpp>
 #include <hyprutils/math/Vector2D.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
-#include <ranges>
 
-#include "globals.hpp"
 #include "log.hpp"
 
 SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout& l): layout(l) {
@@ -287,8 +286,12 @@ void SemmetyWorkspaceWrapper::setFocusedFrame(SP<SemmetyFrame> frame) {
 }
 
 void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
-
 	auto focusedFrame = getFocusedFrame();
+	auto frameWithWindow = getFrameForWindow(window);
+
+	if (focused_frame == frameWithWindow) {
+		return;
+	}
 
 	if (focusedFrame->is_window()) {
 		if (focusedFrame->as_window() == window) {
@@ -298,7 +301,6 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
 		minimized_windows.push_back(focusedFrame->as_window());
 	}
 
-	auto frameWithWindow = getFrameForWindow(window);
 	if (frameWithWindow) {
 		frameWithWindow->makeEmpty();
 	} else {
@@ -306,6 +308,26 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
 	}
 
 	focusedFrame->makeWindow(window);
+}
+
+void SemmetyWorkspaceWrapper::printDebug() {
+	semmety_log(ERR, "DEBUG\n{}\n", root->print(0, this));
+
+	for (const auto& window: minimized_windows) {
+		const auto ptrString = std::to_string(reinterpret_cast<uintptr_t>(&*window));
+		semmety_log(ERR, "    {} {}", ptrString, window.lock()->m_szTitle);
+	}
+
+	if (focused_frame->is_window()) {
+		const auto ptrString =
+		    std::to_string(reinterpret_cast<uintptr_t>(&*focused_frame->as_window()));
+		semmety_log(
+		    ERR,
+		    "focused frame window    {} {}",
+		    ptrString,
+		    focused_frame->as_window()->m_szTitle
+		);
+	}
 }
 
 void SemmetyWorkspaceWrapper::apply() {
@@ -328,10 +350,23 @@ void SemmetyWorkspaceWrapper::apply() {
 		}
 	}
 
-	// g_pAnimationManager->scheduleTick();
 	root->applyRecursive(workspace.lock());
 
 	for (const auto& window: minimized_windows) {
-		window.lock().get()->setHidden(true);
+		auto w = window.lock().get();
+		if (w == nullptr) {
+			// TODO
+			continue;
+		}
+
+		if (!w->isHidden()) {
+			window->setHidden(true);
+		}
+
+		// if (!w->m_pXWaylandSurface->minimized) {
+		// 	window->m_pXWaylandSurface->setMinimized(true);
+		// }
 	}
+
+	// g_pAnimationManager->scheduleTick();
 }

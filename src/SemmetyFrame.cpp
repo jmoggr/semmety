@@ -5,6 +5,7 @@
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Window.hpp>
 #include <hyprland/src/render/Renderer.hpp>
+#include <hyprland/src/xwayland/XSurface.hpp>
 #include <hyprutils/math/Box.hpp>
 
 #include "utils.hpp"
@@ -133,7 +134,8 @@ std::string SemmetyFrame::print(int indentLevel, SemmetyWorkspaceWrapper* worksp
 	const auto isFocus = false;
 	const auto focusIndicator = isFocus ? " [Focus] " : " ";
 
-	const auto ptrString = std::to_string(reinterpret_cast<uintptr_t>(this));
+	const auto ptrString =
+	    is_window() ? std::to_string(reinterpret_cast<uintptr_t>(as_window().lock().get())) : "";
 
 	if (is_window()) {
 		result += indent + "SemmetyFrame " + ptrString + " (WindowId: " + as_window()->m_szTitle + ")"
@@ -206,6 +208,10 @@ void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
 	if (window->isHidden()) {
 		window->setHidden(false);
 	}
+
+	// if (window->m_pXWaylandSurface->minimized) {
+	// 	window->m_pXWaylandSurface->setMinimized(false);
+	// }
 
 	window->unsetWindowData(PRIORITY_LAYOUT);
 	window->updateWindowData();

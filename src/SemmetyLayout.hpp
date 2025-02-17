@@ -35,6 +35,7 @@ public:
 	std::string getLayoutName() override;
 	void replaceWindowDataWith(PHLWINDOW from, PHLWINDOW to) override;
 	Vector2D predictSizeForNewWindowTiled() override;
+	void onWindowFocusChange(PHLWINDOW) override;
 
 	void onEnable() override;
 	void onDisable() override;
