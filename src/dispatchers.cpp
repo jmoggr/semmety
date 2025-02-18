@@ -207,10 +207,43 @@ SDispatchResult dispatch_focus(std::string value) {
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
 
+SDispatchResult dispatch_swap(std::string value) {
+	auto workspace_wrapper = workspace_for_action();
+	if (workspace_wrapper == nullptr) {
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	auto args = CVarList(value);
+
+	const auto direction = parseDirectionArg(args[0]);
+	if (!direction.has_value()) {
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	const auto neighbor = workspace_wrapper->getNeighborByDirection(
+	    workspace_wrapper->focused_frame,
+	    direction.value()
+	);
+
+	if (neighbor == nullptr) {
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	auto focused_frame = workspace_wrapper->getFocusedFrame();
+
+	neighbor->swapData(focused_frame);
+
+	workspace_wrapper->setFocusedFrame(neighbor);
+	workspace_wrapper->apply();
+	g_pAnimationManager->scheduleTick();
+	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+}
+
 void registerDispatchers() {
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:debug", dispatch_debug_v2);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:cycle_hidden", cycle_hidden);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:split", split);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:remove", dispatch_remove);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:focus", dispatch_focus);
+	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:swap", dispatch_swap);
 }

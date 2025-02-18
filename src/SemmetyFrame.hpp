@@ -59,6 +59,11 @@ public:
 	}
 	void makeEmpty() { this->data = Empty {}; }
 	void makeOther(SP<SemmetyFrame> other) { this->data = other->data; }
+	void swapData(SP<SemmetyFrame> other) {
+		const auto temp = other->data;
+		other->data = this->data;
+		this->data = temp;
+	}
 
 	CBox getStandardWindowArea(CBox area, SBoxExtents extents, PHLWORKSPACE workspace);
 	WP<SemmetyFrame> parent;
