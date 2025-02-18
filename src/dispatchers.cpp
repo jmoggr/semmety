@@ -130,10 +130,6 @@ SDispatchResult dispatch_remove(std::string arg) {
 	    [&focused_frame](const SP<SemmetyFrame>& sibling) { return sibling != focused_frame; }
 	);
 
-	if (focused_frame->is_window()) {
-		workspace_wrapper->minimized_windows.push_back(focused_frame->as_window());
-	}
-
 	if (remaining_sibling != siblings.end()) {
 		parent->makeOther(*remaining_sibling);
 
@@ -162,16 +158,12 @@ SDispatchResult cycle_hidden(std::string arg) {
 		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 	}
 
-	if (workspace_wrapper->minimized_windows.empty()) {
+	const auto window = workspace_wrapper->getNextMinimizedWindow();
+	if (!window) {
 		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 	}
 
-	if (focused_frame->is_window()) {
-		workspace_wrapper->minimized_windows.push_back(focused_frame->as_window());
-	}
-
-	focused_frame->makeWindow(workspace_wrapper->minimized_windows.front());
-	workspace_wrapper->minimized_windows.pop_front();
+	focused_frame->makeWindow(window);
 	workspace_wrapper->apply();
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }

@@ -7,6 +7,7 @@
 #include <hyprutils/memory/SharedPtr.hpp>
 
 #include "SemmetyFrame.hpp"
+#include "src/desktop/DesktopTypes.hpp"
 
 enum class Direction { Up, Down, Left, Right };
 // Forward declaration
@@ -16,23 +17,26 @@ class SemmetyWorkspaceWrapper {
 public:
 	PHLWORKSPACEREF workspace;
 	SemmetyLayout& layout;
-	std::list<PHLWINDOWREF> minimized_windows;
+	std::list<PHLWINDOWREF> windows;
 	SP<SemmetyFrame> root;
 	SP<SemmetyFrame> focused_frame;
+	size_t next_window_index = 0;
 
+	PHLWINDOWREF getNextMinimizedWindow();
 	SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout&);
 	void addWindow(PHLWINDOWREF w);
+	void removeWindow(PHLWINDOWREF window);
 	void putWindowInFocusedFrame(PHLWINDOWREF w);
 	SP<SemmetyFrame> getFocusedFrame();
 	void setFocusedFrame(SP<SemmetyFrame> frame);
 	std::list<SP<SemmetyFrame>> getWindowFrames() const;
 	SP<SemmetyFrame> getFrameForWindow(PHLWINDOWREF window) const;
-	void minimizeWindow(PHLWINDOWREF window);
-	void removeWindow(PHLWINDOWREF window);
 	std::list<SP<SemmetyFrame>> getEmptyFrames() const;
 	std::list<SP<SemmetyFrame>> getLeafFrames() const;
 	SP<SemmetyFrame> getNeighborByDirection(SP<SemmetyFrame> basis, Direction dir);
 	void apply();
 	void rebalance();
 	void printDebug();
+	std::list<PHLWINDOWREF> getMinimizedWindows() const;
+	void maybeAdvanceWindowIndex(PHLWINDOWREF skipWindow = {});
 };

@@ -1,4 +1,5 @@
 #include "SemmetyWorkspaceWrapper.hpp"
+#include <algorithm>
 #include <numeric>
 
 #include <hyprland/src/Compositor.hpp>
@@ -31,6 +32,16 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 
 	this->root = frame;
 	this->focused_frame = frame;
+}
+
+std::list<PHLWINDOWREF> SemmetyWorkspaceWrapper::getMinimizedWindows() const {
+	std::list<PHLWINDOWREF> minimizedWindows;
+	for (const auto& window: windows) {
+		if (!getFrameForWindow(window)) {
+			minimizedWindows.push_back(window);
+		}
+	}
+	return minimizedWindows;
 }
 
 bool overlap(int start1, int end1, int start2, int end2) {
@@ -141,22 +152,46 @@ std::list<SP<SemmetyFrame>> SemmetyWorkspaceWrapper::getLeafFrames() const {
 	return leafFrames;
 }
 
+PHLWINDOWREF SemmetyWorkspaceWrapper::getNextMinimizedWindow() {
+	if (next_window_index < 0 || next_window_index >= windows.size()) {
+		maybeAdvanceWindowIndex();
+		if (next_window_index < 0 || next_window_index >= windows.size()) {
+			semmety_log(
+			    ERR,
+			    "next_window_index is out of bounds {} {}",
+			    next_window_index,
+			    windows.size()
+			);
+			return {};
+		}
+	}
+
+	auto it = windows.begin();
+	std::advance(it, next_window_index);
+	const auto frame = getFrameForWindow(*it);
+	if (frame) {
+		return {};
+	}
+
+	maybeAdvanceWindowIndex(*it);
+
+	return *it;
+}
+
 void SemmetyWorkspaceWrapper::rebalance() {
+	// TODO: get minimized window and advance
 	auto emptyFrames = getEmptyFrames();
 	emptyFrames.sort([](const SP<SemmetyFrame>& a, const SP<SemmetyFrame>& b) {
 		return a->geometry.size().x * a->geometry.size().y
 		     > b->geometry.size().x * b->geometry.size().y;
 	});
-	auto frameIt = emptyFrames.begin();
 
-	for (auto windowIt = minimized_windows.begin();
-	     windowIt != minimized_windows.end() && frameIt != emptyFrames.end();)
-	{
-
-		(*frameIt)->makeWindow(*windowIt);
-		windowIt = minimized_windows.erase(windowIt);
-
-		++frameIt;
+	for (auto& frame: emptyFrames) {
+		auto window = getNextMinimizedWindow();
+		if (window == nullptr) {
+			break;
+		}
+		frame->makeWindow(window);
 	}
 }
 
@@ -183,43 +218,55 @@ std::list<SP<SemmetyFrame>> SemmetyWorkspaceWrapper::getEmptyFrames() const {
 	return emptyFrames;
 }
 
-// static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
-// static const auto p_gaps_out = ConfigValue<Hyprlang::CUSTOMTYPE,
-// CCssGapData>("general:gaps_out"); static const auto group_inset =
-// ConfigValue<Hyprlang::INT>("plugin:hy3:group_inset"); static const auto tab_bar_height =
-// ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height"); static const auto tab_bar_padding =
-// ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
-
-// auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(this->workspace);
-// auto gaps_in = workspace_rule.gapsIn.value_or(*p_gaps_in);
-// auto gaps_out = workspace_rule.gapsOut.value_or(*p_gaps_out);
-
-// auto gap_topleft_offset = Vector2D(
-//     (int) -(gaps_in.left - gaps_out.left),
-//     (int) -(gaps_in.top - gaps_out.top)
-// );
-
-// auto gap_bottomright_offset = Vector2D(
-// 		(int) -(gaps_in.right - gaps_out.right),
-// 		(int) -(gaps_in.bottom - gaps_out.bottom)
-// );
-// // clang-format on
-
-void SemmetyWorkspaceWrapper::addWindow(PHLWINDOWREF window) { putWindowInFocusedFrame(window); }
+void SemmetyWorkspaceWrapper::addWindow(PHLWINDOWREF window) {
+	windows.push_back(window);
+	putWindowInFocusedFrame(window);
+	// if index not on minimized window
+	//   try to find minimized window
+	//   if found, move index to minimized window
+}
 
 void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
 	auto frameWithWindow = getFrameForWindow(window);
 	if (frameWithWindow) {
 		frameWithWindow->makeEmpty();
 	}
-	minimized_windows.remove(window);
+
+	windows.remove(window);
+	maybeAdvanceWindowIndex();
+	// if index on removed window (ie, the removed window was minimized),
+	// try to find minimized window,
+	//   if found move index (you may not need to move).
+	//   If not found, and still in range, leave it
+	//   if not found and not in range, set to last window
 }
 
-void SemmetyWorkspaceWrapper::minimizeWindow(PHLWINDOWREF window) {
-	auto frameWithWindow = getFrameForWindow(window);
-	if (frameWithWindow) {
-		frameWithWindow->makeEmpty();
-		minimized_windows.push_back(window);
+void SemmetyWorkspaceWrapper::maybeAdvanceWindowIndex(PHLWINDOWREF skipWindow) {
+	const auto minimizedWindows = getMinimizedWindows();
+
+	if (minimizedWindows.empty()) {
+		if (next_window_index >= windows.size()) {
+			next_window_index = std::max<std::size_t>(0, windows.size() - 1);
+		}
+
+		return;
+	}
+
+	auto it = windows.begin();
+	std::advance(it, next_window_index);
+
+	// Loop through the list once
+	for (std::size_t i = 0; i < windows.size(); ++i) {
+		const auto minimizedWindow = std::find(minimizedWindows.begin(), minimizedWindows.end(), *it);
+		if (minimizedWindow != minimizedWindows.end() && *minimizedWindow != skipWindow) {
+			next_window_index = std::distance(windows.begin(), it);
+			break;
+		}
+		++it;
+
+		if (it == windows.end()) {
+			it = windows.begin();
+		}
 	}
 }
 
@@ -293,27 +340,18 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
 		return;
 	}
 
-	if (focusedFrame->is_window()) {
-		if (focusedFrame->as_window() == window) {
-			return;
-		}
-
-		minimized_windows.push_back(focusedFrame->as_window());
-	}
-
 	if (frameWithWindow) {
 		frameWithWindow->makeEmpty();
-	} else {
-		minimized_windows.remove(window);
 	}
 
 	focusedFrame->makeWindow(window);
+	maybeAdvanceWindowIndex();
 }
 
 void SemmetyWorkspaceWrapper::printDebug() {
 	semmety_log(ERR, "DEBUG\n{}\n", root->print(0, this));
 
-	for (const auto& window: minimized_windows) {
+	for (const auto& window: windows) {
 		const auto ptrString = std::to_string(reinterpret_cast<uintptr_t>(&*window));
 		semmety_log(ERR, "    {} {}", ptrString, window.lock()->m_szTitle);
 	}
@@ -351,8 +389,9 @@ void SemmetyWorkspaceWrapper::apply() {
 	}
 
 	root->applyRecursive(workspace.lock());
+	const auto minimizedWindows = getMinimizedWindows();
 
-	for (const auto& window: minimized_windows) {
+	for (const auto& window: minimizedWindows) {
 		auto w = window.lock().get();
 		if (w == nullptr) {
 			// TODO
