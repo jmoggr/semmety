@@ -481,20 +481,20 @@ void SemmetyWorkspaceWrapper::apply() {
 		}
 
 		const auto isFocused = window == focused_window;
+		const auto minimized = std::find(minimizedWindows.begin(), minimizedWindows.end(), window)
+		                    != minimizedWindows.end();
 
 		jsonWindows.push_back(
 		    {{"xID", surface->xID},
 		     {"wlID", surface->wlID},
 		     {"title", surface->state.title},
 		     {"appid", surface->state.appid},
-		     {"focused", isFocused}}
+		     {"focused", isFocused},
+		     {"minimized", minimized}}
 		);
 	}
 
-	spawnRawProc(
-	    "qs ipc call taskManager setWindows \"{\\" hello\\": \\" world\\"}\"",
-	    workspace.lock()
-	);
+	spawnRawProc("qs ipc call taskManager setWindows ", workspace.lock());
 	// g_pAnimationManager->scheduleTick();
 	//
 
