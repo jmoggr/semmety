@@ -1,7 +1,6 @@
 #pragma once
 
-#include <algorithm>
-#include <list>
+#include <vector>
 
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
@@ -17,7 +16,7 @@ class SemmetyWorkspaceWrapper {
 public:
 	PHLWORKSPACEREF workspace;
 	SemmetyLayout& layout;
-	std::list<PHLWINDOWREF> windows;
+	std::vector<PHLWINDOWREF> windows;
 	SP<SemmetyFrame> root;
 	SP<SemmetyFrame> focused_frame;
 	size_t next_window_index = 0;
@@ -38,5 +37,5 @@ public:
 	void rebalance();
 	void printDebug();
 	std::list<PHLWINDOWREF> getMinimizedWindows() const;
-	void maybeAdvanceWindowIndex(PHLWINDOWREF skipWindow = {});
+	PHLWINDOWREF maybeAdvanceWindowIndex(bool advance_past = false);
 };

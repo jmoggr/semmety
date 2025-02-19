@@ -153,29 +153,7 @@ std::list<SP<SemmetyFrame>> SemmetyWorkspaceWrapper::getLeafFrames() const {
 }
 
 PHLWINDOWREF SemmetyWorkspaceWrapper::getNextMinimizedWindow() {
-	if (next_window_index < 0 || next_window_index >= windows.size()) {
-		maybeAdvanceWindowIndex();
-		if (next_window_index < 0 || next_window_index >= windows.size()) {
-			semmety_log(
-			    ERR,
-			    "next_window_index is out of bounds {} {}",
-			    next_window_index,
-			    windows.size()
-			);
-			return {};
-		}
-	}
-
-	auto it = windows.begin();
-	std::advance(it, next_window_index);
-	const auto frame = getFrameForWindow(*it);
-	if (frame) {
-		return {};
-	}
-
-	maybeAdvanceWindowIndex(*it);
-
-	return *it;
+	return maybeAdvanceWindowIndex(true);
 }
 
 void SemmetyWorkspaceWrapper::rebalance() {
@@ -232,7 +210,7 @@ void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
 		frameWithWindow->makeEmpty();
 	}
 
-	windows.remove(window);
+	windows.erase(std::remove(windows.begin(), windows.end(), window), windows.end());
 	maybeAdvanceWindowIndex();
 	// if index on removed window (ie, the removed window was minimized),
 	// try to find minimized window,
@@ -241,33 +219,34 @@ void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
 	//   if not found and not in range, set to last window
 }
 
-void SemmetyWorkspaceWrapper::maybeAdvanceWindowIndex(PHLWINDOWREF skipWindow) {
-	const auto minimizedWindows = getMinimizedWindows();
-
-	if (minimizedWindows.empty()) {
-		if (next_window_index >= windows.size()) {
-			next_window_index = std::max<std::size_t>(0, windows.size() - 1);
-		}
-
-		return;
+PHLWINDOWREF SemmetyWorkspaceWrapper::maybeAdvanceWindowIndex(bool advance_past) {
+	if (next_window_index >= windows.size()) {
+		next_window_index = std::max<std::size_t>(0, windows.size() - 1);
 	}
 
-	auto it = windows.begin();
-	std::advance(it, next_window_index);
+	const auto minimizedWindows = getMinimizedWindows();
+	if (minimizedWindows.empty()) {
+		return {};
+	}
 
-	// Loop through the list once
-	for (std::size_t i = 0; i < windows.size(); ++i) {
-		const auto minimizedWindow = std::find(minimizedWindows.begin(), minimizedWindows.end(), *it);
-		if (minimizedWindow != minimizedWindows.end() && *minimizedWindow != skipWindow) {
-			next_window_index = std::distance(windows.begin(), it);
+	size_t index = next_window_index;
+	for (size_t i = next_window_index; i < windows.size(); i++) {
+		const auto minimizedWindow =
+		    std::find(minimizedWindows.begin(), minimizedWindows.end(), windows[i]);
+		if (minimizedWindow != minimizedWindows.end()) {
 			break;
 		}
-		++it;
 
-		if (it == windows.end()) {
-			it = windows.begin();
-		}
+		index = (index + 1) % windows.size();
 	}
+
+	if (advance_past) {
+		next_window_index = (index + 1) % windows.size();
+	} else {
+		next_window_index = index;
+	}
+
+	return windows[index];
 }
 
 SP<SemmetyFrame> SemmetyWorkspaceWrapper::getFrameForWindow(PHLWINDOWREF window) const {
@@ -349,23 +328,36 @@ void SemmetyWorkspaceWrapper::putWindowInFocusedFrame(PHLWINDOWREF window) {
 }
 
 void SemmetyWorkspaceWrapper::printDebug() {
-	semmety_log(ERR, "DEBUG\n{}\n", root->print(0, this));
+	semmety_log(ERR, "DEBUG\n{}", root->print(0, this));
 
-	for (const auto& window: windows) {
-		const auto ptrString = std::to_string(reinterpret_cast<uintptr_t>(&*window));
-		semmety_log(ERR, "    {} {}", ptrString, window.lock()->m_szTitle);
-	}
+	const auto minimizedWindows = getMinimizedWindows();
 
-	if (focused_frame->is_window()) {
-		const auto ptrString =
-		    std::to_string(reinterpret_cast<uintptr_t>(&*focused_frame->as_window()));
+	for (auto it = windows.begin(); it != windows.end(); ++it) {
+		const auto minimizedWindow = std::find(minimizedWindows.begin(), minimizedWindows.end(), *it);
+		const auto distance = std::distance(windows.begin(), it);
+
+		CWindow& a = *it->get();
+		const auto ptrString = std::to_string(reinterpret_cast<uintptr_t>(&a));
+
+		const auto focusString =
+		    focused_frame->is_window() && focused_frame->as_window() == *it ? "f" : " ";
+		const auto nextString = distance == next_window_index ? "i" : " ";
+		const auto minimizedString = minimizedWindow != minimizedWindows.end() ? "m" : " ";
+
 		semmety_log(
 		    ERR,
-		    "focused frame window    {} {}",
+		    "{} {} {} {} {}",
 		    ptrString,
-		    focused_frame->as_window()->m_szTitle
+		    focusString,
+		    nextString,
+		    minimizedString,
+		    it->lock()->m_szTitle
 		);
 	}
+
+	semmety_log(ERR, "");
+
+	// apply();
 }
 
 void SemmetyWorkspaceWrapper::apply() {

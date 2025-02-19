@@ -59,8 +59,6 @@ void SemmetyLayout::onWindowFocusChange(PHLWINDOW window) {
 
 	const auto ptrString = std::to_string(reinterpret_cast<uintptr_t>(&*window));
 	auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
-	semmety_log(ERR, "focus changed for window {} {}", ptrString, window->fetchTitle());
-	workspace_wrapper.printDebug();
 
 	const auto frame = workspace_wrapper.getFrameForWindow(window);
 	if (frame == nullptr) {
@@ -68,7 +66,6 @@ void SemmetyLayout::onWindowFocusChange(PHLWINDOW window) {
 	}
 
 	workspace_wrapper.setFocusedFrame(frame);
-	workspace_wrapper.printDebug();
 }
 
 SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE workspace) {
@@ -303,14 +300,11 @@ void SemmetyLayout::activeWindowHook(void*, SCallbackInfo&, std::any data) {
 		return;
 	}
 
-	semmety_log(ERR, "activate window {}", PWINDOW->fetchTitle());
 	auto layout = g_SemmetyLayout.get();
 	if (layout == nullptr) {
 		return;
 	}
 	auto ww = layout->getOrCreateWorkspaceWrapper(PWINDOW->m_pWorkspace);
-	semmety_log(ERR, "activate window before");
-	ww.printDebug();
 
 	const auto frame = ww.getFrameForWindow(PWINDOW);
 	if (frame) {
@@ -318,8 +312,6 @@ void SemmetyLayout::activeWindowHook(void*, SCallbackInfo&, std::any data) {
 	} else {
 		ww.putWindowInFocusedFrame(PWINDOW);
 	}
-	// PWINDOW->setHidden(false);
-	ww.printDebug();
 
 	ww.apply();
 	g_pAnimationManager->scheduleTick();
