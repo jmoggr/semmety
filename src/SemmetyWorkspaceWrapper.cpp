@@ -6,6 +6,7 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
+#include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/managers/PointerManager.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
@@ -15,7 +16,10 @@
 #include <hyprland/src/xwayland/XSurface.hpp>
 #include <hyprutils/math/Vector2D.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
+#include <hyprutils/memory/WeakPtr.hpp>
+#include <hyprutils/os/FileDescriptor.hpp>
 
+#include "json.hpp"
 #include "log.hpp"
 
 SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout& l): layout(l) {
@@ -32,6 +36,68 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 
 	this->root = frame;
 	this->focused_frame = frame;
+}
+
+uint64_t spawnRawProc(std::string args, PHLWORKSPACE pInitialWorkspace) {
+	Debug::log(LOG, "Executing {}", args);
+
+	// const auto HLENV = getHyprlandLaunchEnv(pInitialWorkspace);
+
+	int socket[2];
+	if (pipe(socket) != 0) {
+		Debug::log(LOG, "Unable to create pipe for fork");
+	}
+
+	Hyprutils::OS::CFileDescriptor pipeSock[2] = {
+	    Hyprutils::OS::CFileDescriptor {socket[0]},
+	    Hyprutils::OS::CFileDescriptor {socket[1]}
+	};
+
+	pid_t child, grandchild;
+	child = fork();
+	if (child < 0) {
+		Debug::log(LOG, "Fail to create the first fork");
+		return 0;
+	}
+	if (child == 0) {
+		// run in child
+		g_pCompositor->restoreNofile();
+
+		sigset_t set;
+		sigemptyset(&set);
+		sigprocmask(SIG_SETMASK, &set, nullptr);
+
+		grandchild = fork();
+		if (grandchild == 0) {
+			// run in grandchild
+			// for (auto const& e: HLENV) {
+			// 	setenv(e.first.c_str(), e.second.c_str(), 1);
+			// }
+			setenv("WAYLAND_DISPLAY", g_pCompositor->m_szWLDisplaySocket.c_str(), 1);
+			execl("/bin/sh", "/bin/sh", "-c", args.c_str(), nullptr);
+			// exit grandchild
+			_exit(0);
+		}
+		write(pipeSock[1].get(), &grandchild, sizeof(grandchild));
+		// exit child
+		_exit(0);
+	}
+	// run in parent
+	read(pipeSock[0].get(), &grandchild, sizeof(grandchild));
+	// clear child and leave grandchild to init
+	waitpid(child, nullptr, 0);
+	if (grandchild < 0) {
+		Debug::log(LOG, "Fail to create the second fork");
+		return 0;
+	}
+
+	Debug::log(LOG, "Process Created with pid {}", grandchild);
+
+	return grandchild;
+}
+SDispatchResult spawnRaw(std::string args) {
+	const uint64_t PROC = spawnRawProc(args, nullptr);
+	return {.success = PROC > 0, .error = std::format("Failed to start process {}", args)};
 }
 
 std::list<PHLWINDOWREF> SemmetyWorkspaceWrapper::getMinimizedWindows() const {
@@ -167,10 +233,12 @@ void SemmetyWorkspaceWrapper::rebalance() {
 	for (auto& frame: emptyFrames) {
 		auto window = getNextMinimizedWindow();
 		if (window == nullptr) {
+			semmety_log(ERR, "no more empty windows in balance?");
 			break;
 		}
 		frame->makeWindow(window);
 	}
+	semmety_log(ERR, "no more frames to balance");
 }
 
 std::list<SP<SemmetyFrame>> SemmetyWorkspaceWrapper::getEmptyFrames() const {
@@ -360,6 +428,8 @@ void SemmetyWorkspaceWrapper::printDebug() {
 	// apply();
 }
 
+using json = nlohmann::json;
+
 void SemmetyWorkspaceWrapper::apply() {
 	auto& monitor = workspace->m_pMonitor;
 	auto pos = monitor->vecPosition + monitor->vecReservedTopLeft;
@@ -399,5 +469,34 @@ void SemmetyWorkspaceWrapper::apply() {
 		// }
 	}
 
+	// semmety_log(ERR, "calling IPC");
+	const auto focused_window =
+	    focused_frame->is_window() ? focused_frame->as_window() : CWeakPointer<CWindow>();
+
+	json jsonWindows = json::array();
+	for (const auto& window: windows) {
+		const auto surface = window->m_pXWaylandSurface.lock();
+		if (!surface) {
+			continue;
+		}
+
+		const auto isFocused = window == focused_window;
+
+		jsonWindows.push_back(
+		    {{"xID", surface->xID},
+		     {"wlID", surface->wlID},
+		     {"title", surface->state.title},
+		     {"appid", surface->state.appid},
+		     {"focused", isFocused}}
+		);
+	}
+
+	spawnRawProc(
+	    "qs ipc call taskManager setWindows \"{\\" hello\\": \\" world\\"}\"",
+	    workspace.lock()
+	);
 	// g_pAnimationManager->scheduleTick();
+	//
+
+	// SDispatchResult CKeybindManager::spawnRaw(std::string args);
 }
