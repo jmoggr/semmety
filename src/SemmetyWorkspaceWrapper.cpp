@@ -494,7 +494,9 @@ void SemmetyWorkspaceWrapper::apply() {
 		);
 	}
 
-	spawnRawProc("qs ipc call taskManager setWindows ", workspace.lock());
+	auto jsonString = jsonWindows.dump();
+	auto escapedJsonString = std::string("\"") + jsonString + "\"";
+	spawnRawProc("qs ipc call taskManager setWindows " + escapedJsonString, workspace.lock());
 	// g_pAnimationManager->scheduleTick();
 	//
 
