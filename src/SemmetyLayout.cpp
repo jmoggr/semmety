@@ -34,7 +34,14 @@ void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection direction
 
 	auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
 	workspace_wrapper.addWindow(window);
-	workspace_wrapper.apply();
+
+	auto monitor = g_pHyprOpenGL->m_RenderData.pMonitor.lock();
+	if (monitor != nullptr && monitor->activeWorkspace != nullptr) {
+		if (monitor->activeWorkspace == window->m_pWorkspace) {
+			workspace_wrapper.apply();
+		}
+	}
+
 	g_pAnimationManager->scheduleTick();
 }
 
@@ -42,6 +49,15 @@ void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW window) {
 	if (window->m_pWorkspace == nullptr) {
 		return;
 	}
+
+	semmety_log(
+	    LOG,
+	    "onWindowCreatedTiling called with window {:x} (floating: {}, monitor: {}, workspace: {})",
+	    (uintptr_t) window.get(),
+	    window->m_bIsFloating,
+	    window->monitorID(),
+	    window->m_pWorkspace->m_iID
+	);
 	auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
 	workspace_wrapper.removeWindow(window);
 	workspace_wrapper.apply();
@@ -49,6 +65,8 @@ void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW window) {
 }
 
 void SemmetyLayout::onWindowFocusChange(PHLWINDOW window) {
+	auto title = window == nullptr ? "none" : window->fetchTitle();
+	semmety_log(ERR, "focus changed for window {}", title);
 	if (window == nullptr) {
 		return;
 	}
@@ -62,10 +80,11 @@ void SemmetyLayout::onWindowFocusChange(PHLWINDOW window) {
 
 	const auto frame = workspace_wrapper.getFrameForWindow(window);
 	if (frame == nullptr) {
-		return;
+		semmety_log(ERR, "putting focused window in focused frame");
+		workspace_wrapper.putWindowInFocusedFrame(window);
+	} else {
+		workspace_wrapper.setFocusedFrame(frame);
 	}
-
-	workspace_wrapper.setFocusedFrame(frame);
 }
 
 SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE workspace) {
@@ -179,6 +198,8 @@ Vector2D SemmetyLayout::predictSizeForNewWindowTiled() { return {}; }
 
 std::string SemmetyLayout::getLayoutName() { return "dwindle"; }
 
+bool SemmetyLayout::isWindowReachable(PHLWINDOW win) { return true; }
+
 SP<HOOK_CALLBACK_FN> renderHookPtr;
 SP<HOOK_CALLBACK_FN> tickHookPtr;
 SP<HOOK_CALLBACK_FN> activeWindowHookPtr;
@@ -207,6 +228,58 @@ void SemmetyLayout::onDisable() {
 	renderHookPtr.reset();
 	tickHookPtr.reset();
 	activeWindowHookPtr.reset();
+}
+
+void SemmetyLayout::moveWindowToWorkspace(std::string wsname) {
+	auto focused_window = g_pCompositor->m_pLastWindow.lock();
+	if (!focused_window) {
+		semmety_log(ERR, "no focused window {}", wsname);
+		return;
+	}
+
+	const auto sourceWorkspace = focused_window->m_pWorkspace;
+	if (!sourceWorkspace) {
+		semmety_log(ERR, "no source workspace");
+		return;
+	}
+
+	auto target = getWorkspaceIDNameFromString(wsname);
+
+	if (target.id == WORKSPACE_INVALID) {
+		semmety_log(ERR, "moveNodeToWorkspace called with invalid workspace {}", wsname);
+		return;
+	}
+
+	auto targetWorkspace = g_pCompositor->getWorkspaceByID(target.id);
+	if (!targetWorkspace) {
+		semmety_log(LOG, "creating target workspace {} for node move", target.id);
+
+		targetWorkspace =
+		    g_pCompositor->createNewWorkspace(target.id, sourceWorkspace->monitorID(), target.name);
+		if (!targetWorkspace) {
+			semmety_log(ERR, "could not find target workspace '{}', '{}'", wsname, target.id);
+			return;
+		}
+	}
+
+	if (sourceWorkspace == targetWorkspace) {
+		semmety_log(ERR, "source and target workspaces are the same");
+		return;
+	}
+
+	auto sourceWrapper = getOrCreateWorkspaceWrapper(sourceWorkspace);
+	auto targetWrapper = getOrCreateWorkspaceWrapper(targetWorkspace);
+
+	sourceWrapper.removeWindow(focused_window);
+	// onWindowCreatedTiling is called when the new window is put on the new monitor
+
+	g_pHyprRenderer->damageWindow(focused_window);
+	g_pCompositor->moveWindowToWorkspaceSafe(focused_window, targetWorkspace);
+	focused_window->updateToplevel();
+	focused_window->updateDynamicRules();
+	focused_window->uncacheWindowDecos();
+
+	sourceWrapper.apply();
 }
 
 void SemmetyLayout::tickHook(void*, SCallbackInfo&, std::any) {

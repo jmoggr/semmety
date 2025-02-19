@@ -27,6 +27,8 @@ public:
 	    const eFullscreenMode CURRENT_EFFECTIVE_MODE,
 	    const eFullscreenMode EFFECTIVE_MODE
 	) override;
+
+	bool isWindowReachable(PHLWINDOW) override;
 	std::any layoutMessage(SLayoutMessageHeader, std::string) override;
 	SWindowRenderLayoutHints requestRenderHints(PHLWINDOW) override;
 	void switchWindows(PHLWINDOW, PHLWINDOW) override;
@@ -43,6 +45,7 @@ public:
 	static void renderHook(void*, SCallbackInfo&, std::any);
 	static void tickHook(void*, SCallbackInfo&, std::any);
 	static void activeWindowHook(void*, SCallbackInfo&, std::any);
+	void moveWindowToWorkspace(std::string wsname);
 
 	void recalculateWorkspace(const PHLWORKSPACE& workspace);
 	SemmetyWorkspaceWrapper& getOrCreateWorkspaceWrapper(PHLWORKSPACE workspace);

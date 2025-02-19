@@ -239,6 +239,18 @@ SDispatchResult dispatch_swap(std::string value) {
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
 
+SDispatchResult dispatch_move_to_workspace(std::string value) {
+	auto args = CVarList(value);
+
+	auto workspace = args[0];
+	if (workspace == "") {
+		semmety_log(ERR, "no argument provided");
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	g_SemmetyLayout->moveWindowToWorkspace(workspace);
+	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+}
 void registerDispatchers() {
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:debug", dispatch_debug_v2);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:cycle_hidden", cycle_hidden);
@@ -246,4 +258,5 @@ void registerDispatchers() {
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:remove", dispatch_remove);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:focus", dispatch_focus);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:swap", dispatch_swap);
+	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:movetoworkspace", dispatch_move_to_workspace);
 }

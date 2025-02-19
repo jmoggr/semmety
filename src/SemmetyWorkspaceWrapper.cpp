@@ -21,6 +21,7 @@
 
 #include "json.hpp"
 #include "log.hpp"
+#include "src/helpers/MiscFunctions.hpp"
 
 SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout& l): layout(l) {
 	workspace = w;
@@ -423,18 +424,43 @@ void SemmetyWorkspaceWrapper::printDebug() {
 		);
 	}
 
+	semmety_log(ERR, "workspace id + name '{}' '{}'", workspace->m_szName, workspace->m_iID);
 	semmety_log(ERR, "");
 
 	// apply();
 }
-
+#include <algorithm>
+#include <iostream>
+#include <string>
 using json = nlohmann::json;
+
+void escapeSingleQuotes(std::string& str) {
+	size_t pos = 0;
+	while ((pos = str.find('"', pos)) != std::string::npos) {
+		str.replace(pos, 1, "'"); // Replace single quote with \'
+		pos += 1;                 // Move past the inserted escape sequence
+	}
+}
+
+std::string DoubleQuotes(std::string value) {
+	std::string retval;
+	for (auto ch: value) {
+		if (ch == ',') {
+			retval.push_back('&');
+			continue;
+		}
+		retval.push_back(ch);
+	}
+	return retval;
+}
 
 void SemmetyWorkspaceWrapper::apply() {
 	auto& monitor = workspace->m_pMonitor;
 	auto pos = monitor->vecPosition + monitor->vecReservedTopLeft;
 	auto size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
 	root->geometry = {pos, size};
+
+	semmety_log(ERR, "applying to workspace {}", workspace->m_szName);
 
 	root->propagateGeometry();
 	rebalance();
@@ -463,42 +489,40 @@ void SemmetyWorkspaceWrapper::apply() {
 		if (!w->isHidden()) {
 			window->setHidden(true);
 		}
-
-		// if (!w->m_pXWaylandSurface->minimized) {
-		// 	window->m_pXWaylandSurface->setMinimized(true);
-		// }
 	}
 
-	// semmety_log(ERR, "calling IPC");
 	const auto focused_window =
 	    focused_frame->is_window() ? focused_frame->as_window() : CWeakPointer<CWindow>();
 
 	json jsonWindows = json::array();
 	for (const auto& window: windows) {
-		const auto surface = window->m_pXWaylandSurface.lock();
-		if (!surface) {
-			continue;
-		}
-
 		const auto isFocused = window == focused_window;
 		const auto minimized = std::find(minimizedWindows.begin(), minimizedWindows.end(), window)
 		                    != minimizedWindows.end();
 
+		const auto address = std::format("{:x}", (uintptr_t) window.get());
 		jsonWindows.push_back(
-		    {{"xID", surface->xID},
-		     {"wlID", surface->wlID},
-		     {"title", surface->state.title},
-		     {"appid", surface->state.appid},
+		    {{"address", address},
+		     {"title", window->fetchTitle()},
+		     {"appid", window->fetchClass()},
 		     {"focused", isFocused},
 		     {"minimized", minimized}}
 		);
 	}
 
+	// auto jsonString = "here";
+
 	auto jsonString = jsonWindows.dump();
-	auto escapedJsonString = std::string("\"") + jsonString + "\"";
+	// escapeSingleQuotes(jsonString);
+
+	// std::replace(jsonString.begin(), jsonString.end(), ',', "&");
+	// oss << std::quoted(jsonString); // Escapes quotes properly
+
+	// std::string escapedJsonString = oss.str();
+	// auto jsonString = jsonWindows.dump();
+	auto escapedJsonString = std::string("\'") + DoubleQuotes(jsonString) + "\'";
 	spawnRawProc("qs ipc call taskManager setWindows " + escapedJsonString, workspace.lock());
+	semmety_log(ERR, "calling qs with \n#{}#\n#{}#", escapedJsonString, jsonString);
 	// g_pAnimationManager->scheduleTick();
 	//
-
-	// SDispatchResult CKeybindManager::spawnRaw(std::string args);
 }
