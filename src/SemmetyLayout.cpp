@@ -14,12 +14,18 @@
 #include "globals.hpp"
 #include "log.hpp"
 #include "src/desktop/DesktopTypes.hpp"
+#include "src/layout/IHyprLayout.hpp"
 
 void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection direction) {
 	if (window->m_pWorkspace == nullptr) {
 		semmety_log(ERR, "onWindowCreatedTiling called with a window that has an invalid workspace");
 		return;
 	}
+
+	Debug::log(CRIT, "[semmety] HELP");
+	semmety_log(ERR, "HERE");
+	// return;
+	// semmety_log(LOG, "HERE");
 
 	semmety_log(
 	    LOG,
@@ -46,6 +52,7 @@ void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection direction
 }
 
 void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW window) {
+	semmety_log(TRACE, "BEGIN onWindowRemovedTiling");
 	if (window->m_pWorkspace == nullptr) {
 		return;
 	}
@@ -62,16 +69,24 @@ void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW window) {
 	workspace_wrapper.removeWindow(window);
 	workspace_wrapper.apply();
 	g_pAnimationManager->scheduleTick();
+	semmety_log(TRACE, "END onWindowRemovedTiling");
 }
 
 void SemmetyLayout::onWindowFocusChange(PHLWINDOW window) {
+	semmety_log(TRACE, "BEGIN onWindowFocusChange");
 	auto title = window == nullptr ? "none" : window->fetchTitle();
 	semmety_log(ERR, "focus changed for window {}", title);
 	if (window == nullptr) {
+		semmety_log(TRACE, "END onWindowFocusChange");
 		return;
 	}
 
 	if (window->m_pWorkspace == nullptr) {
+		semmety_log(TRACE, "END onWindowFocusChange");
+		return;
+	}
+
+	if (window->m_bIsFloating) {
 		return;
 	}
 
@@ -85,6 +100,7 @@ void SemmetyLayout::onWindowFocusChange(PHLWINDOW window) {
 	} else {
 		workspace_wrapper.setFocusedFrame(frame);
 	}
+	semmety_log(TRACE, "END onWindowFocusChange");
 }
 
 SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE workspace) {
@@ -118,9 +134,11 @@ SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE
 }
 
 void SemmetyLayout::recalculateMonitor(const MONITORID& monid) {
+	semmety_log(TRACE, "BEGIN recalculateMonitor");
 	const auto PMONITOR = g_pCompositor->getMonitorFromID(monid);
 
 	if (!PMONITOR || !PMONITOR->activeWorkspace) {
+		semmety_log(TRACE, "END recalculateMonitor");
 		return;
 	}
 	g_pHyprRenderer->damageMonitor(PMONITOR);
@@ -130,6 +148,7 @@ void SemmetyLayout::recalculateMonitor(const MONITORID& monid) {
 	// }
 
 	recalculateWorkspace(PMONITOR->activeWorkspace);
+	semmety_log(TRACE, "END recalculateMonitor");
 }
 
 void SemmetyLayout::recalculateWorkspace(const PHLWORKSPACE& workspace) {
@@ -162,43 +181,74 @@ void SemmetyLayout::recalculateWorkspace(const PHLWORKSPACE& workspace) {
 }
 
 bool SemmetyLayout::isWindowTiled(PHLWINDOW pWindow) {
-	return true;
+	semmety_log(TRACE, "BEGIN isWindowTiled");
+	for (const auto& ws: workspaceWrappers) {
+		if (std::find(ws.windows.begin(), ws.windows.end(), pWindow) != ws.windows.end()) {
+			semmety_log(ERR, "isWindowTiled true {}", pWindow->fetchTitle());
+			semmety_log(TRACE, "END isWindowTiled");
+			return true;
+		}
+	}
+
+	semmety_log(ERR, "isWindowTiled false {}", pWindow->fetchTitle());
+	semmety_log(TRACE, "END isWindowTiled");
+	return false;
+
 	// return getNodeFromWindow(pWindow) != nullptr;
 }
 
-void SemmetyLayout::onBeginDragWindow() {}
+void SemmetyLayout::onBeginDragWindow() { semmety_log(TRACE, "STUB onBeginDragWindow"); }
 
 void SemmetyLayout::resizeActiveWindow(
     const Vector2D& pixResize,
     eRectCorner corner,
     PHLWINDOW pWindow
-) {}
+) {
+	semmety_log(TRACE, "STUB resizeActiveWindow");
+}
 
 void SemmetyLayout::fullscreenRequestForWindow(
     PHLWINDOW pWindow,
     const eFullscreenMode CURRENT_EFFECTIVE_MODE,
     const eFullscreenMode EFFECTIVE_MODE
-) {}
+) {
+	semmety_log(TRACE, "STUB fullscreenRequestForWindow");
+}
 
-void SemmetyLayout::recalculateWindow(PHLWINDOW pWindow) {}
+void SemmetyLayout::recalculateWindow(PHLWINDOW pWindow) {
+	semmety_log(TRACE, "STUB recalculateWindow");
+}
 
 SWindowRenderLayoutHints SemmetyLayout::requestRenderHints(PHLWINDOW pWindow) { return {}; }
 
-void SemmetyLayout::moveWindowTo(PHLWINDOW pWindow, const std::string& dir, bool silent) {}
+void SemmetyLayout::moveWindowTo(PHLWINDOW pWindow, const std::string& dir, bool silent) {
+	semmety_log(TRACE, "STUB moveWindowTo");
+}
 
-void SemmetyLayout::switchWindows(PHLWINDOW pWindow, PHLWINDOW pWindow2) {}
+void SemmetyLayout::switchWindows(PHLWINDOW pWindow, PHLWINDOW pWindow2) {
+	semmety_log(TRACE, "STUB switchWindows");
+}
 
-void SemmetyLayout::alterSplitRatio(PHLWINDOW pWindow, float ratio, bool exact) {}
+void SemmetyLayout::alterSplitRatio(PHLWINDOW pWindow, float ratio, bool exact) {
+	semmety_log(TRACE, "STUB alterSplitRatio");
+}
 
-std::any SemmetyLayout::layoutMessage(SLayoutMessageHeader header, std::string message) {}
+std::any SemmetyLayout::layoutMessage(SLayoutMessageHeader header, std::string message) {
+	semmety_log(TRACE, "STUB layoutMessage");
+}
 
-void SemmetyLayout::replaceWindowDataWith(PHLWINDOW from, PHLWINDOW to) {}
+void SemmetyLayout::replaceWindowDataWith(PHLWINDOW from, PHLWINDOW to) {
+	semmety_log(TRACE, "STUB replaceWindowDataWith");
+}
 
-Vector2D SemmetyLayout::predictSizeForNewWindowTiled() { return {}; }
+Vector2D SemmetyLayout::predictSizeForNewWindowTiled() {
+	semmety_log(TRACE, "STUB predictSizeForNewWindowTiled");
+	return {};
+}
 
 std::string SemmetyLayout::getLayoutName() { return "dwindle"; }
 
-bool SemmetyLayout::isWindowReachable(PHLWINDOW win) { return true; }
+bool SemmetyLayout::isWindowReachable(PHLWINDOW win) { return !!win; }
 
 SP<HOOK_CALLBACK_FN> renderHookPtr;
 SP<HOOK_CALLBACK_FN> tickHookPtr;
@@ -339,7 +389,6 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 
 	switch (render_stage) {
 	case RENDER_PRE_WINDOWS:
-
 		for (const auto& frame: emptyFrames) {
 
 			CBorderPassElement::SBorderData borderData;
@@ -363,9 +412,28 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 	}
 }
 
+void SemmetyLayout::activateWindow(PHLWINDOW window) {
+	auto layout = g_SemmetyLayout.get();
+	auto ww = layout->getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+
+	const auto frame = ww.getFrameForWindow(window);
+	if (frame) {
+		ww.setFocusedFrame(frame);
+	} else {
+		ww.putWindowInFocusedFrame(window);
+	}
+
+	ww.apply();
+	g_pAnimationManager->scheduleTick();
+}
+
 void SemmetyLayout::activeWindowHook(void*, SCallbackInfo&, std::any data) {
 	const auto PWINDOW = std::any_cast<PHLWINDOW>(data);
 	if (PWINDOW == nullptr) {
+		return;
+	}
+
+	if (PWINDOW->m_bIsFloating) {
 		return;
 	}
 
@@ -373,19 +441,5 @@ void SemmetyLayout::activeWindowHook(void*, SCallbackInfo&, std::any data) {
 		return;
 	}
 
-	auto layout = g_SemmetyLayout.get();
-	if (layout == nullptr) {
-		return;
-	}
-	auto ww = layout->getOrCreateWorkspaceWrapper(PWINDOW->m_pWorkspace);
-
-	const auto frame = ww.getFrameForWindow(PWINDOW);
-	if (frame) {
-		ww.setFocusedFrame(frame);
-	} else {
-		ww.putWindowInFocusedFrame(PWINDOW);
-	}
-
-	ww.apply();
-	g_pAnimationManager->scheduleTick();
+	g_SemmetyLayout->activateWindow(PWINDOW);
 }

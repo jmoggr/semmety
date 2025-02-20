@@ -425,7 +425,7 @@ void SemmetyWorkspaceWrapper::printDebug() {
 	}
 
 	semmety_log(ERR, "workspace id + name '{}' '{}'", workspace->m_szName, workspace->m_iID);
-	semmety_log(ERR, "");
+	semmety_log(ERR, "DEBUG END");
 
 	// apply();
 }

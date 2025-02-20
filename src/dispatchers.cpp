@@ -1,3 +1,7 @@
+// clang-format off
+#include <re2/re2.h>
+// clang-format on
+
 #include "dispatchers.hpp"
 
 #include <hyprland/src/Compositor.hpp>
@@ -16,6 +20,7 @@
 #include <hyprutils/string/String.hpp>
 
 #include "SemmetyFrame.hpp"
+#include "dispatchers.hpp"
 #include "globals.hpp"
 
 SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = true) {
@@ -251,6 +256,28 @@ SDispatchResult dispatch_move_to_workspace(std::string value) {
 	g_SemmetyLayout->moveWindowToWorkspace(workspace);
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
+
+SDispatchResult dispatch_activate(std::string value) {
+	semmety_log(ERR, "in dispatch activate {}", value);
+	auto args = CVarList(value);
+
+	auto regexp = args[0];
+	if (regexp == "") {
+		semmety_log(ERR, "no argument provided");
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	const auto window = g_pCompositor->getWindowByRegex(regexp);
+
+	if (!window) {
+		semmety_log(ERR, "no window found to activate");
+		return {};
+	}
+
+	g_SemmetyLayout->activateWindow(window);
+	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+}
+
 void registerDispatchers() {
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:debug", dispatch_debug_v2);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:cycle_hidden", cycle_hidden);
@@ -259,4 +286,5 @@ void registerDispatchers() {
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:focus", dispatch_focus);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:swap", dispatch_swap);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:movetoworkspace", dispatch_move_to_workspace);
+	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:activate", dispatch_activate);
 }

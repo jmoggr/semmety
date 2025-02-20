@@ -51,4 +51,5 @@ public:
 	SemmetyWorkspaceWrapper& getOrCreateWorkspaceWrapper(PHLWORKSPACE workspace);
 
 	std::list<SemmetyWorkspaceWrapper> workspaceWrappers;
+	void activateWindow(PHLWINDOW window);
 };
