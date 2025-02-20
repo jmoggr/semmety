@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <vector>
 
 #include <hyprland/src/plugins/PluginAPI.hpp>
@@ -38,4 +39,7 @@ public:
 	void printDebug();
 	std::list<PHLWINDOWREF> getMinimizedWindows() const;
 	PHLWINDOWREF maybeAdvanceWindowIndex(bool advance_past = false);
+	void setFocusShortcut(std::string shortcutKey);
+	void activateFocusShortcut(std::string shortcutKey);
+	std::map<std::string, PHLWINDOWREF> focusShortcuts;
 };

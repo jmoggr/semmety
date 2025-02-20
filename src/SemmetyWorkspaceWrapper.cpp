@@ -522,7 +522,50 @@ void SemmetyWorkspaceWrapper::apply() {
 	// auto jsonString = jsonWindows.dump();
 	auto escapedJsonString = std::string("\'") + DoubleQuotes(jsonString) + "\'";
 	spawnRawProc("qs ipc call taskManager setWindows " + escapedJsonString, workspace.lock());
+
 	semmety_log(ERR, "calling qs with \n#{}#\n#{}#", escapedJsonString, jsonString);
 	// g_pAnimationManager->scheduleTick();
 	//
+}
+
+void SemmetyWorkspaceWrapper::setFocusShortcut(std::string shortcutKey) {
+	if (!focused_frame->is_window()) {
+		semmety_log(ERR, "Can't set focus short cut non-window");
+		return;
+	}
+
+	focusShortcuts[shortcutKey] = focused_frame->as_window();
+}
+
+void SemmetyWorkspaceWrapper::activateFocusShortcut(std::string shortcutKey) {
+	auto window = focusShortcuts.find(shortcutKey);
+
+	if (window == focusShortcuts.end()) {
+		semmety_log(ERR, "No shortcut found for key {}", shortcutKey);
+		return;
+	}
+
+	if (!window->second.valid()) {
+		semmety_log(ERR, "Shortcut window is no longer valid {}", shortcutKey);
+		return;
+	}
+
+	if (window->second->m_pWorkspace != workspace) {
+		semmety_log(ERR, "Window for shortcut is no longer on current worksapce");
+		return;
+	}
+
+	semmety_log(
+	    ERR,
+	    "activating focus shortcut {} for window {}",
+	    shortcutKey,
+	    window->second->fetchTitle()
+	);
+	const auto frame = getFrameForWindow(window->second);
+	if (frame) {
+		setFocusedFrame(frame);
+	} else {
+		// TODO: check that the window is currently being tracked by the desktop?
+		putWindowInFocusedFrame(window->second);
+	}
 }

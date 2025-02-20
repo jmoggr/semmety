@@ -258,7 +258,6 @@ SDispatchResult dispatch_move_to_workspace(std::string value) {
 }
 
 SDispatchResult dispatch_activate(std::string value) {
-	semmety_log(ERR, "in dispatch activate {}", value);
 	auto args = CVarList(value);
 
 	auto regexp = args[0];
@@ -278,6 +277,48 @@ SDispatchResult dispatch_activate(std::string value) {
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
 
+SDispatchResult dispatch_set_focus_shortcut(std::string value) {
+	semmety_log(ERR, "setFocusShortcut {}", value);
+	auto workspace_wrapper = workspace_for_action();
+	if (workspace_wrapper == nullptr) {
+		semmety_log(ERR, "no workspace");
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+	auto args = CVarList(value);
+
+	auto shortcut_key = args[0];
+	if (shortcut_key == "") {
+		semmety_log(ERR, "no argument provided");
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	workspace_wrapper->setFocusShortcut(shortcut_key);
+
+	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+}
+
+SDispatchResult dispatch_activate_focus_shortcut(std::string value) {
+	semmety_log(ERR, "activteFocusShortcut {}", value);
+	auto workspace_wrapper = workspace_for_action();
+	if (workspace_wrapper == nullptr) {
+		semmety_log(ERR, "no workspace");
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+	auto args = CVarList(value);
+
+	auto shortcut_key = args[0];
+	if (shortcut_key == "") {
+		semmety_log(ERR, "no argument provided");
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	workspace_wrapper->activateFocusShortcut(shortcut_key);
+	workspace_wrapper->apply();
+	g_pAnimationManager->scheduleTick();
+
+	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+}
+
 void registerDispatchers() {
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:debug", dispatch_debug_v2);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:cycle_hidden", cycle_hidden);
@@ -287,4 +328,10 @@ void registerDispatchers() {
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:swap", dispatch_swap);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:movetoworkspace", dispatch_move_to_workspace);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:activate", dispatch_activate);
+	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:setfocusshortcut", dispatch_set_focus_shortcut);
+	HyprlandAPI::addDispatcherV2(
+	    PHANDLE,
+	    "semmety:activatefocusshortcut",
+	    dispatch_activate_focus_shortcut
+	);
 }
