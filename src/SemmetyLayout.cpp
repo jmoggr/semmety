@@ -208,9 +208,12 @@ PHLWINDOW SemmetyLayout::getNextWindowCandidate(PHLWINDOW window) {
 		return {};
 	}
 
-	const auto nextMinimizedWindow = ws->getNextMinimizedWindow();
-	if (nextMinimizedWindow) {
-		return nextMinimizedWindow.lock();
+	// if the window we are replacing is floating, first try using an visible window
+	if (!window || !window->m_bIsFloating) {
+		const auto nextMinimizedWindow = ws->getNextMinimizedWindow();
+		if (nextMinimizedWindow) {
+			return nextMinimizedWindow.lock();
+		}
 	}
 
 	const auto index = ws->getLastFocusedWindowIndex();
