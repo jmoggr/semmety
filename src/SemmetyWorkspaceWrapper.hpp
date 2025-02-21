@@ -20,7 +20,6 @@ public:
 	std::vector<PHLWINDOWREF> windows;
 	SP<SemmetyFrame> root;
 	SP<SemmetyFrame> focused_frame;
-	size_t next_window_index = 0;
 
 	PHLWINDOWREF getNextMinimizedWindow();
 	SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout&);
@@ -38,7 +37,6 @@ public:
 	void rebalance();
 	void printDebug();
 	std::list<PHLWINDOWREF> getMinimizedWindows() const;
-	PHLWINDOWREF maybeAdvanceWindowIndex(bool advance_past = false);
 	void setFocusShortcut(std::string shortcutKey);
 	void activateFocusShortcut(std::string shortcutKey);
 	std::map<std::string, PHLWINDOWREF> focusShortcuts;
