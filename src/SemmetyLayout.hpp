@@ -19,6 +19,8 @@ public:
 	void recalculateMonitor(const MONITORID&) override;
 	void recalculateWindow(PHLWINDOW) override;
 	void onBeginDragWindow() override;
+
+	PHLWINDOW getNextWindowCandidate(PHLWINDOW) override;
 	void
 	resizeActiveWindow(const Vector2D&, eRectCorner corner = CORNER_NONE, PHLWINDOW pWindow = nullptr)
 	    override;

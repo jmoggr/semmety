@@ -15,17 +15,13 @@
 #include "log.hpp"
 #include "src/desktop/DesktopTypes.hpp"
 #include "src/layout/IHyprLayout.hpp"
+#include "utils.hpp"
 
 void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection direction) {
 	if (window->m_pWorkspace == nullptr) {
 		semmety_log(ERR, "onWindowCreatedTiling called with a window that has an invalid workspace");
 		return;
 	}
-
-	Debug::log(CRIT, "[semmety] HELP");
-	semmety_log(ERR, "HERE");
-	// return;
-	// semmety_log(LOG, "HERE");
 
 	semmety_log(
 	    LOG,
@@ -196,6 +192,37 @@ bool SemmetyLayout::isWindowTiled(PHLWINDOW pWindow) {
 	return false;
 
 	// return getNodeFromWindow(pWindow) != nullptr;
+}
+
+PHLWINDOW SemmetyLayout::getNextWindowCandidate(PHLWINDOW window) {
+	SemmetyWorkspaceWrapper* ws = nullptr;
+	if (window && window->m_pWorkspace) {
+		ws = &getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+	}
+
+	if (!ws) {
+		ws = workspace_for_action();
+	}
+
+	if (!ws) {
+		return {};
+	}
+
+	const auto nextMinimizedWindow = ws->getNextMinimizedWindow();
+	if (nextMinimizedWindow) {
+		return nextMinimizedWindow.lock();
+	}
+
+	const auto index = ws->getLastFocusedWindowIndex();
+	if (index >= ws->windows.size()) {
+		return {};
+	}
+
+	if (ws->windows[index]) {
+		return ws->windows[index].lock();
+	}
+
+	return {};
 }
 
 void SemmetyLayout::onBeginDragWindow() { semmety_log(TRACE, "STUB onBeginDragWindow"); }

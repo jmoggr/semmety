@@ -1,11 +1,21 @@
 #pragma once
 #include <type_traits>
 
+#include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/config/ConfigManager.hpp>
+#include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
+#include <hyprland/src/managers/AnimationManager.hpp>
+#include <hyprland/src/managers/LayoutManager.hpp>
+#include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprland/src/render/Renderer.hpp>
+#include <hyprland/src/render/pass/BorderPassElement.hpp>
 #include <hyprlang.hpp>
 
 #include "globals.hpp"
+
+SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = true);
 
 class HyprlangUnspecifiedCustomType {};
 

@@ -267,6 +267,7 @@ void SemmetyWorkspaceWrapper::addWindow(PHLWINDOWREF window) {
 }
 
 void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
+	semmety_log(ERR, "removing window from workspace");
 	auto frameWithWindow = getFrameForWindow(window);
 	if (frameWithWindow) {
 		frameWithWindow->makeEmpty();
@@ -321,8 +322,8 @@ PHLWINDOWREF SemmetyWorkspaceWrapper::getNextMinimizedWindow() {
 
 	const auto minimizedWindows = getMinimizedWindows();
 	size_t index = getLastFocusedWindowIndex();
+	semmety_log(ERR, "index of prev focused window {}", index);
 
-	index = (index + 1) % windows.size();
 	for (size_t i = 0; i < windows.size(); i++) {
 		const auto minimizedWindow =
 		    std::find(minimizedWindows.begin(), minimizedWindows.end(), windows[index]);
@@ -340,7 +341,6 @@ PHLWINDOWREF SemmetyWorkspaceWrapper::getPrevMinimizedWindow() {
 	const auto minimizedWindows = getMinimizedWindows();
 	size_t index = getLastFocusedWindowIndex();
 
-	index = (index == 0) ? windows.size() - 1 : index - 1;
 	for (size_t i = 0; i < windows.size(); i++) {
 		const auto minimizedWindow =
 		    std::find(minimizedWindows.begin(), minimizedWindows.end(), windows[index]);
