@@ -50,6 +50,35 @@ SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = true) {
 	return &layout->getOrCreateWorkspaceWrapper(workspace);
 }
 
+SDispatchResult dispatch_set_window_order(std::string arg) {
+	auto* workspace_wrapper = workspace_for_action(true);
+	if (workspace_wrapper == nullptr) {
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	auto args = CVarList(arg);
+	std::vector<PHLWINDOWREF> newOrder;
+	std::set<PHLWINDOWREF> foundWindows;
+
+	for (const auto& regex: args) {
+		const auto window = g_pCompositor->getWindowByRegex(regex);
+		if (window) {
+			newOrder.push_back(window);
+			foundWindows.insert(window);
+		}
+	}
+
+	for (const auto& window: workspace_wrapper->windows) {
+		if (foundWindows.find(window) == foundWindows.end()) {
+			newOrder.push_back(window);
+		}
+	}
+
+	workspace_wrapper->windows = newOrder;
+	workspace_wrapper->apply();
+	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+}
+
 std::optional<Direction> parseDirectionArg(std::string arg) {
 	if (arg == "l" || arg == "left") return Direction::Left;
 	else if (arg == "r" || arg == "right") return Direction::Right;
@@ -346,4 +375,5 @@ void registerDispatchers() {
 	    dispatch_activate_focus_shortcut
 	);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:updatebar", dispatch_update_bar);
+	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:setwindoworder", dispatch_set_window_order);
 }
