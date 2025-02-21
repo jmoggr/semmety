@@ -527,6 +527,12 @@ void SemmetyWorkspaceWrapper::updateBar() {
 	const auto focused_window =
 	    focused_frame->is_window() ? focused_frame->as_window() : CWeakPointer<CWindow>();
 
+	if (windows.empty()) {
+		spawnRawProc("qs ipc call taskManager setWindows empty", workspace.lock());
+		semmety_log(ERR, "calling qs with no windows");
+		return;
+	}
+
 	json jsonWindows = json::array();
 	for (const auto& window: windows) {
 		const auto isFocused = window == focused_window;
