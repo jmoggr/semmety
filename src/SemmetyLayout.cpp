@@ -100,6 +100,7 @@ void SemmetyLayout::onWindowFocusChange(PHLWINDOW window) {
 	} else {
 		workspace_wrapper.setFocusedFrame(frame);
 	}
+	workspace_wrapper.updateBar();
 	semmety_log(TRACE, "END onWindowFocusChange");
 }
 

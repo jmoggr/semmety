@@ -491,6 +491,14 @@ void SemmetyWorkspaceWrapper::apply() {
 		}
 	}
 
+	updateBar();
+
+	// g_pAnimationManager->scheduleTick();
+	//
+}
+
+void SemmetyWorkspaceWrapper::updateBar() {
+	const auto minimizedWindows = getMinimizedWindows();
 	const auto focused_window =
 	    focused_frame->is_window() ? focused_frame->as_window() : CWeakPointer<CWindow>();
 
@@ -510,22 +518,11 @@ void SemmetyWorkspaceWrapper::apply() {
 		);
 	}
 
-	// auto jsonString = "here";
-
 	auto jsonString = jsonWindows.dump();
-	// escapeSingleQuotes(jsonString);
-
-	// std::replace(jsonString.begin(), jsonString.end(), ',', "&");
-	// oss << std::quoted(jsonString); // Escapes quotes properly
-
-	// std::string escapedJsonString = oss.str();
-	// auto jsonString = jsonWindows.dump();
 	auto escapedJsonString = std::string("\'") + DoubleQuotes(jsonString) + "\'";
 	spawnRawProc("qs ipc call taskManager setWindows " + escapedJsonString, workspace.lock());
 
 	semmety_log(ERR, "calling qs with \n#{}#\n#{}#", escapedJsonString, jsonString);
-	// g_pAnimationManager->scheduleTick();
-	//
 }
 
 void SemmetyWorkspaceWrapper::setFocusShortcut(std::string shortcutKey) {

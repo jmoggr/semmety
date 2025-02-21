@@ -42,4 +42,5 @@ public:
 	void setFocusShortcut(std::string shortcutKey);
 	void activateFocusShortcut(std::string shortcutKey);
 	std::map<std::string, PHLWINDOWREF> focusShortcuts;
+	void updateBar();
 };

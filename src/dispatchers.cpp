@@ -318,6 +318,17 @@ SDispatchResult dispatch_activate_focus_shortcut(std::string value) {
 
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
+SDispatchResult dispatch_update_bar(std::string value) {
+	auto workspace_wrapper = workspace_for_action();
+	if (workspace_wrapper == nullptr) {
+		semmety_log(ERR, "no workspace");
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	workspace_wrapper->updateBar();
+
+	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+}
 
 void registerDispatchers() {
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:debug", dispatch_debug_v2);
@@ -334,4 +345,5 @@ void registerDispatchers() {
 	    "semmety:activatefocusshortcut",
 	    dispatch_activate_focus_shortcut
 	);
+	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:updatebar", dispatch_update_bar);
 }
