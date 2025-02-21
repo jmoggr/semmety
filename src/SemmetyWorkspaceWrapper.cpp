@@ -275,14 +275,15 @@ void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
 	windows.erase(std::remove(windows.begin(), windows.end(), window), windows.end());
 }
 
-PHLWINDOWREF SemmetyWorkspaceWrapper::getNextMinimizedWindow() {
+// get the index of the the most recently focused window in this workspace which was not minimized
+size_t SemmetyWorkspaceWrapper::getLastFocusedWindowIndex() {
 	if (windows.empty()) {
-		return {};
+		return 0;
 	}
 
 	const auto minimizedWindows = getMinimizedWindows();
 	if (minimizedWindows.empty()) {
-		return {};
+		return 0;
 	}
 
 	auto getFocusHistoryID = [](PHLWINDOW wnd) -> int {
@@ -293,10 +294,10 @@ PHLWINDOWREF SemmetyWorkspaceWrapper::getNextMinimizedWindow() {
 	};
 
 	auto minFocusIndex = std::numeric_limits<int>::max();
-	// the most recently focused window in this workspace which was not minimized
-	PHLWINDOWREF minFocusWindow;
+	auto minIndex = 0;
 
-	for (const auto& window: windows) {
+	for (size_t index = 0; index < windows.size(); index++) {
+		const auto window = windows[index];
 		if (std::find(minimizedWindows.begin(), minimizedWindows.end(), window)
 		    != minimizedWindows.end())
 		{
@@ -306,17 +307,21 @@ PHLWINDOWREF SemmetyWorkspaceWrapper::getNextMinimizedWindow() {
 		int focusIndex = getFocusHistoryID(window.lock());
 		if (focusIndex != -1 && focusIndex < minFocusIndex) {
 			minFocusIndex = focusIndex;
-			minFocusWindow = window;
+			minIndex = index;
 		}
 	}
 
-	size_t index = 0;
-	if (minFocusWindow) {
-		index =
-		    std::distance(windows.begin(), std::find(windows.begin(), windows.end(), minFocusWindow));
+	return minIndex;
+}
+
+PHLWINDOWREF SemmetyWorkspaceWrapper::getNextMinimizedWindow() {
+	if (windows.empty()) {
+		return {};
 	}
 
-	index += 1;
+	const auto minimizedWindows = getMinimizedWindows();
+	size_t index = getLastFocusedWindowIndex();
+
 	index = (index + 1) % windows.size();
 	for (size_t i = 0; i < windows.size(); i++) {
 		const auto minimizedWindow =
@@ -326,6 +331,24 @@ PHLWINDOWREF SemmetyWorkspaceWrapper::getNextMinimizedWindow() {
 		}
 
 		index = (index + 1) % windows.size();
+	}
+
+	return {};
+}
+
+PHLWINDOWREF SemmetyWorkspaceWrapper::getPrevMinimizedWindow() {
+	const auto minimizedWindows = getMinimizedWindows();
+	size_t index = getLastFocusedWindowIndex();
+
+	index = (index == 0) ? windows.size() - 1 : index - 1;
+	for (size_t i = 0; i < windows.size(); i++) {
+		const auto minimizedWindow =
+		    std::find(minimizedWindows.begin(), minimizedWindows.end(), windows[index]);
+		if (minimizedWindow != minimizedWindows.end()) {
+			return *minimizedWindow;
+		}
+
+		index = (index == 0) ? windows.size() - 1 : index - 1;
 	}
 
 	return {};

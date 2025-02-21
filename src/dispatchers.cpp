@@ -50,6 +50,28 @@ SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = true) {
 	return &layout->getOrCreateWorkspaceWrapper(workspace);
 }
 
+SDispatchResult cycle_prev(std::string arg) {
+	auto* workspace_wrapper = workspace_for_action(true);
+	if (workspace_wrapper == nullptr) {
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+	auto focused_frame = workspace_wrapper->getFocusedFrame();
+
+	if (!focused_frame->is_leaf()) {
+		semmety_log(ERR, "Can only cycle leaf frames");
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	const auto window = workspace_wrapper->getPrevMinimizedWindow();
+	if (!window) {
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	focused_frame->makeWindow(window);
+	workspace_wrapper->apply();
+	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+}
+
 SDispatchResult dispatch_set_window_order(std::string arg) {
 	auto* workspace_wrapper = workspace_for_action(true);
 	if (workspace_wrapper == nullptr) {
@@ -362,6 +384,7 @@ SDispatchResult dispatch_update_bar(std::string value) {
 void registerDispatchers() {
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:debug", dispatch_debug_v2);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:cycle_hidden", cycle_hidden);
+	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:cycleprev", cycle_prev);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:split", split);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:remove", dispatch_remove);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:focus", dispatch_focus);
