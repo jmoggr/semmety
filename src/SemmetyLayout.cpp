@@ -228,7 +228,7 @@ PHLWINDOW SemmetyLayout::getNextWindowCandidate(PHLWINDOW window) {
 	return {};
 }
 
-void SemmetyLayout::onBeginDragWindow() { semmety_log(TRACE, "STUB onBeginDragWindow"); }
+// void SemmetyLayout::onBeginDragWindow() { semmety_log(TRACE, "STUB onBeginDragWindow"); }
 
 void SemmetyLayout::resizeActiveWindow(
     const Vector2D& pixResize,
@@ -418,10 +418,10 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 	auto ww = layout->getOrCreateWorkspaceWrapper(monitor->activeWorkspace);
 	auto emptyFrames = ww.getEmptyFrames();
 
+
 	switch (render_stage) {
 	case RENDER_PRE_WINDOWS:
 		for (const auto& frame: emptyFrames) {
-
 			CBorderPassElement::SBorderData borderData;
 			if (ww.focused_frame == frame) {
 				borderData.grad1 = *ACTIVECOL;

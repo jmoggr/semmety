@@ -18,7 +18,7 @@ public:
 	bool isWindowTiled(PHLWINDOW) override;
 	void recalculateMonitor(const MONITORID&) override;
 	void recalculateWindow(PHLWINDOW) override;
-	void onBeginDragWindow() override;
+	// void onBeginDragWindow() override;
 
 	PHLWINDOW getNextWindowCandidate(PHLWINDOW) override;
 	void
