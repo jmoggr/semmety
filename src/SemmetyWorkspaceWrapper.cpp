@@ -1,6 +1,8 @@
 #include "SemmetyWorkspaceWrapper.hpp"
 #include <algorithm>
 #include <numeric>
+#include <iostream>
+#include <string>
 
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
@@ -19,9 +21,7 @@
 #include <hyprutils/memory/WeakPtr.hpp>
 #include <hyprutils/os/FileDescriptor.hpp>
 
-#include "json.hpp"
 #include "log.hpp"
-#include "src/helpers/MiscFunctions.hpp"
 
 SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout& l): layout(l) {
 	workspace = w;
@@ -37,68 +37,6 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 
 	this->root = frame;
 	this->focused_frame = frame;
-}
-
-uint64_t spawnRawProc(std::string args, PHLWORKSPACE pInitialWorkspace) {
-	Debug::log(LOG, "Executing {}", args);
-
-	// const auto HLENV = getHyprlandLaunchEnv(pInitialWorkspace);
-
-	int socket[2];
-	if (pipe(socket) != 0) {
-		Debug::log(LOG, "Unable to create pipe for fork");
-	}
-
-	Hyprutils::OS::CFileDescriptor pipeSock[2] = {
-	    Hyprutils::OS::CFileDescriptor {socket[0]},
-	    Hyprutils::OS::CFileDescriptor {socket[1]}
-	};
-
-	pid_t child, grandchild;
-	child = fork();
-	if (child < 0) {
-		Debug::log(LOG, "Fail to create the first fork");
-		return 0;
-	}
-	if (child == 0) {
-		// run in child
-		g_pCompositor->restoreNofile();
-
-		sigset_t set;
-		sigemptyset(&set);
-		sigprocmask(SIG_SETMASK, &set, nullptr);
-
-		grandchild = fork();
-		if (grandchild == 0) {
-			// run in grandchild
-			// for (auto const& e: HLENV) {
-			// 	setenv(e.first.c_str(), e.second.c_str(), 1);
-			// }
-			setenv("WAYLAND_DISPLAY", g_pCompositor->m_szWLDisplaySocket.c_str(), 1);
-			execl("/bin/sh", "/bin/sh", "-c", args.c_str(), nullptr);
-			// exit grandchild
-			_exit(0);
-		}
-		write(pipeSock[1].get(), &grandchild, sizeof(grandchild));
-		// exit child
-		_exit(0);
-	}
-	// run in parent
-	read(pipeSock[0].get(), &grandchild, sizeof(grandchild));
-	// clear child and leave grandchild to init
-	waitpid(child, nullptr, 0);
-	if (grandchild < 0) {
-		Debug::log(LOG, "Fail to create the second fork");
-		return 0;
-	}
-
-	Debug::log(LOG, "Process Created with pid {}", grandchild);
-
-	return grandchild;
-}
-SDispatchResult spawnRaw(std::string args) {
-	const uint64_t PROC = spawnRawProc(args, nullptr);
-	return {.success = PROC > 0, .error = std::format("Failed to start process {}", args)};
 }
 
 std::list<PHLWINDOWREF> SemmetyWorkspaceWrapper::getMinimizedWindows() const {
@@ -454,10 +392,6 @@ void SemmetyWorkspaceWrapper::printDebug() {
 
 	// apply();
 }
-#include <algorithm>
-#include <iostream>
-#include <string>
-using json = nlohmann::json;
 
 void escapeSingleQuotes(std::string& str) {
 	size_t pos = 0;
@@ -467,17 +401,6 @@ void escapeSingleQuotes(std::string& str) {
 	}
 }
 
-std::string DoubleQuotes(std::string value) {
-	std::string retval;
-	for (auto ch: value) {
-		if (ch == ',') {
-			retval.push_back('&');
-			continue;
-		}
-		retval.push_back(ch);
-	}
-	return retval;
-}
 
 void SemmetyWorkspaceWrapper::apply() {
 	auto& monitor = workspace->m_pMonitor;
@@ -516,21 +439,18 @@ void SemmetyWorkspaceWrapper::apply() {
 		}
 	}
 
-	updateBar();
-
 	// g_pAnimationManager->scheduleTick();
 	//
 }
 
-void SemmetyWorkspaceWrapper::updateBar() {
+json SemmetyWorkspaceWrapper::getWorkspaceWindowsJson() {
 	const auto minimizedWindows = getMinimizedWindows();
 	const auto focused_window =
 	    focused_frame->is_window() ? focused_frame->as_window() : CWeakPointer<CWindow>();
 
 	if (windows.empty()) {
-		spawnRawProc("qs ipc call taskManager setWindows empty", workspace.lock());
 		semmety_log(ERR, "calling qs with no windows");
-		return;
+		return json({"value", 0});
 	}
 
 	json jsonWindows = json::array();
@@ -549,11 +469,7 @@ void SemmetyWorkspaceWrapper::updateBar() {
 		);
 	}
 
-	auto jsonString = jsonWindows.dump();
-	auto escapedJsonString = std::string("\'") + DoubleQuotes(jsonString) + "\'";
-	spawnRawProc("qs ipc call taskManager setWindows " + escapedJsonString, workspace.lock());
-
-	semmety_log(ERR, "calling qs with \n#{}#\n#{}#", escapedJsonString, jsonString);
+	return jsonWindows;
 }
 
 void SemmetyWorkspaceWrapper::setFocusShortcut(std::string shortcutKey) {

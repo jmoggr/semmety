@@ -41,6 +41,7 @@ void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection direction
 	if (monitor != nullptr && monitor->activeWorkspace != nullptr) {
 		if (monitor->activeWorkspace == window->m_pWorkspace) {
 			workspace_wrapper.apply();
+			updateBar();
 		}
 	}
 
@@ -64,6 +65,7 @@ void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW window) {
 	auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
 	workspace_wrapper.removeWindow(window);
 	workspace_wrapper.apply();
+	updateBar();
 	g_pAnimationManager->scheduleTick();
 	semmety_log(TRACE, "END onWindowRemovedTiling");
 }
@@ -96,7 +98,7 @@ void SemmetyLayout::onWindowFocusChange(PHLWINDOW window) {
 	} else {
 		workspace_wrapper.setFocusedFrame(frame);
 	}
-	workspace_wrapper.updateBar();
+	updateBar();
 	semmety_log(TRACE, "END onWindowFocusChange");
 }
 
@@ -121,11 +123,9 @@ SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE
 		child->parent = ww.root;
 	}
 
-	// semmety_log(ERR, "split after \n{}", focused_frame->print(0, workspace_wrapper));
 	ww.setFocusedFrame(ww.root);
 	ww.apply();
 
-	// this->workspaceWrappers.emplace_back(workspace, *this);
 	this->workspaceWrappers.emplace_back(ww);
 	return this->workspaceWrappers.back();
 }
@@ -361,6 +361,7 @@ void SemmetyLayout::moveWindowToWorkspace(std::string wsname) {
 	focused_window->uncacheWindowDecos();
 
 	sourceWrapper.apply();
+	updateBar();
 }
 
 void SemmetyLayout::tickHook(void*, SCallbackInfo&, std::any) {
@@ -455,6 +456,7 @@ void SemmetyLayout::activateWindow(PHLWINDOW window) {
 	}
 
 	ww.apply();
+	updateBar();
 	g_pAnimationManager->scheduleTick();
 }
 
@@ -474,3 +476,19 @@ void SemmetyLayout::activeWindowHook(void*, SCallbackInfo&, std::any data) {
 
 	g_SemmetyLayout->activateWindow(PWINDOW);
 }
+
+json SemmetyLayout::getWorkspacesJson() {
+	for (const auto& ww: workspaceWrappers) {
+		semmety_log(ERR, "workspace ID: {}", ww.workspace->m_iID);
+	}
+	
+	json jsonWorkspaces = json::array();
+	for (int workspaceIndex = 0; workspaceIndex < 8; workspaceIndex++) {
+	    // auto it = std::find_if(workspaceWrappers.begin(), workspaceWrappers.end(), [workspaceIndex](const auto& workspaceWrapper) {
+	    //     return workspaceWrapper->workspace != nullptr && workspaceWrapper->workspace->m_iID == workspaceIndex;
+	    // });
+	}
+
+	return jsonWorkspaces;
+} 
+

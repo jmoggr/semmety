@@ -16,6 +16,7 @@
 #include "globals.hpp"
 
 SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = true);
+void updateBar();
 
 class HyprlangUnspecifiedCustomType {};
 
