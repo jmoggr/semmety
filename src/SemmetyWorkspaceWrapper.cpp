@@ -467,18 +467,6 @@ void escapeSingleQuotes(std::string& str) {
 	}
 }
 
-std::string DoubleQuotes(std::string value) {
-	std::string retval;
-	for (auto ch: value) {
-		if (ch == ',') {
-			retval.push_back('&');
-			continue;
-		}
-		retval.push_back(ch);
-	}
-	return retval;
-}
-
 void SemmetyWorkspaceWrapper::apply() {
 	auto& monitor = workspace->m_pMonitor;
 	auto pos = monitor->vecPosition + monitor->vecReservedTopLeft;
@@ -527,12 +515,6 @@ void SemmetyWorkspaceWrapper::updateBar() {
 	const auto focused_window =
 	    focused_frame->is_window() ? focused_frame->as_window() : CWeakPointer<CWindow>();
 
-	if (windows.empty()) {
-		spawnRawProc("qs ipc call taskManager setWindows empty", workspace.lock());
-		semmety_log(ERR, "calling qs with no windows");
-		return;
-	}
-
 	json jsonWindows = json::array();
 	for (const auto& window: windows) {
 		const auto isFocused = window == focused_window;
@@ -550,8 +532,8 @@ void SemmetyWorkspaceWrapper::updateBar() {
 	}
 
 	auto jsonString = jsonWindows.dump();
-	auto escapedJsonString = std::string("\'") + DoubleQuotes(jsonString) + "\'";
-	spawnRawProc("qs ipc call taskManager setWindows " + escapedJsonString, workspace.lock());
+	auto escapedJsonString = std::string("\'") + jsonString + "\'";
+	spawnRawProc("qs ipc callJson taskManager setWindows " + escapedJsonString, workspace.lock());
 
 	semmety_log(ERR, "calling qs with \n#{}#\n#{}#", escapedJsonString, jsonString);
 }
