@@ -419,7 +419,6 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 	auto ww = layout->getOrCreateWorkspaceWrapper(monitor->activeWorkspace);
 	auto emptyFrames = ww.getEmptyFrames();
 
-
 	switch (render_stage) {
 	case RENDER_PRE_WINDOWS:
 		for (const auto& frame: emptyFrames) {
@@ -478,17 +477,35 @@ void SemmetyLayout::activeWindowHook(void*, SCallbackInfo&, std::any data) {
 }
 
 json SemmetyLayout::getWorkspacesJson() {
-	for (const auto& ww: workspaceWrappers) {
-		semmety_log(ERR, "workspace ID: {}", ww.workspace->m_iID);
-	}
-	
+	const auto ws = workspace_for_action();
+
 	json jsonWorkspaces = json::array();
+	// TODO: get max workspace ID iterate to that if it's large than 8
 	for (int workspaceIndex = 0; workspaceIndex < 8; workspaceIndex++) {
-	    // auto it = std::find_if(workspaceWrappers.begin(), workspaceWrappers.end(), [workspaceIndex](const auto& workspaceWrapper) {
-	    //     return workspaceWrapper->workspace != nullptr && workspaceWrapper->workspace->m_iID == workspaceIndex;
-	    // });
+		auto it = std::find_if(
+		    workspaceWrappers.begin(),
+		    workspaceWrappers.end(),
+		    [workspaceIndex](const auto& workspaceWrapper) {
+			    return workspaceWrapper.workspace != nullptr
+			        && workspaceWrapper.workspace->m_iID == workspaceIndex + 1;
+		    }
+		);
+
+		if (it == workspaceWrappers.end()) {
+			jsonWorkspaces.push_back(
+			    {{"id", workspaceIndex + 1}, {"numWindows", 0}, {"name", ""}, {"focused", false}}
+			);
+
+			continue;
+		}
+
+		jsonWorkspaces.push_back(
+		    {{"id", workspaceIndex + 1},
+		     {"numWindows", it->windows.size()},
+		     {"name", it->workspace->m_szName},
+		     {"focused", &(*it) == &(*ws)}}
+		);
 	}
 
 	return jsonWorkspaces;
-} 
-
+}
