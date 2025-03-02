@@ -3,6 +3,7 @@
 // clang-format on
 
 #include "dispatchers.hpp"
+#include "src/helpers/MiscFunctions.hpp"
 
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
@@ -23,6 +24,7 @@
 #include "dispatchers.hpp"
 #include "globals.hpp"
 #include "utils.hpp"
+#include "json.hpp"
 
 SDispatchResult cycle_prev(std::string arg) {
 	auto* workspace_wrapper = workspace_for_action(true);
@@ -43,6 +45,7 @@ SDispatchResult cycle_prev(std::string arg) {
 
 	focused_frame->makeWindow(window);
 	workspace_wrapper->apply();
+	updateBar();
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
 
@@ -72,6 +75,7 @@ SDispatchResult dispatch_set_window_order(std::string arg) {
 
 	workspace_wrapper->windows = newOrder;
 	workspace_wrapper->apply();
+	updateBar();
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
 
@@ -130,6 +134,7 @@ SDispatchResult split(std::string arg) {
 	semmety_log(ERR, "split after \n{}", focused_frame->print(0, workspace_wrapper));
 	workspace_wrapper->setFocusedFrame(focused_frame);
 	workspace_wrapper->apply();
+	updateBar();
 
 	g_pAnimationManager->scheduleTick();
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
@@ -172,6 +177,7 @@ SDispatchResult dispatch_remove(std::string arg) {
 
 	workspace_wrapper->setFocusedFrame(parent);
 	workspace_wrapper->apply();
+	updateBar();
 	g_pAnimationManager->scheduleTick();
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
@@ -195,6 +201,7 @@ SDispatchResult cycle_hidden(std::string arg) {
 
 	focused_frame->makeWindow(window);
 	workspace_wrapper->apply();
+	updateBar();
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
 
@@ -233,6 +240,7 @@ SDispatchResult dispatch_focus(std::string value) {
 	semmety_log(ERR, "focus {}", direction_to_string(direction.value()));
 	workspace_wrapper->setFocusedFrame(neighbor);
 	workspace_wrapper->apply();
+	updateBar();
 	g_pAnimationManager->scheduleTick();
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
@@ -265,6 +273,7 @@ SDispatchResult dispatch_swap(std::string value) {
 
 	workspace_wrapper->setFocusedFrame(neighbor);
 	workspace_wrapper->apply();
+	updateBar();
 	g_pAnimationManager->scheduleTick();
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
@@ -339,19 +348,15 @@ SDispatchResult dispatch_activate_focus_shortcut(std::string value) {
 
 	workspace_wrapper->activateFocusShortcut(shortcut_key);
 	workspace_wrapper->apply();
+	updateBar();
 	g_pAnimationManager->scheduleTick();
 
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
+
+
 SDispatchResult dispatch_update_bar(std::string value) {
-	auto workspace_wrapper = workspace_for_action();
-	if (workspace_wrapper == nullptr) {
-		semmety_log(ERR, "no workspace");
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	workspace_wrapper->updateBar();
-
+	updateBar();
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
 

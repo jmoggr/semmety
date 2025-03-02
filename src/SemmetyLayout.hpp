@@ -7,6 +7,9 @@
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
 #include "SemmetyWorkspaceWrapper.hpp"
+#include "json.hpp"
+using json = nlohmann::json;
+
 
 class SemmetyLayout;
 class SemmetyWorkspaceWrapper;
@@ -54,4 +57,5 @@ public:
 
 	std::list<SemmetyWorkspaceWrapper> workspaceWrappers;
 	void activateWindow(PHLWINDOW window);
+	json getWorkspacesJson();
 };
