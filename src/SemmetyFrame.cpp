@@ -205,9 +205,6 @@ void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
 		return;
 	}
 
-	if (window->isHidden()) {
-		window->setHidden(false);
-	}
 
 	// if (window->m_pXWaylandSurface->minimized) {
 	// 	window->m_pXWaylandSurface->setMinimized(false);
@@ -215,6 +212,7 @@ void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
 
 	window->unsetWindowData(PRIORITY_LAYOUT);
 	window->updateWindowData();
+
 
 	window->m_vSize = geometry.size();
 	window->m_vPosition = geometry.pos();
@@ -227,8 +225,14 @@ void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
 	    workspace
 	);
 
-	*window->m_vRealPosition = wb.pos();
-	*window->m_vRealSize = wb.size();
+	if (window->isHidden()) {
+		window->setHidden(false);
+		window->m_vRealPosition->setValueAndWarp(wb.pos());
+		window->m_vRealSize->setValueAndWarp(wb.size());
+	} else {
+		*window->m_vRealPosition = wb.pos();
+		*window->m_vRealSize = wb.size();
+	}
 
 	window->updateWindowDecos();
 	// window->sendWindowSize(true);
