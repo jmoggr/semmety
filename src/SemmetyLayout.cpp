@@ -284,6 +284,7 @@ bool SemmetyLayout::isWindowReachable(PHLWINDOW win) { return !!win; }
 SP<HOOK_CALLBACK_FN> renderHookPtr;
 SP<HOOK_CALLBACK_FN> tickHookPtr;
 SP<HOOK_CALLBACK_FN> activeWindowHookPtr;
+SP<HOOK_CALLBACK_FN> workspaceHookPtr;
 
 void SemmetyLayout::onEnable() {
 	for (auto& window: g_pCompositor->m_vWindows) {
@@ -303,6 +304,8 @@ void SemmetyLayout::onEnable() {
 	    "activeWindow",
 	    &SemmetyLayout::activeWindowHook
 	);
+
+	workspaceHookPtr = HyprlandAPI::registerCallbackDynamic(PHANDLE, "workspace", &SemmetyLayout::workspaceHook);
 }
 
 void SemmetyLayout::onDisable() {
@@ -388,6 +391,9 @@ void SemmetyLayout::tickHook(void*, SCallbackInfo&, std::any) {
 			frame->damageEmptyFrameBox(*monitor);
 		}
 	}
+}
+void SemmetyLayout::workspaceHook(void*, SCallbackInfo&, std::any data) {
+	updateBar();
 }
 
 void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
