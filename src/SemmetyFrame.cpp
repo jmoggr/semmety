@@ -206,10 +206,6 @@ void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
 	}
 
 
-	// if (window->m_pXWaylandSurface->minimized) {
-	// 	window->m_pXWaylandSurface->setMinimized(false);
-	// }
-
 	window->unsetWindowData(PRIORITY_LAYOUT);
 	window->updateWindowData();
 
@@ -225,17 +221,19 @@ void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
 	    workspace
 	);
 
+	*window->m_vRealPosition = wb.pos();
+	*window->m_vRealSize = wb.size();
 	if (window->isHidden()) {
 		window->setHidden(false);
-		window->m_vRealPosition->setValueAndWarp(wb.pos());
-		window->m_vRealSize->setValueAndWarp(wb.size());
-	} else {
-		*window->m_vRealPosition = wb.pos();
-		*window->m_vRealSize = wb.size();
+
+		// cargo cult dwindle applyNodeDataToWindow
+		g_pHyprRenderer->damageWindow(window.lock());
+		window->m_vRealPosition->warp();
+		window->m_vRealSize->warp();
+		g_pHyprRenderer->damageWindow(window.lock());
 	}
 
 	window->updateWindowDecos();
-	// window->sendWindowSize(true);
 }
 
 // from CHyprBorderDecoration::draw
