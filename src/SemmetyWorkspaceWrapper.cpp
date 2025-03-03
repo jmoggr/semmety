@@ -456,6 +456,7 @@ json SemmetyWorkspaceWrapper::getWorkspaceWindowsJson() {
 		const auto address = std::format("{:x}", (uintptr_t) window.get());
 		jsonWindows.push_back(
 		    {{"address", address},
+		     {"urgent", window->m_bIsUrgent},
 		     {"title", window->fetchTitle()},
 		     {"appid", window->fetchClass()},
 		     {"focused", isFocused},

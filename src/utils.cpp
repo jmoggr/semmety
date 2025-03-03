@@ -117,6 +117,6 @@ void updateBar() {
 	auto escapedJsonString = std::string("\'") + jsonString + "\'";
 	spawnRawProc("qs ipc call taskManager setWindows " + escapedJsonString, workspace_wrapper->workspace.lock());
 
-	semmety_log(ERR, "calling qs with \n#{}#\n#{}#", escapedJsonString, jsonString);
+	semmety_log(ERR, "calling qs with {}", escapedJsonString);
 }
 

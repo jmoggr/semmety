@@ -51,12 +51,14 @@ public:
 	static void tickHook(void*, SCallbackInfo&, std::any);
 	static void activeWindowHook(void*, SCallbackInfo&, std::any);
 	static void workspaceHook(void*, SCallbackInfo&, std::any);
+	static void urgentHook(void*, SCallbackInfo&, std::any);
 	void moveWindowToWorkspace(std::string wsname);
 
 	void recalculateWorkspace(const PHLWORKSPACE& workspace);
 	SemmetyWorkspaceWrapper& getOrCreateWorkspaceWrapper(PHLWORKSPACE workspace);
 
 	std::list<SemmetyWorkspaceWrapper> workspaceWrappers;
+	bool updateBarOnNextTick = false;
 	void activateWindow(PHLWINDOW window);
 	json getWorkspacesJson();
 };

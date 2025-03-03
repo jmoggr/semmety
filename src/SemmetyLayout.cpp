@@ -285,6 +285,7 @@ SP<HOOK_CALLBACK_FN> renderHookPtr;
 SP<HOOK_CALLBACK_FN> tickHookPtr;
 SP<HOOK_CALLBACK_FN> activeWindowHookPtr;
 SP<HOOK_CALLBACK_FN> workspaceHookPtr;
+SP<HOOK_CALLBACK_FN> urgentHookPtr;
 
 void SemmetyLayout::onEnable() {
 	for (auto& window: g_pCompositor->m_vWindows) {
@@ -306,6 +307,7 @@ void SemmetyLayout::onEnable() {
 	);
 
 	workspaceHookPtr = HyprlandAPI::registerCallbackDynamic(PHANDLE, "workspace", &SemmetyLayout::workspaceHook);
+	urgentHookPtr = HyprlandAPI::registerCallbackDynamic(PHANDLE, "urgent", &SemmetyLayout::urgentHook);
 }
 
 void SemmetyLayout::onDisable() {
@@ -372,6 +374,12 @@ void SemmetyLayout::tickHook(void*, SCallbackInfo&, std::any) {
 	if (layout == nullptr) {
 		return;
 	}
+
+	if (layout->updateBarOnNextTick) {
+		updateBar();
+		layout->updateBarOnNextTick = false;
+	}
+	
 	if (g_pLayoutManager->getCurrentLayout() != layout) return;
 
 	for (const auto& monitor: g_pCompositor->m_vMonitors) {
@@ -394,6 +402,16 @@ void SemmetyLayout::tickHook(void*, SCallbackInfo&, std::any) {
 }
 void SemmetyLayout::workspaceHook(void*, SCallbackInfo&, std::any data) {
 	updateBar();
+}
+
+void SemmetyLayout::urgentHook(void*, SCallbackInfo&, std::any data) {
+	auto layout = g_SemmetyLayout.get();
+	if (layout == nullptr) {
+		return;
+	}
+
+    // m_bIsUrgent is not set until after the hook event is handled, so we hack it this way
+	layout->updateBarOnNextTick = true;
 }
 
 void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
@@ -499,7 +517,7 @@ json SemmetyLayout::getWorkspacesJson() {
 
 		if (it == workspaceWrappers.end()) {
 			jsonWorkspaces.push_back(
-			    {{"id", workspaceIndex + 1}, {"numWindows", 0}, {"name", ""}, {"focused", false}}
+			    {{"id", workspaceIndex + 1}, {"numWindows", 0}, {"name", ""}, {"focused", false}, {"urgent", false}}
 			);
 
 			continue;
@@ -509,6 +527,7 @@ json SemmetyLayout::getWorkspacesJson() {
 		    {{"id", workspaceIndex + 1},
 		     {"numWindows", it->windows.size()},
 		     {"name", it->workspace->m_szName},
+			 {"urgent", it->workspace->hasUrgentWindow()},
 		     {"focused", &(*it) == &(*ws)}}
 		);
 	}
