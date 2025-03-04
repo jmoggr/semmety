@@ -98,6 +98,17 @@ uint64_t spawnRawProc(std::string args, PHLWORKSPACE pInitialWorkspace) {
 	return grandchild;
 }
 
+std::string escapeSingleQuotes(const std::string& input) {
+	std::ostringstream ss;
+	for (char c: input) {
+		switch (c) {
+		case '\'': ss << "'\\\''"; break;
+		default: ss << c;
+		}
+	}
+	return ss.str();
+}
+
 void updateBar() {
 	auto workspace_wrapper = workspace_for_action();
 	if (workspace_wrapper == nullptr) {
@@ -108,15 +119,14 @@ void updateBar() {
 	const auto windowsJson = workspace_wrapper->getWorkspaceWindowsJson();
 	const auto workspacesJson = g_SemmetyLayout->getWorkspacesJson();
 
-	const json updateJson = {
-		{"windows", windowsJson},
-		{"workspaces", workspacesJson}
-	};
+	const json updateJson = {{"windows", windowsJson}, {"workspaces", workspacesJson}};
 
 	auto jsonString = updateJson.dump();
-	auto escapedJsonString = std::string("\'") + jsonString + "\'";
-	spawnRawProc("qs ipc call taskManager setWindows " + escapedJsonString, workspace_wrapper->workspace.lock());
+	auto escapedJsonString = "\'" + escapeSingleQuotes(jsonString) + "\'";
+	spawnRawProc(
+	    "qs ipc call taskManager setWindows " + escapedJsonString,
+	    workspace_wrapper->workspace.lock()
+	);
 
 	semmety_log(ERR, "calling qs with {}", escapedJsonString);
 }
-
