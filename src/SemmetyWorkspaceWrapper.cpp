@@ -200,8 +200,21 @@ std::list<SP<SemmetyFrame>> SemmetyWorkspaceWrapper::getEmptyFrames() const {
 }
 
 void SemmetyWorkspaceWrapper::addWindow(PHLWINDOWREF window) {
-	windows.push_back(window);
+	insertWindow(window);
 	putWindowInFocusedFrame(window);
+}
+
+void SemmetyWorkspaceWrapper::insertWindow(PHLWINDOWREF window) {
+	if (!g_pCompositor->m_pLastWindow) {
+		windows.push_back(window);
+		return;
+	}
+	auto focusedWindow = g_pCompositor->m_pLastWindow.lock();
+	auto it = std::find(windows.begin(), windows.end(), focusedWindow);
+	if (it == windows.end()) {
+		windows.push_back(window);
+		return;
+	}
 }
 
 void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
