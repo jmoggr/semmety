@@ -45,5 +45,6 @@ public:
 	void activateFocusShortcut(std::string shortcutKey);
 	std::map<std::string, PHLWINDOWREF> focusShortcuts;
 	void changeWindowOrder(bool prev);
+	void insertWindow(PHLWINDOWREF window);
 	json getWorkspaceWindowsJson();
 };

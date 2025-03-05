@@ -205,10 +205,11 @@ void SemmetyWorkspaceWrapper::addWindow(PHLWINDOWREF window) {
 }
 
 void SemmetyWorkspaceWrapper::insertWindow(PHLWINDOWREF window) {
-	if (!g_pCompositor->m_pLastWindow) {
+	if (!g_pCompositor->m_pLastWindow || windows.empty()) {
 		windows.push_back(window);
 		return;
 	}
+
 	auto focusedWindow = g_pCompositor->m_pLastWindow.lock();
 	auto it = std::find(windows.begin(), windows.end(), focusedWindow);
 	if (it != windows.end()) {
