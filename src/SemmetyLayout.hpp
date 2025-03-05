@@ -10,7 +10,6 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
-
 class SemmetyLayout;
 class SemmetyWorkspaceWrapper;
 
@@ -60,5 +59,6 @@ public:
 	std::list<SemmetyWorkspaceWrapper> workspaceWrappers;
 	bool updateBarOnNextTick = false;
 	void activateWindow(PHLWINDOW window);
+	void changeWindowOrder(bool prev);
 	json getWorkspacesJson();
 };

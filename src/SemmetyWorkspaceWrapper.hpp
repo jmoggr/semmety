@@ -7,8 +7,8 @@
 #include <hyprutils/memory/SharedPtr.hpp>
 
 #include "SemmetyFrame.hpp"
-#include "src/desktop/DesktopTypes.hpp"
 #include "json.hpp"
+#include "src/desktop/DesktopTypes.hpp"
 using json = nlohmann::json;
 
 enum class Direction { Up, Down, Left, Right };
@@ -44,5 +44,6 @@ public:
 	void setFocusShortcut(std::string shortcutKey);
 	void activateFocusShortcut(std::string shortcutKey);
 	std::map<std::string, PHLWINDOWREF> focusShortcuts;
+	void changeWindowOrder(bool prev);
 	json getWorkspaceWindowsJson();
 };

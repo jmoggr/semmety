@@ -1,4 +1,3 @@
-
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
@@ -12,8 +11,9 @@
 #include <hyprlang.hpp>
 
 #include "globals.hpp"
+#include "log.hpp"
 
-SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = true) {
+SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = false) {
 	auto layout = g_SemmetyLayout.get();
 	if (layout == nullptr) {
 		return nullptr;
@@ -41,7 +41,7 @@ SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = true) {
 }
 
 uint64_t spawnRawProc(std::string args, PHLWORKSPACE pInitialWorkspace) {
-	Debug::log(LOG, "Executing {}", args);
+	// Debug::log(LOG, "Executing {}", args);
 
 	// const auto HLENV = getHyprlandLaunchEnv(pInitialWorkspace);
 
@@ -128,5 +128,13 @@ void updateBar() {
 	    workspace_wrapper->workspace.lock()
 	);
 
-	semmety_log(ERR, "calling qs with {}", escapedJsonString);
+	// semmety_log(ERR, "calling qs with {}", escapedJsonString);
+}
+
+size_t getWrappedOffsetIndex3(size_t index, int offset, size_t size) {
+	// if (size == 0) {
+	// 	semmety_critical_error("getWrappedOffsetIndex called with size 0");
+	// }
+
+	return ((index + offset) % size + size) % size;
 }

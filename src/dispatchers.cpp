@@ -3,7 +3,6 @@
 // clang-format on
 
 #include "dispatchers.hpp"
-#include "src/helpers/MiscFunctions.hpp"
 
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
@@ -23,8 +22,9 @@
 #include "SemmetyFrame.hpp"
 #include "dispatchers.hpp"
 #include "globals.hpp"
-#include "utils.hpp"
 #include "json.hpp"
+#include "src/helpers/MiscFunctions.hpp"
+#include "utils.hpp"
 
 SDispatchResult cycle_prev(std::string arg) {
 	auto* workspace_wrapper = workspace_for_action(true);
@@ -354,6 +354,21 @@ SDispatchResult dispatch_activate_focus_shortcut(std::string value) {
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
 
+SDispatchResult dispatch_change_window_order(std::string arg) {
+	semmety_log(ERR, "change_window_order {}", arg);
+	auto workspace_wrapper = workspace_for_action();
+	if (workspace_wrapper == nullptr) {
+		semmety_log(ERR, "no workspace");
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	auto prev = arg == "prev";
+	workspace_wrapper->changeWindowOrder(prev);
+	workspace_wrapper->apply();
+	updateBar();
+
+	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+}
 
 SDispatchResult dispatch_update_bar(std::string value) {
 	updateBar();
@@ -377,5 +392,7 @@ void registerDispatchers() {
 	    dispatch_activate_focus_shortcut
 	);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:updatebar", dispatch_update_bar);
+	// TODO: we can probably get rid of set window order
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:setwindoworder", dispatch_set_window_order);
+	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:changewindoworder", dispatch_change_window_order);
 }

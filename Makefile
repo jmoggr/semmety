@@ -1,6 +1,5 @@
                                                                                                                                                                                                                                                                                                                             
 all:
-	rm -rf build
 	mkdir -p build
 	cd build && meson setup ..
 	cd build && ninja

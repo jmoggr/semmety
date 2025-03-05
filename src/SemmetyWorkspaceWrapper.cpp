@@ -1,7 +1,6 @@
 #include "SemmetyWorkspaceWrapper.hpp"
 #include <algorithm>
 #include <numeric>
-#include <iostream>
 #include <string>
 
 #include <hyprland/src/Compositor.hpp>
@@ -22,6 +21,7 @@
 #include <hyprutils/os/FileDescriptor.hpp>
 
 #include "log.hpp"
+#include "utils.hpp"
 
 SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout& l): layout(l) {
 	workspace = w;
@@ -393,14 +393,6 @@ void SemmetyWorkspaceWrapper::printDebug() {
 	// apply();
 }
 
-void escapeSingleQuotes(std::string& str) {
-	size_t pos = 0;
-	while ((pos = str.find('"', pos)) != std::string::npos) {
-		str.replace(pos, 1, "'"); // Replace single quote with \'
-		pos += 1;                 // Move past the inserted escape sequence
-	}
-}
-
 void SemmetyWorkspaceWrapper::apply() {
 	auto& monitor = workspace->m_pMonitor;
 	auto pos = monitor->vecPosition + monitor->vecReservedTopLeft;
@@ -465,6 +457,28 @@ json SemmetyWorkspaceWrapper::getWorkspaceWindowsJson() {
 	}
 
 	return jsonWindows;
+}
+
+void SemmetyWorkspaceWrapper::changeWindowOrder(bool prev) {
+	if (windows.size() < 2) {
+		return;
+	}
+
+	if (!g_pCompositor->m_pLastWindow) {
+		return;
+	}
+
+	auto focusedWindow = g_pCompositor->m_pLastWindow.lock();
+	auto it = std::find(windows.begin(), windows.end(), focusedWindow);
+	if (it == windows.end()) {
+		return;
+	}
+
+	size_t index = std::distance(windows.begin(), it);
+	int offset = prev ? -1 : 1;
+	size_t newIndex = getWrappedOffsetIndex3(index, offset, windows.size());
+
+	std::swap(windows[index], windows[newIndex]);
 }
 
 void SemmetyWorkspaceWrapper::setFocusShortcut(std::string shortcutKey) {
