@@ -204,10 +204,31 @@ bool SemmetyLayout::isWindowTiled(PHLWINDOW pWindow) {
 	// return getNodeFromWindow(pWindow) != nullptr;
 }
 
-// is only called from hyprland when the window is unmapped, but we are already handling dealing the
-// removed window in tilingRemoved.
-// TODO: This wouldn't handle the case of floating windows.
-PHLWINDOW SemmetyLayout::getNextWindowCandidate(PHLWINDOW window) { return {}; }
+PHLWINDOW SemmetyLayout::getNextWindowCandidate(PHLWINDOW window) {
+	// This is only called from the hyprland code that closes windows. If the window is tiled then the
+	// logic for closing a tiled window would have already been handled by onWindowRemovedTiling.
+	// TODO: return nothing when we have dedicated handling for floating windows
+	if (!window->m_bIsFloating) {
+		return {};
+	}
+
+	auto ws = workspace_for_action();
+
+	if (!ws) {
+		return {};
+	}
+
+	const auto index = ws->getLastFocusedWindowIndex();
+	if (index >= ws->windows.size()) {
+		return {};
+	}
+
+	if (ws->windows[index]) {
+		return ws->windows[index].lock();
+	}
+
+	return {};
+}
 
 // void SemmetyLayout::onBeginDragWindow() { semmety_log(LOG, "STUB onBeginDragWindow"); }
 
