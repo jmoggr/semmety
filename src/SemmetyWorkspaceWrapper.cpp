@@ -220,13 +220,27 @@ void SemmetyWorkspaceWrapper::insertWindow(PHLWINDOWREF window) {
 }
 
 void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
-	semmety_log(ERR, "removing window from workspace");
-	auto frameWithWindow = getFrameForWindow(window);
-	if (frameWithWindow) {
-		frameWithWindow->makeEmpty();
+	semmety_log(ERR, "removing window from workspace {}", window->fetchTitle());
+	auto it = std::find(windows.begin(), windows.end(), window);
+	if (it == windows.end()) {
+		// TODO: error
+		return;
 	}
 
-	windows.erase(std::remove(windows.begin(), windows.end(), window), windows.end());
+	auto frameWithWindow = getFrameForWindow(window);
+	if (frameWithWindow) {
+		size_t index = std::distance(windows.begin(), it);
+		semmety_log(ERR, "removed window index {}", index);
+		auto nextWindow = getNextMinimizedWindow(index);
+
+		if (nextWindow) {
+			frameWithWindow->makeWindow(nextWindow);
+		} else {
+			frameWithWindow->makeEmpty();
+		}
+	}
+
+	windows.erase(it);
 }
 
 // get the index of the the most recently focused window in this workspace which was not minimized
@@ -268,21 +282,36 @@ size_t SemmetyWorkspaceWrapper::getLastFocusedWindowIndex() {
 	return minIndex;
 }
 
-PHLWINDOWREF SemmetyWorkspaceWrapper::getNextMinimizedWindow() {
+PHLWINDOWREF SemmetyWorkspaceWrapper::getNextMinimizedWindow(std::optional<size_t> fromIndex) {
 	if (windows.empty()) {
 		return {};
 	}
 
-	const auto minimizedWindows = getMinimizedWindows();
-	size_t index = getLastFocusedWindowIndex();
-	semmety_log(ERR, "index of prev focused window {}", index);
+	// const auto minimizedWindows = getMinimizedWindows();
+	size_t index;
+	if (fromIndex.has_value()) {
+		index = fromIndex.value();
+		if (index >= windows.size()) {
+			index = getLastFocusedWindowIndex();
+		}
+	} else {
+
+		index = getLastFocusedWindowIndex();
+	}
+	semmety_log(ERR, "getting next minimized window from index {}", index);
 
 	for (size_t i = 0; i < windows.size(); i++) {
-		const auto minimizedWindow =
-		    std::find(minimizedWindows.begin(), minimizedWindows.end(), windows[index]);
-		if (minimizedWindow != minimizedWindows.end()) {
-			return *minimizedWindow;
+		const auto window = windows[index];
+		if (!getFrameForWindow(window)) {
+			semmety_log(
+			    ERR,
+			    "found next minimized window at index {} {}",
+			    index,
+			    window.get()->fetchTitle()
+			);
+			return window;
 		}
+		semmety_log(ERR, "skipping window at index {} {}", index, window.get()->fetchTitle());
 
 		index = (index + 1) % windows.size();
 	}

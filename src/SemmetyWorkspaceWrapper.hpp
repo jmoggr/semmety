@@ -24,7 +24,7 @@ public:
 	SP<SemmetyFrame> focused_frame;
 
 	size_t getLastFocusedWindowIndex();
-	PHLWINDOWREF getNextMinimizedWindow();
+	PHLWINDOWREF getNextMinimizedWindow(std::optional<size_t> fromIndex = std::nullopt);
 	PHLWINDOWREF getPrevMinimizedWindow();
 	SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout&);
 	void addWindow(PHLWINDOWREF w);
