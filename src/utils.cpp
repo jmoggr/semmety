@@ -132,9 +132,17 @@ void updateBar() {
 }
 
 size_t getWrappedOffsetIndex3(size_t index, int offset, size_t size) {
-	// if (size == 0) {
-	// 	semmety_critical_error("getWrappedOffsetIndex called with size 0");
-	// }
+	if (size == 0) {
+		semmety_critical_error("getWrappedOffsetIndex called with size 0");
+	}
 
-	return ((index + offset) % size + size) % size;
+	if (std::abs(offset) > size) {
+		semmety_critical_error(
+		    "getWrappedOffsetIndex called with an offset ({}) greater than size ({})",
+		    offset,
+		    size
+		);
+	}
+
+	return (index + (offset + size)) % size;
 }
