@@ -414,6 +414,7 @@ void SemmetyLayout::urgentHook(void*, SCallbackInfo&, std::any data) {
 
 	// m_bIsUrgent is not set until after the hook event is handled, so we hack it this way
 	layout->updateBarOnNextTick = true;
+	g_pAnimationManager->scheduleTick();
 }
 
 void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
