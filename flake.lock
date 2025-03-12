@@ -141,9 +141,7 @@
         "hyprwayland-scanner": "hyprwayland-scanner",
         "nixpkgs": "nixpkgs",
         "pre-commit-hooks": "pre-commit-hooks",
-        "systems": [
-          "systems"
-        ],
+        "systems": "systems",
         "xdph": "xdph"
       },
       "locked": {
@@ -374,8 +372,7 @@
     },
     "root": {
       "inputs": {
-        "hyprland": "hyprland",
-        "systems": "systems"
+        "hyprland": "hyprland"
       }
     },
     "systems": {

@@ -1,9 +1,12 @@
-                                                                                                                                                                                                                                                                                                                            
 all:
-	mkdir -p build
-	cd build && meson setup ..
-	cd build && ninja
-	cp build/libSemmety.so ~/hyprland-semmety/build/
-	scp build/libSemmety.so ananke:~/hyprland-semmety/build
+	ninja -C build
+
+setup:
+	meson setup build
+
+reset: clean setup all
+
 clean:
 	rm -rf build
+
+

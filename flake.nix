@@ -1,116 +1,65 @@
-# based on: https://github.com/KZDKM/Hyprspace
+# somewhat inspired by:
+# https://github.com/shezdy/hyprsplit/blob/main/flake.nix
 {
   description = "Semmety";
 
   inputs = {
-    systems = {
-      type = "github";
-      owner = "nix-systems";
-      repo = "default-linux";
-    };
     hyprland = {
-
       url = "github:hyprwm/Hyprland/68bb3e7";
-      inputs.systems.follows = "systems";
     };
   };
 
   outputs =
-    {
-      self,
-      systems,
-      hyprland,
-      ...
-    }:
+    { self, hyprland, ... }:
     let
-      inherit (builtins)
-        concatStringsSep
-        elemAt
-        head
-        readFile
-        split
-        substring
-        ;
       inherit (hyprland.inputs) nixpkgs;
-
-      perSystem =
-        attrs:
-        nixpkgs.lib.genAttrs (import systems) (
-          system:
-          attrs system (
-            import nixpkgs {
-              inherit system;
-              overlays = [ hyprland.overlays.hyprland-packages ];
-            }
-          )
-        );
-
-      # Generate version
-      mkDate =
-        longDate:
-        (concatStringsSep "-" [
-          (substring 0 4 longDate)
-          (substring 4 2 longDate)
-          (substring 6 2 longDate)
-        ]);
-
-      version =
-        (head (split "'" (elemAt (split " version: '" (readFile ./meson.build)) 2)))
-        + "+date=${mkDate (self.lastModifiedDate or "19700101")}_${self.shortRev or "dirty"}";
+      eachSystem = nixpkgs.lib.genAttrs (import hyprland.inputs.systems);
+      pkgsFor = eachSystem (system: import nixpkgs { localSystem = system; });
     in
     {
-      packages = perSystem (
-        system: pkgs: {
-          Hyprspace =
-            let
-              hyprlandPkg = hyprland.packages.${system}.hyprland-debug;
-            in
-            pkgs.gcc14Stdenv.mkDerivation {
-              pname = "Semmety";
-              inherit version;
-              src = ./.;
+      packages = eachSystem (
+        system:
+        let
+          pkgs = pkgsFor.${system};
+        in
+        {
+          semmety = pkgs.stdenv.mkDerivation {
+            pname = "semmety";
+            version = "0.1";
 
-              nativeBuildInputs = hyprlandPkg.nativeBuildInputs;
-              buildInputs = [ hyprlandPkg ] ++ hyprlandPkg.buildInputs;
-              dontUseCmakeConfigure = true;
+            src = ./.;
 
-              meta = with pkgs.lib; {
-                homepage = "https://github.com/jmoggr/semmety";
-                description = "Semmit automatic tiling layout plugin for Hyprland";
-                license = licenses.gpl2Only;
-                platforms = platforms.linux;
-              };
-            };
-          default = self.packages.${system}.Hyprspace;
-        }
-      );
-
-      devShells = perSystem (
-        system: pkgs: {
-          default = pkgs.mkShell {
-            name = "Semmety-shell";
-            nativeBuildInputs = with pkgs; [
-              gcc14
-              clang-tools
-              meson
-              ninja
-              pkg-config
-              libdrm
-              fmt
+            nativeBuildInputs = [
+              pkgs.meson
+              pkgs.ninja
+              pkgs.pkg-config
+              pkgs.gcc
             ];
-            buildInputs = [ hyprland.packages.${system}.hyprland ];
-            inputsFrom = [
-              hyprland.packages.${system}.hyprland-debug
-              self.packages.${system}.Hyprspace
-            ];
-            # shellHook = ''
-            #   meson setup build --reconfigure
-            #   sed -e 's/c++23/c++2b/g' ./build/compile_commands.json > ./compile_commands.json
-            # '';
+
+            buildInputs = [
+              hyprland.packages.${system}.hyprland.dev
+              pkgs.pixman
+              pkgs.libdrm
+            ] ++ hyprland.packages.${system}.hyprland.buildInputs;
           };
         }
       );
 
-      formatter = perSystem (_: pkgs: pkgs.alejandra);
+      defaultPackage = eachSystem (system: self.packages.${system}.semmety);
+
+      devShells = eachSystem (
+        system:
+        let
+          pkgs = pkgsFor.${system};
+        in
+        {
+          default = pkgs.mkShell {
+            shellHook = ''
+              meson setup build --reconfigure
+            '';
+            inputsFrom = [ self.packages.${system}.semmety ];
+          };
+        }
+      );
     };
 }
