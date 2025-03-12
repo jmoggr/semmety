@@ -205,18 +205,22 @@ void SemmetyWorkspaceWrapper::addWindow(PHLWINDOWREF window) {
 }
 
 void SemmetyWorkspaceWrapper::insertWindow(PHLWINDOWREF window) {
-	if (!g_pCompositor->m_pLastWindow || windows.empty()) {
-		windows.push_back(window);
-		return;
-	}
+	windows.push_back(window);
 
-	auto focusedWindow = g_pCompositor->m_pLastWindow.lock();
-	auto it = std::find(windows.begin(), windows.end(), focusedWindow);
-	if (it != windows.end()) {
-		windows.insert(it, window);
-	} else {
-		windows.push_back(window);
-	}
+	// TODO: new window position
+	// exisiting code puts new window before focused window
+	// if (!g_pCompositor->m_pLastWindow || windows.empty()) {
+	// 	windows.push_back(window);
+	// 	return;
+	// }
+	//
+	// auto focusedWindow = g_pCompositor->m_pLastWindow.lock();
+	// auto it = std::find(windows.begin(), windows.end(), focusedWindow);
+	// if (it != windows.end()) {
+	// 	windows.insert(it, window);
+	// } else {
+	// 	windows.push_back(window);
+	// }
 }
 
 void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
