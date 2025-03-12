@@ -182,6 +182,35 @@ SDispatchResult dispatch_remove(std::string arg) {
 	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
 }
 
+SDispatchResult dispatch_remove_sibling(std::string arg) {
+	auto* workspace_wrapper = workspace_for_action(true);
+	if (workspace_wrapper == nullptr) {
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+	auto focused_frame = workspace_wrapper->getFocusedFrame();
+
+	auto parent = focused_frame->parent.lock();
+	if (!parent) {
+		semmety_log(ERR, "Root frame has no siblings to remove");
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	// This is technically not needed, but makeOther currently is not safe for anything but leaf
+	// frames
+	if (!focused_frame->is_leaf()) {
+		semmety_log(ERR, "Can only operate on leaf frames");
+		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	}
+
+	parent->makeOther(focused_frame);
+
+	workspace_wrapper->setFocusedFrame(parent);
+	workspace_wrapper->apply();
+	updateBar();
+	g_pAnimationManager->scheduleTick();
+	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+}
+
 SDispatchResult cycle_hidden(std::string arg) {
 	auto* workspace_wrapper = workspace_for_action(true);
 	if (workspace_wrapper == nullptr) {
@@ -381,6 +410,7 @@ void registerDispatchers() {
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:cycleprev", cycle_prev);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:split", split);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:remove", dispatch_remove);
+	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:removesibling", dispatch_remove_sibling);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:focus", dispatch_focus);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:swap", dispatch_swap);
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:movetoworkspace", dispatch_move_to_workspace);

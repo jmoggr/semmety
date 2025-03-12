@@ -58,8 +58,18 @@ public:
 		this->data = parent;
 	}
 	void makeEmpty() { this->data = Empty {}; }
-	void makeOther(SP<SemmetyFrame> other) { this->data = other->data; }
+	void makeOther(SP<SemmetyFrame> other) {
+		// TODO: need 'this' as a weak pointer
+		// if (other->is_parent()) {
+		// 	const auto children = other->as_parent().children;
+		// 	for (auto child: children) {
+		// 		child->parent = this;
+		// 	}
+		// }
+		this->data = other->data;
+	}
 	void swapData(SP<SemmetyFrame> other) {
+		// TODO: should probably swap parents of descendants?
 		const auto temp = other->data;
 		other->data = this->data;
 		this->data = temp;
