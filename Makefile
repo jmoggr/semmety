@@ -8,5 +8,3 @@ reset: clean setup all
 
 clean:
 	rm -rf build
-
-

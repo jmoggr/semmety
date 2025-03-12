@@ -33,7 +33,7 @@
               pkgs.meson
               pkgs.ninja
               pkgs.pkg-config
-              pkgs.gcc
+              pkgs.gcc14
             ];
 
             buildInputs = [
