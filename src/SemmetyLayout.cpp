@@ -44,12 +44,13 @@ void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection direction
 	auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
 	workspace_wrapper.addWindow(window);
 
-	auto monitor = g_pHyprOpenGL->m_RenderData.pMonitor.lock();
-	if (monitor != nullptr && monitor->activeWorkspace != nullptr) {
-		if (monitor->activeWorkspace == window->m_pWorkspace) {
-			workspace_wrapper.apply();
-			updateBar();
-		}
+	// if the new window was created on the active workspace
+	// TODO: test that everything works when creating a window on a workspace that is not active
+	if (window->m_pWorkspace && window->m_pWorkspace->m_pMonitor
+	    && window->m_pWorkspace->m_pMonitor->activeWorkspace == window->m_pWorkspace)
+	{
+		workspace_wrapper.apply();
+		updateBar();
 	}
 
 	g_pAnimationManager->scheduleTick();
