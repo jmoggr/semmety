@@ -182,6 +182,8 @@ void SemmetyLayout::recalculateWorkspace(const PHLWORKSPACE& workspace) {
 	    monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight
 	};
 
+	ww.apply();
+
 	// TODO: figure out why this breaks, maybe re-entry?
 	// DO NOT apply here, it breaks mouse focus, result is that first render has incorrectly sized
 	// frames ww.apply(); g_pAnimationManager->scheduleTick();
