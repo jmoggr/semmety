@@ -1,8 +1,10 @@
 // clang-format off
+#include <hyprutils/string/VarList.hpp>
 #include <re2/re2.h>
 // clang-format on
 
 #include "dispatchers.hpp"
+#include <optional>
 
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
@@ -20,409 +22,202 @@
 #include <hyprutils/string/String.hpp>
 
 #include "SemmetyFrame.hpp"
+#include "SemmetyFrameUtils.hpp"
+#include "SemmetyWorkspaceWrapper.hpp"
 #include "dispatchers.hpp"
 #include "globals.hpp"
-#include "json.hpp"
-#include "src/helpers/MiscFunctions.hpp"
 #include "utils.hpp"
 
-SDispatchResult cycle_prev(std::string arg) {
-	auto* workspace_wrapper = workspace_for_action(true);
-	if (workspace_wrapper == nullptr) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-	auto focused_frame = workspace_wrapper->getFocusedFrame();
-
-	if (!focused_frame->is_leaf()) {
-		semmety_log(ERR, "Can only cycle leaf frames");
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+std::optional<std::string>
+dispatchDebug(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame>, CVarList) {
+	if (!valid(workspace.workspace.lock())) {
+		return "Workspace is not valid";
 	}
 
-	const auto window = workspace_wrapper->getPrevMinimizedWindow();
-	if (!window) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	if (workspace.workspace.lock() == nullptr) {
+		return "Workspace is null";
 	}
 
-	focused_frame->makeWindow(window);
-	workspace_wrapper->apply();
-	updateBar();
-	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	workspace.printDebug();
+	return std::nullopt;
 }
 
-SDispatchResult dispatch_set_window_order(std::string arg) {
-	auto* workspace_wrapper = workspace_for_action(true);
-	if (workspace_wrapper == nullptr) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
+std::optional<std::string>
+dispatchSplit(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame> focussedFrame, CVarList) {
+	auto firstChild = focussedFrame;
+	auto secondChild = SemmetyLeafFrame::create(workspace.getNextMinimizedWindow());
+	// TODO: replace node should be updating the geometry
+	auto newSplit = SemmetySplitFrame::create(firstChild, secondChild);
 
-	auto args = CVarList(arg);
-	std::vector<PHLWINDOWREF> newOrder;
-	std::set<PHLWINDOWREF> foundWindows;
+	replaceNode(focussedFrame, newSplit, workspace);
 
-	for (const auto& regex: args) {
-		const auto window = g_pCompositor->getWindowByRegex(regex);
-		if (window) {
-			newOrder.push_back(window);
-			foundWindows.insert(window);
-		}
-	}
-
-	for (const auto& window: workspace_wrapper->windows) {
-		if (foundWindows.find(window) == foundWindows.end()) {
-			newOrder.push_back(window);
-		}
-	}
-
-	workspace_wrapper->windows = newOrder;
-	workspace_wrapper->apply();
-	updateBar();
-	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	return std::nullopt;
 }
 
-std::optional<Direction> parseDirectionArg(std::string arg) {
-	if (arg == "l" || arg == "left") return Direction::Left;
-	else if (arg == "r" || arg == "right") return Direction::Right;
-	else if (arg == "u" || arg == "up") return Direction::Up;
-	else if (arg == "d" || arg == "down") return Direction::Down;
-	else return {};
-}
-SDispatchResult dispatch_debug_v2(std::string arg) {
-	auto* workspace_wrapper = workspace_for_action(true);
-	if (workspace_wrapper == nullptr)
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-
-	if (!valid(workspace_wrapper->workspace.lock())) {
-		semmety_log(ERR, "workspace is not valid");
+std::optional<std::string> dispatchRemove(
+    SemmetyWorkspaceWrapper& workspace,
+    SP<SemmetyLeafFrame> focussedFrame,
+    CVarList args
+) {
+	auto parent = findParent(focussedFrame, workspace);
+	if (!parent) {
+		return "Frame has no parent, cannot remove the root frame!";
 	}
 
-	auto p = workspace_wrapper->workspace.lock().get();
-	if (p == nullptr) {
-		semmety_log(ERR, "workspace is null");
-	}
-
-	workspace_wrapper->printDebug();
-
-	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-}
-
-SDispatchResult split(std::string arg) {
-	auto* workspace_wrapper = workspace_for_action(true);
-	if (workspace_wrapper == nullptr) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	auto focused_frame = workspace_wrapper->getFocusedFrame();
-	if (!focused_frame->is_leaf()) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-	semmety_log(ERR, "split before \n{}", focused_frame->print(0, workspace_wrapper));
-
-	const auto childA = makeShared<SemmetyFrame>(focused_frame);
-	const auto childB = makeShared<SemmetyFrame>(SemmetyFrame());
-	focused_frame->makeParent(childA, childB);
-	for (auto& child: focused_frame->as_parent().children) {
-		child->parent = focused_frame;
-	}
-
-	const auto frameSize = focused_frame->geometry.size();
-	if (frameSize.x > frameSize.y) {
-		focused_frame->split_direction = SemmetySplitDirection::SplitV;
+	if (args[0] == "sibling") {
+		replaceNode(parent, focussedFrame, workspace);
 	} else {
-		focused_frame->split_direction = SemmetySplitDirection::SplitH;
+		auto remainingSibling = parent->getOtherChild(focussedFrame);
+		replaceNode(parent, remainingSibling, workspace);
+		workspace.setFocusedFrame(remainingSibling);
 	}
 
-	semmety_log(ERR, "split after \n{}", focused_frame->print(0, workspace_wrapper));
-	workspace_wrapper->setFocusedFrame(focused_frame);
-	workspace_wrapper->apply();
-	updateBar();
-
-	g_pAnimationManager->scheduleTick();
-	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	return std::nullopt;
 }
 
-SDispatchResult dispatch_remove(std::string arg) {
-	auto* workspace_wrapper = workspace_for_action(true);
-	if (workspace_wrapper == nullptr) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+std::optional<std::string> dispatchCycle(
+    SemmetyWorkspaceWrapper& workspace,
+    SP<SemmetyLeafFrame> focussedFrame,
+    CVarList args
+) {
+	PHLWINDOWREF window;
+	if (args[0] == "prev") {
+		window = workspace.getPrevMinimizedWindow();
+	} else {
+		window = workspace.getNextMinimizedWindow();
 	}
-	auto focused_frame = workspace_wrapper->getFocusedFrame();
-
-	if (!focused_frame->is_leaf()) {
-		semmety_log(ERR, "Can only remove leaf frames");
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	auto parent = focused_frame->parent.lock();
-	if (!parent) {
-		semmety_log(ERR, "Frame has no parent, cannot remove the root frame!");
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	auto& siblings = parent->as_parent().children;
-	auto remaining_sibling = std::find_if(
-	    siblings.begin(),
-	    siblings.end(),
-	    [&focused_frame](const SP<SemmetyFrame>& sibling) { return sibling != focused_frame; }
-	);
-
-	if (remaining_sibling != siblings.end()) {
-		parent->makeOther(*remaining_sibling);
-
-		if (parent->is_parent()) {
-			for (auto& child: parent->as_parent().children) {
-				child->parent = parent;
-			}
-		}
-	}
-
-	workspace_wrapper->setFocusedFrame(parent);
-	workspace_wrapper->apply();
-	updateBar();
-	g_pAnimationManager->scheduleTick();
-	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-}
-
-SDispatchResult dispatch_remove_sibling(std::string arg) {
-	auto* workspace_wrapper = workspace_for_action(true);
-	if (workspace_wrapper == nullptr) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-	auto focused_frame = workspace_wrapper->getFocusedFrame();
-
-	auto parent = focused_frame->parent.lock();
-	if (!parent) {
-		semmety_log(ERR, "Root frame has no siblings to remove");
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	// This is technically not needed, but makeOther currently is not safe for anything but leaf
-	// frames
-	if (!focused_frame->is_leaf()) {
-		semmety_log(ERR, "Can only operate on leaf frames");
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	parent->makeOther(focused_frame);
-
-	workspace_wrapper->setFocusedFrame(parent);
-	workspace_wrapper->apply();
-	updateBar();
-	g_pAnimationManager->scheduleTick();
-	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-}
-
-SDispatchResult cycle_hidden(std::string arg) {
-	auto* workspace_wrapper = workspace_for_action(true);
-	if (workspace_wrapper == nullptr) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-	auto focused_frame = workspace_wrapper->getFocusedFrame();
-
-	if (!focused_frame->is_leaf()) {
-		semmety_log(ERR, "Can only cycle leaf frames");
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	const auto window = workspace_wrapper->getNextMinimizedWindow();
-	if (!window) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	focused_frame->makeWindow(window);
-	workspace_wrapper->apply();
-	updateBar();
-	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-}
-
-std::string direction_to_string(Direction dir) {
-	switch (dir) {
-	case Direction::Up: return "Up";
-	case Direction::Down: return "Down";
-	case Direction::Left: return "Left";
-	case Direction::Right: return "Right";
-	default: return "Unknown";
-	}
-}
-
-SDispatchResult dispatch_focus(std::string value) {
-	auto workspace_wrapper = workspace_for_action();
-	if (workspace_wrapper == nullptr) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	auto args = CVarList(value);
-
-	const auto direction = parseDirectionArg(args[0]);
-	if (!direction.has_value()) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	const auto neighbor = workspace_wrapper->getNeighborByDirection(
-	    workspace_wrapper->focused_frame,
-	    direction.value()
-	);
-
-	if (neighbor == nullptr) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	semmety_log(ERR, "focus {}", direction_to_string(direction.value()));
-	workspace_wrapper->setFocusedFrame(neighbor);
-	workspace_wrapper->apply();
-	updateBar();
-	g_pAnimationManager->scheduleTick();
-	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-}
-
-SDispatchResult dispatch_swap(std::string value) {
-	auto workspace_wrapper = workspace_for_action();
-	if (workspace_wrapper == nullptr) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	auto args = CVarList(value);
-
-	const auto direction = parseDirectionArg(args[0]);
-	if (!direction.has_value()) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	const auto neighbor = workspace_wrapper->getNeighborByDirection(
-	    workspace_wrapper->focused_frame,
-	    direction.value()
-	);
-
-	if (neighbor == nullptr) {
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	auto focused_frame = workspace_wrapper->getFocusedFrame();
-
-	neighbor->swapData(focused_frame);
-
-	workspace_wrapper->setFocusedFrame(neighbor);
-	workspace_wrapper->apply();
-	updateBar();
-	g_pAnimationManager->scheduleTick();
-	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-}
-
-SDispatchResult dispatch_move_to_workspace(std::string value) {
-	auto args = CVarList(value);
-
-	auto workspace = args[0];
-	if (workspace == "") {
-		semmety_log(ERR, "no argument provided");
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	g_SemmetyLayout->moveWindowToWorkspace(workspace);
-	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-}
-
-SDispatchResult dispatch_activate(std::string value) {
-	auto args = CVarList(value);
-
-	auto regexp = args[0];
-	if (regexp == "") {
-		semmety_log(ERR, "no argument provided");
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	const auto window = g_pCompositor->getWindowByRegex(regexp);
 
 	if (!window) {
-		semmety_log(ERR, "no window found to activate");
-		return {};
+		return std::nullopt;
+	}
+
+	// TODO: focus window?
+	focussedFrame->setWindow(window);
+
+	return std::nullopt;
+}
+
+std::optional<std::string> dispatchFocus(
+    SemmetyWorkspaceWrapper& workspace,
+    SP<SemmetyLeafFrame> focussedFrame,
+    CVarList args
+) {
+	const auto direction = directionFromString(args[0]);
+	if (!direction.has_value()) {
+		// TODO: return error
+		return std::nullopt;
+	}
+
+	const auto neighbor = getNeighborByDirection(workspace, focussedFrame, direction.value());
+	if (!neighbor) {
+		return std::nullopt;
+	}
+
+	workspace.setFocusedFrame(neighbor);
+	return std::nullopt;
+}
+
+std::optional<std::string> dispatchSwap(
+    SemmetyWorkspaceWrapper& workspace,
+    SP<SemmetyLeafFrame> focussedFrame,
+    CVarList args
+) {
+	const auto direction = directionFromString(args[0]);
+	if (!direction.has_value()) {
+		return format("Failed to pares direction from argument string '{}'", args[0]);
+	}
+
+	const auto neighbor = getNeighborByDirection(workspace, focussedFrame, direction.value());
+	if (!neighbor) {
+		return std::nullopt;
+	}
+
+	const auto temp = neighbor->getWindow();
+	neighbor->setWindow(focussedFrame->getWindow());
+	focussedFrame->setWindow(temp);
+
+	return std::nullopt;
+}
+
+std::optional<std::string>
+dispatchMoveToWorkspace(SemmetyWorkspaceWrapper&, SP<SemmetyLeafFrame>, CVarList args) {
+	if (args.size() == 0 || args[0].empty()) {
+		return "No workspace name provided";
+	}
+
+	g_SemmetyLayout->moveWindowToWorkspace(args[0]);
+	return std::nullopt;
+}
+
+std::optional<std::string>
+dispatchActivate(SemmetyWorkspaceWrapper&, SP<SemmetyLeafFrame>, CVarList args) {
+	if (args.size() == 0 || args[0].empty()) {
+		return "No regex provided for activation";
+	}
+
+	const auto window = g_pCompositor->getWindowByRegex(args[0]);
+	if (!window) {
+		return "No window matched the regex";
 	}
 
 	g_SemmetyLayout->activateWindow(window);
-	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	return std::nullopt;
 }
 
-SDispatchResult dispatch_set_focus_shortcut(std::string value) {
-	semmety_log(ERR, "setFocusShortcut {}", value);
-	auto workspace_wrapper = workspace_for_action();
-	if (workspace_wrapper == nullptr) {
-		semmety_log(ERR, "no workspace");
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-	auto args = CVarList(value);
-
-	auto shortcut_key = args[0];
-	if (shortcut_key == "") {
-		semmety_log(ERR, "no argument provided");
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+std::optional<std::string>
+dispatchChangeWindowOrder(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame>, CVarList args) {
+	if (args.size() == 0) {
+		return "Expected 'prev' or 'next' as argument";
 	}
 
-	workspace_wrapper->setFocusShortcut(shortcut_key);
+	const bool prev = args[0] == "prev";
+	workspace.changeWindowOrder(prev);
 
-	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	return std::nullopt;
 }
 
-SDispatchResult dispatch_activate_focus_shortcut(std::string value) {
-	semmety_log(ERR, "activteFocusShortcut {}", value);
-	auto workspace_wrapper = workspace_for_action();
-	if (workspace_wrapper == nullptr) {
-		semmety_log(ERR, "no workspace");
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-	auto args = CVarList(value);
+std::optional<std::string>
+dispatchUpdateBar(SemmetyWorkspaceWrapper&, SP<SemmetyLeafFrame>, CVarList) {
+	updateBar();
+	return std::nullopt;
+}
 
-	auto shortcut_key = args[0];
-	if (shortcut_key == "") {
-		semmety_log(ERR, "no argument provided");
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+using DispatchFunc = std::function<
+    std::optional<std::string>(SemmetyWorkspaceWrapper&, SP<SemmetyLeafFrame>, CVarList)>;
+
+SDispatchResult dispatchWrapper(const std::string& arg, const DispatchFunc& action) {
+	// TODO? Check that the layout pointer is valid?
+	auto* workspace = workspace_for_action(true);
+	if (!workspace) {
+		return {.passEvent = false, .success = false, .error = ""};
 	}
 
-	workspace_wrapper->activateFocusShortcut(shortcut_key);
-	workspace_wrapper->apply();
+	auto args = CVarList(arg);
+	auto focused = workspace->getFocusedFrame();
+	if (auto err = action(*workspace, focused, args)) {
+		return {.passEvent = false, .success = false, .error = *err};
+	}
+
 	updateBar();
 	g_pAnimationManager->scheduleTick();
-
-	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+	return {.passEvent = false, .success = true, .error = ""};
 }
 
-SDispatchResult dispatch_change_window_order(std::string arg) {
-	semmety_log(ERR, "change_window_order {}", arg);
-	auto workspace_wrapper = workspace_for_action();
-	if (workspace_wrapper == nullptr) {
-		semmety_log(ERR, "no workspace");
-		return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-	}
-
-	auto prev = arg == "prev";
-	workspace_wrapper->changeWindowOrder(prev);
-	workspace_wrapper->apply();
-	updateBar();
-
-	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
-}
-
-SDispatchResult dispatch_update_bar(std::string value) {
-	updateBar();
-	return SDispatchResult {.passEvent = false, .success = true, .error = ""};
+void registerSemmetyDispatcher(const std::string& name, const DispatchFunc& func) {
+	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:" + name, [func](const std::string& arg) {
+		return dispatchWrapper(arg, func);
+	});
 }
 
 void registerDispatchers() {
-	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:debug", dispatch_debug_v2);
-	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:cycle_hidden", cycle_hidden);
-	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:cycleprev", cycle_prev);
-	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:split", split);
-	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:remove", dispatch_remove);
-	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:removesibling", dispatch_remove_sibling);
-	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:focus", dispatch_focus);
-	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:swap", dispatch_swap);
-	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:movetoworkspace", dispatch_move_to_workspace);
-	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:activate", dispatch_activate);
-	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:setfocusshortcut", dispatch_set_focus_shortcut);
-	HyprlandAPI::addDispatcherV2(
-	    PHANDLE,
-	    "semmety:activatefocusshortcut",
-	    dispatch_activate_focus_shortcut
-	);
-	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:updatebar", dispatch_update_bar);
-	// TODO: we can probably get rid of set window order
-	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:setwindoworder", dispatch_set_window_order);
-	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:changewindoworder", dispatch_change_window_order);
+	registerSemmetyDispatcher("split", dispatchSplit);
+	registerSemmetyDispatcher("remove", dispatchRemove);
+	registerSemmetyDispatcher("cycle", dispatchCycle);
+	registerSemmetyDispatcher("focus", dispatchFocus);
+	registerSemmetyDispatcher("swap", dispatchSwap);
+	registerSemmetyDispatcher("movetoworkspace", dispatchMoveToWorkspace);
+	registerSemmetyDispatcher("activate", dispatchActivate);
+	registerSemmetyDispatcher("changewindoworder", dispatchChangeWindowOrder);
+	registerSemmetyDispatcher("updatebar", dispatchUpdateBar);
+	registerSemmetyDispatcher("debug", dispatchDebug);
 }

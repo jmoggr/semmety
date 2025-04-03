@@ -1,16 +1,21 @@
 project('semmety', 'cpp',
-  default_options: ['buildtype=debug', 'cpp_std=c++23'],
+  default_options: ['buildtype=debugoptimized', 'cpp_std=c++23'],
 )
 
-add_project_arguments([ '-DWLR_USE_UNSTABLE' ], language: 'cpp')
+add_project_arguments([
+  '-DWLR_USE_UNSTABLE',
+], language: 'cpp')
 
 src = files(
   './src/dispatchers.cpp',
   './src/SemmetyFrame.cpp',
+  './src/SemmetyFrameUtils.cpp',
   './src/SemmetyLayout.cpp',
+  './src/SemmetyLayoutHypr.cpp',
+  './src/SemmetyLayoutHooks.cpp',
   './src/SemmetyWorkspaceWrapper.cpp',
   './src/utils.cpp',
-  './src/main.cpp'
+  './src/main.cpp',
 )
 
 shared_module(meson.project_name(), src,

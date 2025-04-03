@@ -8,68 +8,118 @@
 #include <hyprland/src/xwayland/XSurface.hpp>
 #include <hyprutils/math/Box.hpp>
 
+#include "SemmetyFrameUtils.hpp"
+#include "log.hpp"
 #include "utils.hpp"
 
-bool SemmetyFrame::validateParentReferences() const {
-	if (this->is_parent()) {
-		for (const auto& child: this->as_parent().children) {
-			if (child->parent.get() != this) {
-				semmety_log(
-				    ERR,
-				    "Parent reference mismatch: child {} does not point back to parent {}",
-				    child->print(),
-				    this->print()
-				);
-				return false;
-			}
-			if (!child->validateParentReferences()) {
-				return false;
-			}
+//
+// SemmetyFrame
+//
+
+std::vector<SP<SemmetyLeafFrame>> SemmetyFrame::getEmptyFrames() const {
+	auto leafFrames = getLeafFrames();
+	std::vector<SP<SemmetyLeafFrame>> emptyFrames;
+
+	for (const auto& leaf: leafFrames) {
+		if (leaf->isEmpty()) {
+			emptyFrames.push_back(leaf);
 		}
 	}
-	return true;
+
+	return emptyFrames;
 }
 
-std::list<SP<SemmetyFrame>> SemmetyFrame::getLeafDescendants(const SP<SemmetyFrame>& frame) {
-	std::list<SP<SemmetyFrame>> leafFrames;
-	std::list<SP<SemmetyFrame>> stack;
-	stack.push_back(frame);
-
-	while (!stack.empty()) {
-		auto current = stack.back();
-		stack.pop_back();
-
-		if (current->is_leaf()) {
-			leafFrames.push_back(current);
-		}
-
-		if (current->is_parent()) {
-			for (const auto& child: current->as_parent().children) {
-				stack.push_back(child);
-			}
-		}
+SP<SemmetySplitFrame> SemmetyFrame::asSplit() const {
+	if (!isSplit()) {
+		semmety_critical_error("Tried to call asSplit on a frame that is not a split frame");
 	}
+
+	auto sp = hyprland_dynamic_pointer_cast<SemmetySplitFrame>(self.lock());
+	if (!sp) {
+		semmety_critical_error("Failed to cast to split frame");
+	}
+
+	return sp;
+}
+
+SP<SemmetyLeafFrame> SemmetyFrame::asLeaf() const {
+	if (!isLeaf()) {
+		semmety_critical_error("Tried to call asLeaf on a frame that is not a leaf frame");
+	}
+
+	auto sp = hyprland_dynamic_pointer_cast<SemmetyLeafFrame>(self.lock());
+	if (!sp) {
+		semmety_critical_error("Failed to cast to leaf frame");
+	}
+
+	return sp;
+}
+
+SP<SemmetyLeafFrame> SemmetyFrame::getLastFocussedLeaf() const {
+	const auto descendantLeafs = getLeafFrames();
+	const auto maxFocusOrderLeaf = getMaxFocusOrderLeaf(descendantLeafs);
+
+	// this shouldn't be possible
+	if (!maxFocusOrderLeaf) {
+		semmety_critical_error("No non parent descendant leafs");
+	}
+
+	return maxFocusOrderLeaf;
+}
+
+//
+// SemmetySplitFrame
+//
+
+SP<SemmetySplitFrame>
+SemmetySplitFrame::create(SP<SemmetyFrame> firstChild, SP<SemmetyFrame> secondChild) {
+	auto ptr = SP<SemmetySplitFrame>(new SemmetySplitFrame(firstChild, secondChild));
+	ptr->self = ptr;
+	return ptr;
+}
+
+SemmetySplitFrame::SemmetySplitFrame(SP<SemmetyFrame> firstChild, SP<SemmetyFrame> secondChild):
+    children {firstChild, secondChild} {
+	if (geometry.width > geometry.height) {
+		splitDirection = SemmetySplitDirection::SplitV;
+	} else {
+		splitDirection = SemmetySplitDirection::SplitH;
+	}
+}
+
+void SemmetySplitFrame::applyRecursive(PHLWORKSPACE workspace, CBox newGeometry) {
+	auto childGeometries = getChildGeometries();
+
+	children.first->applyRecursive(workspace, childGeometries.first);
+	children.second->applyRecursive(workspace, childGeometries.second);
+}
+
+std::vector<SP<SemmetyLeafFrame>> SemmetySplitFrame::getLeafFrames() const {
+	std::vector<SP<SemmetyLeafFrame>> leafFrames;
+
+	auto processChild = [&leafFrames](const SP<SemmetyFrame>& child) {
+		auto childLeaves = child->getLeafFrames();
+		leafFrames.insert(leafFrames.end(), childLeaves.begin(), childLeaves.end());
+	};
+
+	processChild(children.first);
+	processChild(children.second);
 
 	return leafFrames;
 }
 
-void SemmetyFrame::propagateGeometry(const std::optional<CBox>& geometry) {
-	if (geometry) {
-		this->geometry = *geometry;
+SP<SemmetyFrame> SemmetySplitFrame::getOtherChild(const SP<SemmetyFrame>& child) {
+	if (children.first == child) {
+		return children.second;
+	} else if (children.second == child) {
+		return children.first;
+	} else {
+		semmety_critical_error("Child not found in parent.");
 	}
-
-	if (!this->is_parent()) {
-		return;
-	}
-
-	const auto childGeometries = this->getChildGeometries();
-	const auto& children = this->as_parent().children;
-	children.front()->propagateGeometry(childGeometries.first);
-	children.back()->propagateGeometry(childGeometries.second);
 }
 
-std::pair<CBox, CBox> SemmetyFrame::getChildGeometries() const {
-	switch (this->split_direction) {
+std::pair<CBox, CBox> SemmetySplitFrame::getChildGeometries() const {
+	switch (this->splitDirection) {
 	case SemmetySplitDirection::SplitV: {
 		const auto new_width = static_cast<int>(this->geometry.size().x / 2);
 
@@ -122,41 +172,71 @@ std::pair<CBox, CBox> SemmetyFrame::getChildGeometries() const {
 	}
 }
 
-std::string SemmetyFrame::print(int indentLevel, SemmetyWorkspaceWrapper* workspace) const {
-	std::string indent(indentLevel * 2, ' '); // 2 spaces per indent level
+std::string
+SemmetySplitFrame::print(const SemmetyWorkspaceWrapper& workspace, int indentLevel) const {
+	std::string indent(indentLevel * 2, ' ');
 	std::string result;
+	std::string geometryString = getGeometryString(geometry);
 
-	auto geometry_str = std::to_string(geometry.pos().x) + ", " + std::to_string(geometry.pos().y)
-	                  + ", " + std::to_string(geometry.size().x) + ", "
-	                  + std::to_string(geometry.size().y);
+	result += indent + "SemmetySplitFrame " + geometryString + "\n";
+	result += children.first->print(workspace, indentLevel + 1);
+	result += children.second->print(workspace, indentLevel + 1);
 
-	// const auto isFocus = workspace != nullptr && workspace->focused_frame.get() == this;
+	return result;
+}
+
+bool SemmetySplitFrame::isLeaf() const { return false; }
+bool SemmetySplitFrame::isSplit() const { return true; }
+
+//
+// SemmetyLeafFrame
+//
+
+SP<SemmetyLeafFrame> create(PHLWINDOWREF window) {
+	auto ptr = SP<SemmetyLeafFrame>(new SemmetyLeafFrame(window));
+	ptr->self = ptr;
+	return ptr;
+}
+SemmetyLeafFrame::SemmetyLeafFrame(PHLWINDOWREF window): window(window) {}
+
+bool SemmetyLeafFrame::isEmpty() const { return window == nullptr; }
+
+PHLWINDOWREF SemmetyLeafFrame::getWindow() const { return window; }
+
+void SemmetyLeafFrame::setWindow(PHLWINDOWREF win) { window = win; }
+
+void SemmetyLeafFrame::clearWindow() { window = {}; }
+
+std::string
+SemmetyLeafFrame::print(const SemmetyWorkspaceWrapper& workspace, int indentLevel) const {
+	std::string indent(indentLevel * 2, ' ');
+	std::string result;
+	std::string geometryString = getGeometryString(geometry);
+
+	// TODO isFocus should work
 	const auto isFocus = false;
 	const auto focusIndicator = isFocus ? " [Focus] " : " ";
 
-	const auto ptrString =
-	    is_window() ? std::to_string(reinterpret_cast<uintptr_t>(as_window().lock().get())) : "";
+	// const auto ptrString =
+	//     window ? std::to_string(reinterpret_cast<uintptr_t>(window.lock().get())) : "";
 
-	if (is_window()) {
-		result += indent + "SemmetyFrame " + ptrString + " (WindowId: " + as_window()->m_szTitle + ")"
-		        + focusIndicator + geometry_str + "\n";
-	} else if (is_empty()) {
-		result +=
-		    indent + "SemmetyFrame " + ptrString + " (Empty)" + focusIndicator + geometry_str + "\n";
-	} else if (is_parent()) {
-		result += indent + "SemmetyFrame " + ptrString + " (Parent with "
-		        + std::to_string(as_parent().children.size()) + " children)" + focusIndicator
-		        + geometry_str + "\n";
-
-		for (const auto& child: as_parent().children) {
-			result += child->print(indentLevel + 1, workspace);
-		}
+	if (window) {
+		result += indent + "SemmetyFrame (WindowId: " + window->m_szTitle + ")" + focusIndicator
+		        + geometryString + "\n";
+	} else {
+		result += indent + "SemmetyFrame (Empty)" + focusIndicator + geometryString + "\n";
 	}
 
 	return result;
 }
 
-CBox SemmetyFrame::getStandardWindowArea(CBox area, SBoxExtents extents, PHLWORKSPACE workspace) {
+bool SemmetyLeafFrame::isLeaf() const { return true; }
+bool SemmetyLeafFrame::isSplit() const { return false; }
+
+std::vector<SP<SemmetyLeafFrame>> SemmetyLeafFrame::getLeafFrames() const { return {asLeaf()}; }
+
+CBox SemmetyLeafFrame::getStandardWindowArea(CBox area, SBoxExtents extents, PHLWORKSPACE workspace)
+    const {
 	static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
 
 	auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(workspace);
@@ -179,20 +259,7 @@ CBox SemmetyFrame::getStandardWindowArea(CBox area, SBoxExtents extents, PHLWORK
 	return area;
 }
 
-void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
-	if (this->is_empty()) {
-		return;
-	}
-
-	if (this->is_parent()) {
-		for (const auto& child: this->as_parent().children) {
-			child->applyRecursive(workspace);
-		}
-		return;
-	}
-
-	auto window = this->as_window();
-
+void SemmetyLeafFrame::applyRecursive(PHLWORKSPACE workspace, CBox newGeometry) {
 	if (!valid(window) || !window->m_bIsMapped) {
 		semmety_log(
 		    ERR,
@@ -205,10 +272,8 @@ void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
 		return;
 	}
 
-
 	window->unsetWindowData(PRIORITY_LAYOUT);
 	window->updateWindowData();
-
 
 	window->m_vSize = geometry.size();
 	window->m_vPosition = geometry.pos();
@@ -237,7 +302,7 @@ void SemmetyFrame::applyRecursive(PHLWORKSPACE workspace) {
 }
 
 // from CHyprBorderDecoration::draw
-CBox SemmetyFrame::getEmptyFrameBox(const CMonitor& monitor) {
+CBox SemmetyLeafFrame::getEmptyFrameBox(const CMonitor& monitor) {
 	static auto PBORDERSIZE = CConfigValue<Hyprlang::INT>("general:border_size");
 
 	const auto borderSize = static_cast<int>(-*PBORDERSIZE);
@@ -255,7 +320,7 @@ CBox SemmetyFrame::getEmptyFrameBox(const CMonitor& monitor) {
 	return frameBox.translate(-monitor.vecPosition + workspaceOffset).scale(monitor.scale).round();
 }
 
-void SemmetyFrame::damageEmptyFrameBox(const CMonitor& monitor) {
+void SemmetyLeafFrame::damageEmptyFrameBox(const CMonitor& monitor) {
 	static auto PROUNDING = CConfigValue<Hyprlang::INT>("decoration:rounding");
 
 	const auto rounding = static_cast<float>(*PROUNDING);

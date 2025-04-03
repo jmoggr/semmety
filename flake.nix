@@ -57,7 +57,12 @@
             shellHook = ''
               meson setup build --reconfigure
             '';
-            inputsFrom = [ self.packages.${system}.semmety ];
+            inputsFrom = [
+              self.packages.${system}.semmety
+            ];
+            packages = with pkgs; [
+              clang-tools
+            ];
           };
         }
       );

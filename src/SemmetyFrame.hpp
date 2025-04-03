@@ -1,13 +1,11 @@
 #pragma once
 
-#include <list>
 #include <utility>
-#include <variant>
+#include <vector>
 
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprutils/math/Box.hpp>
 
-#include "log.hpp"
 using namespace Hyprutils::Math;
 
 enum class SemmetySplitDirection {
@@ -15,92 +13,72 @@ enum class SemmetySplitDirection {
 	SplitV,
 };
 
+class SemmetySplitFrame;
+class SemmetyLeafFrame;
 class SemmetyWorkspaceWrapper;
 
 class SemmetyFrame {
 public:
-	struct Empty {};
+	virtual ~SemmetyFrame() = default;
 
-	struct Window {
-		PHLWINDOWREF window;
-	};
-
-	struct Parent {
-		std::list<SP<SemmetyFrame>> children;
-	};
-
-	bool is_window() const { return std::holds_alternative<Window>(data); }
-	bool is_empty() const { return std::holds_alternative<Empty>(data); }
-	bool is_leaf() const { return is_empty() || is_window(); }
-	bool is_parent() const { return std::holds_alternative<Parent>(data); }
-
-	const Parent& as_parent() const {
-		if (std::holds_alternative<Parent>(data)) {
-			return std::get<Parent>(data);
-		} else {
-			semmety_critical_error("Attempted to get parent value of a non-parent FrameData");
-		}
-	}
-
-	PHLWINDOWREF as_window() const {
-		if (std::holds_alternative<Window>(data)) {
-			return std::get<Window>(data).window;
-		} else {
-			semmety_critical_error("Attempted to get window value of a non-window FrameData");
-		}
-	}
-
-	void makeWindow(PHLWINDOWREF window) { this->data = Window(window); }
-	void makeParent(SP<SemmetyFrame> child_a, SP<SemmetyFrame> child_b) {
-		Parent parent;
-		parent.children.push_back(child_a);
-		parent.children.push_back(child_b);
-		this->data = parent;
-	}
-	void makeEmpty() { this->data = Empty {}; }
-	void makeOther(SP<SemmetyFrame> other) {
-		// TODO: need 'this' as a weak pointer
-		// if (other->is_parent()) {
-		// 	const auto children = other->as_parent().children;
-		// 	for (auto child: children) {
-		// 		child->parent = this;
-		// 	}
-		// }
-		this->data = other->data;
-	}
-	void swapData(SP<SemmetyFrame> other) {
-		// TODO: should probably swap parents of descendants?
-		const auto temp = other->data;
-		other->data = this->data;
-		this->data = temp;
-	}
-
-	CBox getStandardWindowArea(CBox area, SBoxExtents extents, PHLWORKSPACE workspace);
-	WP<SemmetyFrame> parent;
-	bool validateParentReferences() const;
-
-	SemmetyFrame(): data(Empty {}) {}
-	SemmetyFrame(SP<SemmetyFrame> other): data(other->data) {}
-	// SemmetyFrame(Vector2D pos, Vector2D size): data(Empty {}), geometry(CBox {pos, size}) {}
-	// SemmetyFrame(FrameData frameData): data(std::move(frameData)) {}
-
-	static std::list<SP<SemmetyFrame>> getLeafDescendants(const SP<SemmetyFrame>& frame);
-	void clearWindow();
-	std::string print(int indentLevel = 0, SemmetyWorkspaceWrapper* = nullptr) const;
-	void propagateGeometry(const std::optional<CBox>& geometry = std::nullopt);
-	std::pair<CBox, CBox> getChildGeometries() const;
-	void applyRecursive(PHLWORKSPACE workspace);
-
-	SemmetySplitDirection split_direction = SemmetySplitDirection::SplitV;
-
-	int focusOrder = 0;
 	CBox geometry;
+	int focusOrder = 0;
 	Vector2D gap_topleft_offset;
 	Vector2D gap_bottomright_offset;
+	WP<SemmetyFrame> self;
+
+	SP<SemmetySplitFrame> asSplit() const;
+	SP<SemmetyLeafFrame> asLeaf() const;
+	std::vector<SP<SemmetyLeafFrame>> getEmptyFrames() const;
+	SP<SemmetyLeafFrame> getLastFocussedLeaf() const;
+
+	virtual bool isLeaf() const = 0;
+	virtual bool isSplit() const = 0;
+	virtual void applyRecursive(PHLWORKSPACE workspace, CBox newGeometry) = 0;
+	virtual std::vector<SP<SemmetyLeafFrame>> getLeafFrames() const = 0;
+	virtual std::string
+	print(const SemmetyWorkspaceWrapper& workspace, int indentLevel = 0) const = 0;
+};
+
+class SemmetySplitFrame: public SemmetyFrame {
+public:
+	// how much larger the 1st child is
 	int child0Offset = 0;
-	CBox getEmptyFrameBox(const CMonitor& monitor);
+	SemmetySplitDirection splitDirection;
+	std::pair<SP<SemmetyFrame>, SP<SemmetyFrame>> children;
+
+	static SP<SemmetySplitFrame> create(SP<SemmetyFrame> firstChild, SP<SemmetyFrame> secondChild);
+	SemmetySplitFrame(SP<SemmetyFrame> firstChild, SP<SemmetyFrame> secondChild);
+
+	SP<SemmetyFrame> getOtherChild(const SP<SemmetyFrame>& child);
+	std::pair<CBox, CBox> getChildGeometries() const;
+
+	bool isLeaf() const override;
+	bool isSplit() const override;
+	void applyRecursive(PHLWORKSPACE workspace, CBox newGeometry) override;
+	std::vector<SP<SemmetyLeafFrame>> getLeafFrames() const override;
+	std::string print(const SemmetyWorkspaceWrapper& workspace, int indentLevel = 0) const override;
+};
+
+class SemmetyLeafFrame: public SemmetyFrame {
+public:
+	static SP<SemmetyLeafFrame> create(PHLWINDOWREF window);
+	SemmetyLeafFrame(PHLWINDOWREF window);
+
+	bool isEmpty() const;
+	PHLWINDOWREF getWindow() const;
+	void setWindow(PHLWINDOWREF win);
+	void clearWindow();
+	CBox getStandardWindowArea(CBox area, SBoxExtents extents, PHLWORKSPACE workspace) const;
 	void damageEmptyFrameBox(const CMonitor& monitor);
+	CBox getEmptyFrameBox(const CMonitor& monitor);
+
+	bool isLeaf() const override;
+	bool isSplit() const override;
+	void applyRecursive(PHLWORKSPACE workspace, CBox newGeometry) override;
+	std::vector<SP<SemmetyLeafFrame>> getLeafFrames() const override;
+	std::string print(const SemmetyWorkspaceWrapper& workspace, int indentLevel = 0) const override;
 
 private:
-	std::variant<Empty, Window, Parent> data;
+	PHLWINDOWREF window;
 };

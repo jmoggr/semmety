@@ -1,6 +1,5 @@
 #pragma once
 
-#include <map>
 #include <vector>
 
 #include <hyprland/src/plugins/PluginAPI.hpp>
@@ -11,40 +10,35 @@
 #include "src/desktop/DesktopTypes.hpp"
 using json = nlohmann::json;
 
-enum class Direction { Up, Down, Left, Right };
-// Forward declaration
 class SemmetyLayout;
 
 class SemmetyWorkspaceWrapper {
 public:
+	SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout&);
 	PHLWORKSPACEREF workspace;
 	SemmetyLayout& layout;
 	std::vector<PHLWINDOWREF> windows;
-	SP<SemmetyFrame> root;
-	SP<SemmetyFrame> focused_frame;
 
 	size_t getLastFocusedWindowIndex();
 	PHLWINDOWREF getNextMinimizedWindow(std::optional<size_t> fromIndex = std::nullopt);
 	PHLWINDOWREF getPrevMinimizedWindow();
-	SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout&);
 	void addWindow(PHLWINDOWREF w);
 	void removeWindow(PHLWINDOWREF window);
-	void putWindowInFocusedFrame(PHLWINDOWREF w);
-	SP<SemmetyFrame> getFocusedFrame();
+	SP<SemmetyLeafFrame> getFocusedFrame();
 	void setFocusedFrame(SP<SemmetyFrame> frame);
-	std::list<SP<SemmetyFrame>> getWindowFrames() const;
-	SP<SemmetyFrame> getFrameForWindow(PHLWINDOWREF window) const;
-	std::list<SP<SemmetyFrame>> getEmptyFrames() const;
-	std::list<SP<SemmetyFrame>> getLeafFrames() const;
-	SP<SemmetyFrame> getNeighborByDirection(SP<SemmetyFrame> basis, Direction dir);
-	void apply();
+	SP<SemmetyLeafFrame> getFrameForWindow(PHLWINDOWREF window) const;
+	void updateHiddenAndFocusedWindows();
 	void rebalance();
-	void printDebug();
-	std::list<PHLWINDOWREF> getMinimizedWindows() const;
-	void setFocusShortcut(std::string shortcutKey);
-	void activateFocusShortcut(std::string shortcutKey);
-	std::map<std::string, PHLWINDOWREF> focusShortcuts;
+	void printDebug() const;
 	void changeWindowOrder(bool prev);
-	void insertWindow(PHLWINDOWREF window);
-	json getWorkspaceWindowsJson();
+	json getWorkspaceWindowsJson() const;
+	void activateWindow(PHLWINDOWREF window);
+	bool isWindowMinimized(PHLWINDOWREF window) const;
+	bool isWindowFocussed(PHLWINDOWREF window) const;
+
+	// TODO: should also be private
+	SP<SemmetyFrame> root;
+
+private:
+	SP<SemmetyLeafFrame> focused_frame;
 };

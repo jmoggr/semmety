@@ -1,3 +1,5 @@
+#include "utils.hpp"
+
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
@@ -10,10 +12,59 @@
 #include <hyprland/src/render/pass/BorderPassElement.hpp>
 #include <hyprlang.hpp>
 
-#include "globals.hpp"
 #include "log.hpp"
 
-SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = false) {
+std::optional<size_t> getFocusHistoryIndex(PHLWINDOW wnd) {
+    const auto& history = g_pCompositor->m_vWindowFocusHistory;
+
+    for (size_t i = 0; i < history.size(); ++i) {
+        if (history[i].lock() == wnd)
+            return i;
+    }
+
+    return std::nullopt;
+}
+
+std::string getGeometryString(const CBox geometry) {
+	return std::format(
+	    "{}, {}, {}, {}",
+	    geometry.pos().x,
+	    geometry.pos().y,
+	    geometry.size().x,
+	    geometry.size().y
+	);
+}
+
+std::string directionToString(const Direction dir) {
+	switch (dir) {
+	case Direction::Up: return "Up";
+	case Direction::Down: return "Down";
+	case Direction::Left: return "Left";
+	case Direction::Right: return "Right";
+	default: return "Unknown";
+	}
+}
+
+std::string toLower(const std::string& str) {
+	std::string result;
+	std::transform(str.begin(), str.end(), std::back_inserter(result), [](unsigned char c) {
+		return std::tolower(c);
+	});
+	return result;
+}
+
+std::optional<Direction> directionFromString(const std::string& str) {
+	const auto lowerStr = toLower(str);
+
+	if (lowerStr == "l" || lowerStr == "left") return Direction::Left;
+	else if (lowerStr == "r" || lowerStr == "right") return Direction::Right;
+	else if (lowerStr == "u" || lowerStr == "up") return Direction::Up;
+	else if (lowerStr == "d" || lowerStr == "down") return Direction::Down;
+	else return {};
+}
+
+// TODO: should it every be allowed to return null?
+SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
 	auto layout = g_SemmetyLayout.get();
 	if (layout == nullptr) {
 		return nullptr;
@@ -38,6 +89,18 @@ SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = false) {
 	semmety_log(ERR, "getting workspace for action {}", workspace->m_iID);
 
 	return &layout->getOrCreateWorkspaceWrapper(workspace);
+}
+
+template <typename T, typename U>
+Hyprutils::Memory::CSharedPointer<T>
+hyprland_dynamic_pointer_cast(const Hyprutils::Memory::CSharedPointer<U>& ptr) {
+	// Perform dynamic_cast on the raw pointer.
+	if (T* casted = dynamic_cast<T*>(ptr.get())) {
+		// If successful, create a new shared pointer that uses the same control block.
+		return Hyprutils::Memory::CSharedPointer<T>(ptr.impl_);
+	}
+	// If the cast fails, return an empty pointer.
+	return Hyprutils::Memory::CSharedPointer<T>(nullptr);
 }
 
 uint64_t spawnRawProc(std::string args, PHLWORKSPACE pInitialWorkspace) {
@@ -80,12 +143,12 @@ uint64_t spawnRawProc(std::string args, PHLWORKSPACE pInitialWorkspace) {
 			// exit grandchild
 			_exit(0);
 		}
-		write(pipeSock[1].get(), &grandchild, sizeof(grandchild));
+		[[maybe_unused]] auto wret = write(pipeSock[1].get(), &grandchild, sizeof(grandchild));
 		// exit child
 		_exit(0);
 	}
 	// run in parent
-	read(pipeSock[0].get(), &grandchild, sizeof(grandchild));
+	[[maybe_unused]] auto rret = read(pipeSock[0].get(), &grandchild, sizeof(grandchild));
 	// clear child and leave grandchild to init
 	waitpid(child, nullptr, 0);
 	if (grandchild < 0) {
@@ -136,7 +199,8 @@ size_t getWrappedOffsetIndex3(size_t index, int offset, size_t size) {
 		semmety_critical_error("getWrappedOffsetIndex called with size 0");
 	}
 
-	if (std::abs(offset) > size) {
+	// TODO: can maybe be simplified
+	if (static_cast<size_t>(std::abs(offset)) > size) {
 		semmety_critical_error(
 		    "getWrappedOffsetIndex called with an offset ({}) greater than size ({})",
 		    offset,

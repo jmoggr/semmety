@@ -15,13 +15,25 @@
 
 #include "globals.hpp"
 
+enum class Direction { Up, Right, Down, Left };
+
+std::string toLower(const std::string& str);
+std::optional<Direction> directionFromString(const std::string& str);
+std::string directionToString(const Direction dir);
+std::string getGeometryString(const CBox geometry);
+std::optional<size_t> getFocusHistoryIndex(PHLWINDOW wnd);
 SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = true);
+
 size_t getWrappedOffsetIndex3(size_t index, int offset, size_t size);
+
 void updateBar();
 
-class HyprlangUnspecifiedCustomType {};
+template <typename T, typename U>
+Hyprutils::Memory::CSharedPointer<T>
+hyprland_dynamic_pointer_cast(const Hyprutils::Memory::CSharedPointer<U>& ptr);
 
 // abandon hope all ye who enter here
+class HyprlangUnspecifiedCustomType {};
 template <typename T, typename V = HyprlangUnspecifiedCustomType>
 class ConfigValue {
 public:
