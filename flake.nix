@@ -5,7 +5,7 @@
 
   inputs = {
     hyprland = {
-      url = "github:hyprwm/Hyprland/68bb3e7";
+      url = "github:hyprwm/Hyprland/b496e2c71817aae5560af04b8c6439c39f4e05d8";
     };
   };
 
