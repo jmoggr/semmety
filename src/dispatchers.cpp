@@ -50,11 +50,8 @@ dispatchSplit(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame> focussedF
 	// TODO: replace node should be updating the geometry
 	auto newSplit = SemmetySplitFrame::create(firstChild, secondChild, focussedFrame->geometry);
 
-	semmety_log(ERR, "first child:\n{}", firstChild->print(workspace));
-	semmety_log(ERR, "second child:\n{}", secondChild->print(workspace));
-
 	replaceNode(focussedFrame, newSplit, workspace);
-	semmety_log(ERR, "after:\n{}", workspace.root->print(workspace));
+	workspace.setFocusedFrame(secondChild);
 
 	return std::nullopt;
 }
