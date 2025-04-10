@@ -80,12 +80,12 @@ uint64_t spawnRawProc(std::string args, PHLWORKSPACE pInitialWorkspace) {
 			// exit grandchild
 			_exit(0);
 		}
-		write(pipeSock[1].get(), &grandchild, sizeof(grandchild));
+		[[maybe_unused]] ssize_t wret = write(pipeSock[1].get(), &grandchild, sizeof(grandchild));
 		// exit child
 		_exit(0);
 	}
 	// run in parent
-	read(pipeSock[0].get(), &grandchild, sizeof(grandchild));
+	[[maybe_unused]] ssize_t rret = read(pipeSock[0].get(), &grandchild, sizeof(grandchild));
 	// clear child and leave grandchild to init
 	waitpid(child, nullptr, 0);
 	if (grandchild < 0) {
@@ -131,18 +131,22 @@ void updateBar() {
 	// semmety_log(ERR, "calling qs with {}", escapedJsonString);
 }
 
-size_t getWrappedOffsetIndex3(size_t index, int offset, size_t size) {
-	if (size == 0) {
-		semmety_critical_error("getWrappedOffsetIndex called with size 0");
+
+
+size_t getWrappedOffsetIndex3(size_t index, std::ptrdiff_t offset, size_t size)
+{
+    if (size == 0) {
+        semmety_critical_error("getWrappedOffsetIndex called with size 0");
+    }
+
+    // Bring the offset into the canonical range [-size+1, size-1]
+    std::ptrdiff_t mod = offset % static_cast<std::ptrdiff_t>(size);
+
+    // If it’s negative, shift it into [0, size‑1]
+    if (mod < 0) {
+    	mod += static_cast<std::ptrdiff_t>(size);
 	}
 
-	if (std::abs(offset) > size) {
-		semmety_critical_error(
-		    "getWrappedOffsetIndex called with an offset ({}) greater than size ({})",
-		    offset,
-		    size
-		);
-	}
-
-	return (index + (offset + size)) % size;
+    // Now everything is non‑negative and fits in size_t
+    return (index + static_cast<size_t>(mod)) % size;
 }

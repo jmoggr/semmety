@@ -1,5 +1,5 @@
 project('semmety', 'cpp',
-  default_options: ['buildtype=debug', 'cpp_std=c++23'],
+  default_options: ['buildtype=debug', 'cpp_std=c++23', 'optimization=1'],
 )
 
 add_project_arguments([ '-DWLR_USE_UNSTABLE' ], language: 'cpp')

@@ -271,6 +271,7 @@ void SemmetyLayout::alterSplitRatio(PHLWINDOW pWindow, float ratio, bool exact) 
 
 std::any SemmetyLayout::layoutMessage(SLayoutMessageHeader header, std::string message) {
 	semmety_log(LOG, "STUB layoutMessage");
+	return 0;
 }
 
 void SemmetyLayout::replaceWindowDataWith(PHLWINDOW from, PHLWINDOW to) {

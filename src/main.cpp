@@ -26,7 +26,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	}
 
 	g_SemmetyLayout = std::make_unique<SemmetyLayout>();
-	auto res = HyprlandAPI::addLayout(PHANDLE, "semmety", g_SemmetyLayout.get());
+	[[maybe_unused]] auto res = HyprlandAPI::addLayout(PHANDLE, "semmety", g_SemmetyLayout.get());
 
 	registerDispatchers();
 	HyprlandAPI::reloadConfig();
