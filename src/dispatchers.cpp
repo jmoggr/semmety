@@ -26,6 +26,7 @@
 #include "SemmetyWorkspaceWrapper.hpp"
 #include "dispatchers.hpp"
 #include "globals.hpp"
+#include "log.hpp"
 #include "utils.hpp"
 
 std::optional<std::string>
@@ -47,9 +48,13 @@ dispatchSplit(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame> focussedF
 	auto firstChild = focussedFrame;
 	auto secondChild = SemmetyLeafFrame::create(workspace.getNextMinimizedWindow());
 	// TODO: replace node should be updating the geometry
-	auto newSplit = SemmetySplitFrame::create(firstChild, secondChild);
+	auto newSplit = SemmetySplitFrame::create(firstChild, secondChild, focussedFrame->geometry);
+
+	semmety_log(ERR, "first child:\n{}", firstChild->print(workspace));
+	semmety_log(ERR, "second child:\n{}", secondChild->print(workspace));
 
 	replaceNode(focussedFrame, newSplit, workspace);
+	semmety_log(ERR, "after:\n{}", workspace.root->print(workspace));
 
 	return std::nullopt;
 }
@@ -91,8 +96,8 @@ std::optional<std::string> dispatchCycle(
 		return std::nullopt;
 	}
 
-	// TODO: focus window?
-	focussedFrame->setWindow(window);
+	focussedFrame->setWindow(workspace, window);
+	focusWindow(window);
 
 	return std::nullopt;
 }
@@ -133,8 +138,8 @@ std::optional<std::string> dispatchSwap(
 	}
 
 	const auto temp = neighbor->getWindow();
-	neighbor->setWindow(focussedFrame->getWindow());
-	focussedFrame->setWindow(temp);
+	neighbor->setWindow(workspace, focussedFrame->getWindow());
+	focussedFrame->setWindow(workspace, temp);
 
 	return std::nullopt;
 }
@@ -204,8 +209,11 @@ SDispatchResult dispatchWrapper(const std::string& arg, const DispatchFunc& acti
 }
 
 void registerSemmetyDispatcher(const std::string& name, const DispatchFunc& func) {
-	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:" + name, [func](const std::string& arg) {
-		return dispatchWrapper(arg, func);
+	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:" + name, [func, name](const std::string& arg) {
+		semmety_log(ERR, "ENTER semmety:{}", name);
+		const auto res = dispatchWrapper(arg, func);
+		semmety_log(ERR, "EXIT semmety:{}", name);
+		return res;
 	});
 }
 

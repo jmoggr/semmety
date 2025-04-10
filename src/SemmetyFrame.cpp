@@ -7,6 +7,7 @@
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/xwayland/XSurface.hpp>
 #include <hyprutils/math/Box.hpp>
+#include <hyprutils/memory/SharedPtr.hpp>
 
 #include "SemmetyFrameUtils.hpp"
 #include "log.hpp"
@@ -71,15 +72,23 @@ SP<SemmetyLeafFrame> SemmetyFrame::getLastFocussedLeaf() const {
 // SemmetySplitFrame
 //
 
-SP<SemmetySplitFrame>
-SemmetySplitFrame::create(SP<SemmetyFrame> firstChild, SP<SemmetyFrame> secondChild) {
-	auto ptr = SP<SemmetySplitFrame>(new SemmetySplitFrame(firstChild, secondChild));
+SP<SemmetySplitFrame> SemmetySplitFrame::create(
+    SP<SemmetyFrame> firstChild,
+    SP<SemmetyFrame> secondChild,
+    CBox _geometry
+) {
+	auto ptr = makeShared<SemmetySplitFrame>(firstChild, secondChild, _geometry);
 	ptr->self = ptr;
 	return ptr;
 }
 
-SemmetySplitFrame::SemmetySplitFrame(SP<SemmetyFrame> firstChild, SP<SemmetyFrame> secondChild):
+SemmetySplitFrame::SemmetySplitFrame(
+    SP<SemmetyFrame> firstChild,
+    SP<SemmetyFrame> secondChild,
+    CBox _geometry
+):
     children {firstChild, secondChild} {
+	geometry = _geometry;
 	if (geometry.width > geometry.height) {
 		splitDirection = SemmetySplitDirection::SplitV;
 	} else {
@@ -87,7 +96,14 @@ SemmetySplitFrame::SemmetySplitFrame(SP<SemmetyFrame> firstChild, SP<SemmetyFram
 	}
 }
 
-void SemmetySplitFrame::applyRecursive(PHLWORKSPACE workspace, CBox newGeometry) {
+void SemmetySplitFrame::applyRecursive(
+    SemmetyWorkspaceWrapper& workspace,
+    std::optional<CBox> newGeometry
+) {
+	if (newGeometry.has_value()) {
+		geometry = newGeometry.value();
+	}
+
 	auto childGeometries = getChildGeometries();
 
 	children.first->applyRecursive(workspace, childGeometries.first);
@@ -172,8 +188,7 @@ std::pair<CBox, CBox> SemmetySplitFrame::getChildGeometries() const {
 	}
 }
 
-std::string
-SemmetySplitFrame::print(const SemmetyWorkspaceWrapper& workspace, int indentLevel) const {
+std::string SemmetySplitFrame::print(SemmetyWorkspaceWrapper& workspace, int indentLevel) const {
 	std::string indent(indentLevel * 2, ' ');
 	std::string result;
 	std::string geometryString = getGeometryString(geometry);
@@ -192,8 +207,8 @@ bool SemmetySplitFrame::isSplit() const { return true; }
 // SemmetyLeafFrame
 //
 
-SP<SemmetyLeafFrame> create(PHLWINDOWREF window) {
-	auto ptr = SP<SemmetyLeafFrame>(new SemmetyLeafFrame(window));
+SP<SemmetyLeafFrame> SemmetyLeafFrame::create(PHLWINDOWREF window) {
+	auto ptr = makeShared<SemmetyLeafFrame>(window);
 	ptr->self = ptr;
 	return ptr;
 }
@@ -203,18 +218,22 @@ bool SemmetyLeafFrame::isEmpty() const { return window == nullptr; }
 
 PHLWINDOWREF SemmetyLeafFrame::getWindow() const { return window; }
 
-void SemmetyLeafFrame::setWindow(PHLWINDOWREF win) { window = win; }
+void SemmetyLeafFrame::setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win) {
+	if (window) {
+		window->setHidden(true);
+	}
 
-void SemmetyLeafFrame::clearWindow() { window = {}; }
+	window = win;
+	applyRecursive(workspace, std::nullopt);
+}
 
-std::string
-SemmetyLeafFrame::print(const SemmetyWorkspaceWrapper& workspace, int indentLevel) const {
+std::string SemmetyLeafFrame::print(SemmetyWorkspaceWrapper& workspace, int indentLevel) const {
 	std::string indent(indentLevel * 2, ' ');
 	std::string result;
 	std::string geometryString = getGeometryString(geometry);
 
 	// TODO isFocus should work
-	const auto isFocus = false;
+	const auto isFocus = workspace.getFocusedFrame() == self.lock();
 	const auto focusIndicator = isFocus ? " [Focus] " : " ";
 
 	// const auto ptrString =
@@ -233,7 +252,11 @@ SemmetyLeafFrame::print(const SemmetyWorkspaceWrapper& workspace, int indentLeve
 bool SemmetyLeafFrame::isLeaf() const { return true; }
 bool SemmetyLeafFrame::isSplit() const { return false; }
 
-std::vector<SP<SemmetyLeafFrame>> SemmetyLeafFrame::getLeafFrames() const { return {asLeaf()}; }
+std::vector<SP<SemmetyLeafFrame>> SemmetyLeafFrame::getLeafFrames() const {
+	const auto l = asLeaf();
+
+	return {l};
+}
 
 CBox SemmetyLeafFrame::getStandardWindowArea(CBox area, SBoxExtents extents, PHLWORKSPACE workspace)
     const {
@@ -259,7 +282,14 @@ CBox SemmetyLeafFrame::getStandardWindowArea(CBox area, SBoxExtents extents, PHL
 	return area;
 }
 
-void SemmetyLeafFrame::applyRecursive(PHLWORKSPACE workspace, CBox newGeometry) {
+void SemmetyLeafFrame::applyRecursive(
+    SemmetyWorkspaceWrapper& workspace,
+    std::optional<CBox> newGeometry
+) {
+	if (newGeometry.has_value()) {
+		geometry = newGeometry.value();
+	}
+
 	if (!valid(window) || !window->m_bIsMapped) {
 		semmety_log(
 		    ERR,
@@ -272,33 +302,28 @@ void SemmetyLeafFrame::applyRecursive(PHLWORKSPACE workspace, CBox newGeometry) 
 		return;
 	}
 
+	if (window->isHidden()) {
+		window->setHidden(false);
+	}
+
 	window->unsetWindowData(PRIORITY_LAYOUT);
 	window->updateWindowData();
+	geometry.round();
 
 	window->m_vSize = geometry.size();
 	window->m_vPosition = geometry.pos();
+
 	window->updateWindowDecos();
 
 	auto reserved = window->getFullWindowReservedArea();
 	auto wb = this->getStandardWindowArea(
 	    this->geometry,
 	    {-reserved.topLeft, -reserved.bottomRight},
-	    workspace
+	    workspace.workspace.lock()
 	);
 
-	*window->m_vRealPosition = wb.pos();
 	*window->m_vRealSize = wb.size();
-	if (window->isHidden()) {
-		window->setHidden(false);
-
-		// cargo cult dwindle applyNodeDataToWindow
-		g_pHyprRenderer->damageWindow(window.lock());
-		window->m_vRealPosition->warp();
-		window->m_vRealSize->warp();
-		g_pHyprRenderer->damageWindow(window.lock());
-	}
-
-	window->updateWindowDecos();
+	*window->m_vRealPosition = wb.pos();
 }
 
 // from CHyprBorderDecoration::draw

@@ -27,9 +27,8 @@ public:
 	SP<SemmetyLeafFrame> getFocusedFrame();
 	void setFocusedFrame(SP<SemmetyFrame> frame);
 	SP<SemmetyLeafFrame> getFrameForWindow(PHLWINDOWREF window) const;
-	void updateHiddenAndFocusedWindows();
 	void rebalance();
-	void printDebug() const;
+	void printDebug();
 	void changeWindowOrder(bool prev);
 	json getWorkspaceWindowsJson() const;
 	void activateWindow(PHLWINDOWREF window);

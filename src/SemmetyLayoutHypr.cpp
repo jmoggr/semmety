@@ -155,9 +155,9 @@ void SemmetyLayout::recalculateMonitor(const MONITORID& monid) {
 	}
 	g_pHyprRenderer->damageMonitor(PMONITOR);
 
-	// if (PMONITOR->activeSpecialWorkspace) {
-	// 	recalculateWorkspace(PMONITOR->activeSpecialWorkspace);
-	// }
+	if (PMONITOR->activeSpecialWorkspace) {
+		recalculateWorkspace(PMONITOR->activeSpecialWorkspace);
+	}
 
 	recalculateWorkspace(PMONITOR->activeWorkspace);
 	semmety_log(LOG, "EXIT recalculateMonitor");
@@ -207,32 +207,38 @@ bool SemmetyLayout::isWindowTiled(PHLWINDOW pWindow) {
 }
 
 PHLWINDOW SemmetyLayout::getNextWindowCandidate(PHLWINDOW window) {
+	semmety_log(ERR, "ENTER getNextWindowCandidate");
 	// This is only called from the hyprland code that closes windows. If the window is tiled then the
 	// logic for closing a tiled window would have already been handled by onWindowRemovedTiling.
 	// TODO: return nothing when we have dedicated handling for floating windows
 	if (!window->m_bIsFloating) {
+		semmety_log(ERR, "EXIT getNextWindowCandidate");
 		return {};
 	}
 
 	auto ws = workspace_for_action();
 
 	if (!ws) {
+		semmety_log(ERR, "EXIT getNextWindowCandidate");
 		return {};
 	}
 
 	const auto index = ws->getLastFocusedWindowIndex();
 	if (index >= ws->windows.size()) {
+		semmety_log(ERR, "EXIT getNextWindowCandidate");
 		return {};
 	}
 
 	if (ws->windows[index]) {
+		semmety_log(ERR, "EXIT getNextWindowCandidate");
 		return ws->windows[index].lock();
 	}
 
+	semmety_log(ERR, "EXIT getNextWindowCandidate");
 	return {};
 }
 
-// void SemmetyLayout::onBeginDragWindow() { semmety_log(LOG, "STUB onBeginDragWindow"); }
+void SemmetyLayout::onBeginDragWindow() { semmety_log(LOG, "STUB onBeginDragWindow"); }
 
 void SemmetyLayout::resizeActiveWindow(
     const Vector2D& pixResize,

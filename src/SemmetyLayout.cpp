@@ -23,6 +23,7 @@ SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE
 }
 
 json SemmetyLayout::getWorkspacesJson() {
+	semmety_log(ERR, "in getWorkspacesJson");
 	const auto ws = workspace_for_action();
 
 	json jsonWorkspaces = json::array();
@@ -62,6 +63,7 @@ json SemmetyLayout::getWorkspacesJson() {
 }
 
 void SemmetyLayout::activateWindow(PHLWINDOW window) {
+	semmety_log(ERR, "ENTER activateWindow");
 	auto layout = g_SemmetyLayout.get();
 	auto ww = layout->getOrCreateWorkspaceWrapper(window->m_pWorkspace);
 
@@ -69,6 +71,7 @@ void SemmetyLayout::activateWindow(PHLWINDOW window) {
 
 	updateBar();
 	g_pAnimationManager->scheduleTick();
+	semmety_log(ERR, "EXIT activateWindow");
 }
 
 void SemmetyLayout::moveWindowToWorkspace(std::string wsname) {

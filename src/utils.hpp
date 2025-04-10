@@ -23,6 +23,7 @@ std::string directionToString(const Direction dir);
 std::string getGeometryString(const CBox geometry);
 std::optional<size_t> getFocusHistoryIndex(PHLWINDOW wnd);
 SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = true);
+void focusWindow(PHLWINDOWREF window);
 
 size_t getWrappedOffsetIndex3(size_t index, int offset, size_t size);
 
@@ -30,7 +31,15 @@ void updateBar();
 
 template <typename T, typename U>
 Hyprutils::Memory::CSharedPointer<T>
-hyprland_dynamic_pointer_cast(const Hyprutils::Memory::CSharedPointer<U>& ptr);
+hyprland_dynamic_pointer_cast(const Hyprutils::Memory::CSharedPointer<U>& ptr) {
+	// Perform dynamic_cast on the raw pointer.
+	if (T* casted = dynamic_cast<T*>(ptr.get())) {
+		// If successful, create a new shared pointer that uses the same control block.
+		return Hyprutils::Memory::CSharedPointer<T>(ptr.impl_);
+	}
+	// If the cast fails, return an empty pointer.
+	return Hyprutils::Memory::CSharedPointer<T>(nullptr);
+}
 
 // abandon hope all ye who enter here
 class HyprlangUnspecifiedCustomType {};

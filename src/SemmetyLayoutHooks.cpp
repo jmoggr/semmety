@@ -1,8 +1,12 @@
 #include "SemmetyLayout.hpp"
 #include "SemmetyWorkspaceWrapper.hpp"
+#include "log.hpp"
 #include "utils.hpp"
 
-void SemmetyLayout::workspaceHook(void*, SCallbackInfo&, std::any data) { updateBar(); }
+void SemmetyLayout::workspaceHook(void*, SCallbackInfo&, std::any data) {
+	semmety_log(ERR, "WORKSPACE_HOOK");
+	updateBar();
+}
 
 void SemmetyLayout::urgentHook(void*, SCallbackInfo&, std::any data) {
 	auto layout = g_SemmetyLayout.get();
@@ -101,6 +105,7 @@ void SemmetyLayout::tickHook(void*, SCallbackInfo&, std::any) {
 }
 
 void SemmetyLayout::activeWindowHook(void*, SCallbackInfo&, std::any data) {
+	semmety_log(ERR, "activate hook");
 	const auto PWINDOW = std::any_cast<PHLWINDOW>(data);
 	if (PWINDOW == nullptr) {
 		return;

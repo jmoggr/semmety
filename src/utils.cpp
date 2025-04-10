@@ -13,16 +13,16 @@
 #include <hyprlang.hpp>
 
 #include "log.hpp"
+#include "src/desktop/DesktopTypes.hpp"
 
 std::optional<size_t> getFocusHistoryIndex(PHLWINDOW wnd) {
-    const auto& history = g_pCompositor->m_vWindowFocusHistory;
+	const auto& history = g_pCompositor->m_vWindowFocusHistory;
 
-    for (size_t i = 0; i < history.size(); ++i) {
-        if (history[i].lock() == wnd)
-            return i;
-    }
+	for (size_t i = 0; i < history.size(); ++i) {
+		if (history[i].lock() == wnd) return i;
+	}
 
-    return std::nullopt;
+	return std::nullopt;
 }
 
 std::string getGeometryString(const CBox geometry) {
@@ -89,18 +89,6 @@ SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
 	semmety_log(ERR, "getting workspace for action {}", workspace->m_iID);
 
 	return &layout->getOrCreateWorkspaceWrapper(workspace);
-}
-
-template <typename T, typename U>
-Hyprutils::Memory::CSharedPointer<T>
-hyprland_dynamic_pointer_cast(const Hyprutils::Memory::CSharedPointer<U>& ptr) {
-	// Perform dynamic_cast on the raw pointer.
-	if (T* casted = dynamic_cast<T*>(ptr.get())) {
-		// If successful, create a new shared pointer that uses the same control block.
-		return Hyprutils::Memory::CSharedPointer<T>(ptr.impl_);
-	}
-	// If the cast fails, return an empty pointer.
-	return Hyprutils::Memory::CSharedPointer<T>(nullptr);
 }
 
 uint64_t spawnRawProc(std::string args, PHLWORKSPACE pInitialWorkspace) {
@@ -173,6 +161,7 @@ std::string escapeSingleQuotes(const std::string& input) {
 }
 
 void updateBar() {
+	semmety_log(ERR, "in update bar");
 	auto workspace_wrapper = workspace_for_action();
 	if (workspace_wrapper == nullptr) {
 		semmety_log(ERR, "no workspace");
@@ -209,4 +198,18 @@ size_t getWrappedOffsetIndex3(size_t index, int offset, size_t size) {
 	}
 
 	return (index + (offset + size)) % size;
+}
+
+void focusWindow(PHLWINDOWREF window) {
+	auto focused_window = g_pCompositor->m_pLastWindow.lock();
+	if (focused_window == window) {
+		return;
+	}
+
+	if (window) {
+		window->setHidden(false);
+		g_pCompositor->focusWindow(window.lock());
+	} else {
+		g_pCompositor->focusWindow(nullptr);
+	}
 }

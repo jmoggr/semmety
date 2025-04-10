@@ -5,28 +5,54 @@
 #include "SemmetyWorkspaceWrapper.hpp"
 #include "log.hpp"
 
+// TODO: entry wrapper checks. windows should be valid, all windowsIds in frames must be unique,
+// all frames should be unique, window in focussed frame should be focused? hiddenness, root frame
+// and focused frame should be valid
+
 void replaceNode(
     SP<SemmetyFrame> target,
     SP<SemmetyFrame> source,
     SemmetyWorkspaceWrapper& workspace
 ) {
-	// TODO: replaceNode apply changes, setWindow, entry wrapper updateHiddenAndFocussedWindows
-	// TODO: entry wrapper checks. windows should be valid, all windowsIds in frames must be unique,
-	// all frames should be unique, window in focussed frame should be focused? hiddenness, root frame
-	// and focused frame should be valid
+	auto* slot = &workspace.root;
 	if (auto parent = findParent(target, workspace)) {
 		if (parent->children.first == target) {
-			parent->children.first = source;
+			slot = &parent->children.first;
 		} else if (parent->children.second == target) {
-			parent->children.second = source;
+			slot = &parent->children.second;
 		} else {
 			// this should not be possible based on findParent
 			semmety_critical_error("Parent does not have child");
 		}
-	} else {
-		// If there is no parent, then target is the root.
-		workspace.root = source;
 	}
+
+	*slot = source;
+
+	workspace.rebalance();
+
+	std::vector<PHLWINDOWREF> oldWindows;
+	for (const auto& leaf: target->getLeafFrames()) {
+		if (auto win = leaf->getWindow()) {
+			oldWindows.push_back(win);
+		}
+	}
+
+	std::unordered_set<PHLWINDOWREF> currentWindows;
+	for (const auto& leaf: workspace.root->getLeafFrames()) {
+		if (auto win = leaf->getWindow()) {
+			currentWindows.insert(win);
+		}
+	}
+
+	for (const auto& win: oldWindows) {
+		if (currentWindows.contains(win)) {
+			continue;
+		}
+
+		win->setHidden(true);
+	}
+
+	source->applyRecursive(workspace, target->geometry);
 }
 
 SP<SemmetySplitFrame>
