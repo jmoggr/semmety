@@ -5,9 +5,15 @@
 #include "SemmetyWorkspaceWrapper.hpp"
 #include "log.hpp"
 
-// TODO: entry wrapper checks. windows should be valid, all windowsIds in frames must be unique,
-// all frames should be unique, window in focussed frame should be focused? hiddenness, root frame
-// and focused frame should be valid
+// - all window pointers should be non-null
+// - all windows in frames must be unique,
+// - all windows in workspace.windows must be unique
+// - all frames should be unique
+// - workspace.root should be non-null
+// - there should be no empty frames if there are minimized windows
+// - all split frames must have 2 valid children
+// - windows in frames should not be hidden
+// - windows not in frames should be hidden
 
 void replaceNode(
     SP<SemmetyFrame> target,
@@ -29,6 +35,7 @@ void replaceNode(
 	*slot = source;
 
 	workspace.rebalance();
+	source->applyRecursive(workspace, target->geometry);
 
 	std::vector<PHLWINDOWREF> oldWindows;
 	for (const auto& leaf: target->getLeafFrames()) {
@@ -51,8 +58,6 @@ void replaceNode(
 
 		win->setHidden(true);
 	}
-
-	source->applyRecursive(workspace, target->geometry);
 }
 
 SP<SemmetySplitFrame>
@@ -204,4 +209,14 @@ SP<SemmetyLeafFrame> getNeighborByDirection(
 	}
 
 	return getMaxFocusOrderLeaf(closest);
+}
+
+bool frameAreaGreater(const SP<SemmetyLeafFrame>& a, const SP<SemmetyLeafFrame>& b) {
+	const auto sa = a->geometry.size();
+	const auto sb = b->geometry.size();
+
+	const double areaA = sa.x * sa.y;
+	const double areaB = sb.x * sb.y;
+
+	return areaA > areaB; // descending order
 }

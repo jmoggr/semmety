@@ -47,7 +47,6 @@ std::optional<std::string>
 dispatchSplit(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame> focussedFrame, CVarList) {
 	auto firstChild = focussedFrame;
 	auto secondChild = SemmetyLeafFrame::create(workspace.getNextMinimizedWindow());
-	// TODO: replace node should be updating the geometry
 	auto newSplit = SemmetySplitFrame::create(firstChild, secondChild, focussedFrame->geometry);
 
 	replaceNode(focussedFrame, newSplit, workspace);
@@ -93,8 +92,7 @@ std::optional<std::string> dispatchCycle(
 		return std::nullopt;
 	}
 
-	focussedFrame->setWindow(workspace, window);
-	focusWindow(window);
+	workspace.putWindowInFocussedFrame(window);
 
 	return std::nullopt;
 }
@@ -134,9 +132,8 @@ std::optional<std::string> dispatchSwap(
 		return std::nullopt;
 	}
 
-	const auto temp = neighbor->getWindow();
-	neighbor->setWindow(workspace, focussedFrame->getWindow());
-	focussedFrame->setWindow(workspace, temp);
+	focussedFrame->swapContents(workspace, neighbor);
+	workspace.setFocusedFrame(neighbor);
 
 	return std::nullopt;
 }
@@ -162,6 +159,7 @@ dispatchActivate(SemmetyWorkspaceWrapper&, SP<SemmetyLeafFrame>, CVarList args) 
 		return "No window matched the regex";
 	}
 
+	// TODO: should call workspace.activateWindow, but we don't know what workspace the window is in
 	g_SemmetyLayout->activateWindow(window);
 	return std::nullopt;
 }
@@ -180,7 +178,6 @@ dispatchChangeWindowOrder(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFram
 
 std::optional<std::string>
 dispatchUpdateBar(SemmetyWorkspaceWrapper&, SP<SemmetyLeafFrame>, CVarList) {
-	updateBar();
 	return std::nullopt;
 }
 
@@ -207,7 +204,7 @@ SDispatchResult dispatchWrapper(const std::string& arg, const DispatchFunc& acti
 
 void registerSemmetyDispatcher(const std::string& name, const DispatchFunc& func) {
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:" + name, [func, name](const std::string& arg) {
-		semmety_log(ERR, "ENTER semmety:{}", name);
+		semmety_log(ERR, "ENTER semmety:{}, {}", name, arg);
 		const auto res = dispatchWrapper(arg, func);
 		semmety_log(ERR, "EXIT semmety:{}", name);
 		return res;

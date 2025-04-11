@@ -19,6 +19,7 @@
 #include <hyprutils/memory/WeakPtr.hpp>
 #include <hyprutils/os/FileDescriptor.hpp>
 
+#include "SemmetyFrameUtils.hpp"
 #include "log.hpp"
 #include "utils.hpp"
 
@@ -34,7 +35,6 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 	this->root = frame;
 	this->focused_frame = frame;
 
-	// TODO: apply stuff to frame like in replaceNode
 	frame->geometry = {pos, size};
 	semmety_log(ERR, "init workspace monitor size {} {}", monitor->vecSize.x, monitor->vecSize.y);
 	semmety_log(ERR, "workspace has root frame: {}", frame->print(*this));
@@ -44,14 +44,7 @@ void SemmetyWorkspaceWrapper::rebalance() {
 	auto emptyFrames = root->getEmptyFrames();
 
 	// sort empty frames by size, largest first
-	std::sort(
-	    emptyFrames.begin(),
-	    emptyFrames.end(),
-	    [](const SP<SemmetyLeafFrame>& a, const SP<SemmetyLeafFrame>& b) {
-		    return a->geometry.size().x * a->geometry.size().y
-		         > b->geometry.size().x * b->geometry.size().y;
-	    }
-	);
+	std::sort(emptyFrames.begin(), emptyFrames.end(), frameAreaGreater);
 
 	for (auto& frame: emptyFrames) {
 		auto window = getNextMinimizedWindow();
@@ -63,11 +56,40 @@ void SemmetyWorkspaceWrapper::rebalance() {
 	}
 }
 
-void SemmetyWorkspaceWrapper::addWindow(PHLWINDOWREF window) {
-	windows.push_back(window);
-	focused_frame->setWindow(*this, window);
+void SemmetyWorkspaceWrapper::putWindowInFocussedFrame(PHLWINDOWREF window) {
+	if (!window) {
+		return;
+	}
+
+	const auto replacedWindow = focused_frame->replaceWindow(*this, window);
 	focusWindow(window);
-	rebalance();
+	if (!replacedWindow) {
+		return;
+	}
+
+	auto emptyFrames = root->getEmptyFrames();
+	if (emptyFrames.empty()) {
+		replacedWindow->setHidden(true);
+		return;
+	}
+
+	auto largestFrameIt = std::min_element(emptyFrames.begin(), emptyFrames.end(), frameAreaGreater);
+
+	if (largestFrameIt == emptyFrames.end()) {
+		replacedWindow->setHidden(true);
+		return;
+	}
+
+	(*largestFrameIt)->setWindow(*this, replacedWindow);
+}
+
+void SemmetyWorkspaceWrapper::addWindow(PHLWINDOWREF window) {
+	if (!window) {
+		semmety_critical_error("add window called with an invalid window");
+	}
+
+	windows.push_back(window);
+	putWindowInFocussedFrame(window);
 }
 
 void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
@@ -80,7 +102,7 @@ void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
 	if (frameWithWindow) {
 		size_t index = std::distance(windows.begin(), it);
 		auto nextWindow = getNextMinimizedWindow(index);
-		frameWithWindow->setWindow(*this, nextWindow);
+		const auto _removedWindow = frameWithWindow->replaceWindow(*this, nextWindow);
 		if (frameWithWindow == focused_frame) {
 			focusWindow(nextWindow);
 		}
@@ -190,8 +212,7 @@ void SemmetyWorkspaceWrapper::activateWindow(PHLWINDOWREF window) {
 	}
 
 	// TODO: if window is not in workspace?
-	focused_frame->setWindow(*this, window);
-	focusWindow(focused_frame->getWindow());
+	putWindowInFocussedFrame(window);
 }
 
 void SemmetyWorkspaceWrapper::printDebug() {

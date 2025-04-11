@@ -72,9 +72,11 @@ public:
 	bool isEmpty() const;
 	PHLWINDOWREF getWindow() const;
 	void setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win);
+	PHLWINDOWREF replaceWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win);
 	CBox getStandardWindowArea(CBox area, SBoxExtents extents, PHLWORKSPACE workspace) const;
 	void damageEmptyFrameBox(const CMonitor& monitor);
 	CBox getEmptyFrameBox(const CMonitor& monitor);
+	void swapContents(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame> leafFrame);
 
 	bool isLeaf() const override;
 	bool isSplit() const override;
@@ -85,6 +87,7 @@ public:
 private:
 	PHLWINDOWREF window;
 	SemmetyLeafFrame(PHLWINDOWREF window);
+	void _setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win);
 
 	template <typename U, typename... Args>
 	friend Hyprutils::Memory::CSharedPointer<U> Hyprutils::Memory::makeShared(Args&&...);

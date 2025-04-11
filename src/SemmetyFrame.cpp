@@ -220,9 +220,29 @@ PHLWINDOWREF SemmetyLeafFrame::getWindow() const { return window; }
 
 void SemmetyLeafFrame::setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win) {
 	if (window) {
-		window->setHidden(true);
+		// The caller must handle the case where there is an existing window
+		semmety_critical_error("setWindow called on non-empty frame");
 	}
 
+	_setWindow(workspace, win);
+}
+
+PHLWINDOWREF SemmetyLeafFrame::replaceWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win) {
+	const auto oldWin = window;
+	_setWindow(workspace, win);
+	return oldWin;
+}
+
+void SemmetyLeafFrame::swapContents(
+    SemmetyWorkspaceWrapper& workspace,
+    SP<SemmetyLeafFrame> other
+) {
+	const auto tmp = window;
+	_setWindow(workspace, other->window);
+	other->_setWindow(workspace, tmp);
+}
+
+void SemmetyLeafFrame::_setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win) {
 	window = win;
 	applyRecursive(workspace, std::nullopt);
 }
@@ -232,7 +252,6 @@ std::string SemmetyLeafFrame::print(SemmetyWorkspaceWrapper& workspace, int inde
 	std::string result;
 	std::string geometryString = getGeometryString(geometry);
 
-	// TODO isFocus should work
 	const auto isFocus = workspace.getFocusedFrame() == self.lock();
 	const auto focusIndicator = isFocus ? " [Focus] " : " ";
 

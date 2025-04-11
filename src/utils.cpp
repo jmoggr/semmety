@@ -207,7 +207,9 @@ void focusWindow(PHLWINDOWREF window) {
 	}
 
 	if (window) {
-		window->setHidden(false);
+		if (window->isHidden()) {
+			window->setHidden(false);
+		}
 		g_pCompositor->focusWindow(window.lock());
 	} else {
 		g_pCompositor->focusWindow(nullptr);
