@@ -5,16 +5,6 @@
 #include "SemmetyWorkspaceWrapper.hpp"
 #include "log.hpp"
 
-// - all window pointers should be non-null
-// - all windows in frames must be unique,
-// - all windows in workspace.windows must be unique
-// - all frames should be unique
-// - workspace.root should be non-null
-// - there should be no empty frames if there are minimized windows
-// - all split frames must have 2 valid children
-// - windows in frames should not be hidden
-// - windows not in frames should be hidden
-
 void replaceNode(
     SP<SemmetyFrame> target,
     SP<SemmetyFrame> source,

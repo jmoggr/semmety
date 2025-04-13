@@ -1,7 +1,11 @@
 #include "SemmetyWorkspaceWrapper.hpp"
 #include <algorithm>
+#include <functional>
 #include <string>
+#include <unordered_set>
+#include <vector>
 
+#include <format>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
@@ -281,4 +285,155 @@ void SemmetyWorkspaceWrapper::changeWindowOrder(bool prev) {
 	size_t newIndex = getWrappedOffsetIndex3(index, offset, windows.size());
 
 	std::swap(windows[index], windows[newIndex]);
+}
+
+std::vector<std::string> SemmetyWorkspaceWrapper::testInvariants() {
+	std::vector<std::string> errors;
+
+	// 1. Check that root is non-null.
+	if (!root) {
+		errors.push_back("Invariant violation: root is null.");
+	}
+
+	// 2. Check that all window pointers in windows are non-null.
+	for (size_t i = 0; i < windows.size(); ++i) {
+		if (windows[i] == nullptr) {
+			errors.push_back(std::format("Invariant violation: workspace.windows[{}] is null.", i));
+		}
+	}
+
+	// 3. Check that all windows in windows are unique.
+	std::unordered_set<PHLWINDOWREF> workspaceWindowSet;
+	for (size_t i = 0; i < windows.size(); ++i) {
+		PHLWINDOWREF w = windows[i];
+		if (!w) {
+			continue;
+		}
+
+		if (workspaceWindowSet.find(w) != workspaceWindowSet.end()) {
+			errors.push_back(std::format(
+			    "Invariant violation: Duplicate window pointer found in workspace.windows at index {}.",
+			    i
+			));
+		} else {
+			workspaceWindowSet.insert(w);
+		}
+	}
+
+	// 4. Traverse the frame tree starting at root to perform several frame-related checks.
+	// We'll collect all frames, and also check that each frame is unique.
+	std::vector<SP<SemmetyFrame>> allFrames;
+	std::unordered_set<SemmetyFrame*> frameSet;
+
+	// Recursive lambda to traverse the frame tree.
+	std::function<void(const SP<SemmetyFrame>&)> traverseFrames = [&](const SP<SemmetyFrame>& frame) {
+		if (!frame) {
+			errors.push_back("Invariant violation: null frame encountered in frame tree.");
+			return;
+		}
+
+		// Check for duplicate frames.
+		if (frameSet.find(frame.get()) != frameSet.end()) {
+			errors.push_back("Invariant violation: Duplicate frame encountered in frame tree.");
+		} else {
+			frameSet.insert(frame.get());
+			allFrames.push_back(frame);
+		}
+
+		if (!frame->isSplit()) {
+			return;
+		}
+
+		// If the frame is a split frame, we need to check:
+		// - both children are valid (non-null)
+		// - then traverse both children.
+		auto splitFrame = frame->asSplit();
+		if (!splitFrame->children.first) {
+			errors.push_back("Invariant violation: Split frame has a null first child.");
+		}
+		if (!splitFrame->children.second) {
+			errors.push_back("Invariant violation: Split frame has a null second child.");
+		}
+		if (splitFrame->children.first) {
+			traverseFrames(splitFrame->children.first);
+		}
+		if (splitFrame->children.second) {
+			traverseFrames(splitFrame->children.second);
+		}
+	};
+
+	if (root) {
+		traverseFrames(root);
+	}
+
+	// 5. Check that in leaf frames:
+	// - window pointer is non-null (if the frame is not empty),
+	// - windows in frames are unique,
+	// - and that windows in frames are not minimized/hidden.
+	std::unordered_set<PHLWINDOWREF> frameWindowSet;
+	for (const auto& frame: allFrames) {
+		if (!frame->isLeaf()) {
+			continue;
+		}
+
+		auto leafFrame = frame->asLeaf();
+		if (leafFrame->isEmpty()) {
+			continue;
+		}
+
+		auto window = leafFrame->getWindow();
+		if (window == nullptr) {
+			errors.push_back("Invariant violation: Leaf frame contains a null window pointer.");
+			continue;
+		}
+
+		// Check uniqueness of windows in frames.
+		if (frameWindowSet.find(window) != frameWindowSet.end()) {
+			errors.push_back("Invariant violation: Duplicate window pointer found in frames.");
+		} else {
+			frameWindowSet.insert(window);
+		}
+
+		// Windows in frames should not be hidden/minimized.
+		if (isWindowMinimized(window)) {
+			errors.push_back("Invariant violation: Window in a frame is minimized/hidden.");
+		}
+	}
+
+	// 6. There should be no empty leaf frames if there are minimized windows.
+	bool hasMinimizedWindow = false;
+	for (const auto& w: windows) {
+		if (isWindowMinimized(w)) {
+			hasMinimizedWindow = true;
+			break;
+		}
+	}
+
+	if (hasMinimizedWindow) {
+		for (const auto& frame: allFrames) {
+			if (!frame->isLeaf()) {
+				continue;
+			}
+
+			auto leafFrame = frame->asLeaf();
+			if (leafFrame->isEmpty()) {
+				errors.push_back("Invariant violation: An empty leaf frame exists despite the presence "
+				                 "of minimized windows.");
+			}
+		}
+	}
+
+	// 7. Windows not assigned to any frame should be hidden/minimized.
+	// For every window in windows that does not appear in a frame, check that it is
+	// minimized.
+	for (const auto& w: windows) {
+		if (isWindowMinimized(w) && !w->isHidden()) {
+			errors.push_back(std::format(
+			    "Invariant violation: Window not assigned to any frame is not hidden. {}",
+			    w->fetchTitle()
+			));
+		}
+	}
+
+	return errors;
 }

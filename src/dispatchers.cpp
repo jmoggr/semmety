@@ -197,17 +197,16 @@ SDispatchResult dispatchWrapper(const std::string& arg, const DispatchFunc& acti
 		return {.passEvent = false, .success = false, .error = *err};
 	}
 
-	updateBar();
+	shouldUpdateBar();
 	g_pAnimationManager->scheduleTick();
 	return {.passEvent = false, .success = true, .error = ""};
 }
 
 void registerSemmetyDispatcher(const std::string& name, const DispatchFunc& func) {
 	HyprlandAPI::addDispatcherV2(PHANDLE, "semmety:" + name, [func, name](const std::string& arg) {
-		semmety_log(ERR, "ENTER semmety:{}, {}", name, arg);
-		const auto res = dispatchWrapper(arg, func);
-		semmety_log(ERR, "EXIT semmety:{}", name);
-		return res;
+		return g_SemmetyLayout->entryWrapper("semmety:" + name, [&]() {
+			return dispatchWrapper(arg, func);
+		});
 	});
 }
 

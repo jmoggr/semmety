@@ -28,6 +28,7 @@ void focusWindow(PHLWINDOWREF window);
 size_t getWrappedOffsetIndex3(size_t index, int offset, size_t size);
 
 void updateBar();
+void shouldUpdateBar();
 
 template <typename T, typename U>
 Hyprutils::Memory::CSharedPointer<T>

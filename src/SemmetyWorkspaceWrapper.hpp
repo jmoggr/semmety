@@ -35,6 +35,7 @@ public:
 	void activateWindow(PHLWINDOWREF window);
 	bool isWindowMinimized(PHLWINDOWREF window) const;
 	bool isWindowFocussed(PHLWINDOWREF window) const;
+	std::vector<std::string> testInvariants();
 
 	// TODO: should also be private
 	SP<SemmetyFrame> root;

@@ -86,8 +86,6 @@ SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
 		return nullptr;
 	}
 
-	semmety_log(ERR, "getting workspace for action {}", workspace->m_iID);
-
 	return &layout->getOrCreateWorkspaceWrapper(workspace);
 }
 
@@ -161,7 +159,6 @@ std::string escapeSingleQuotes(const std::string& input) {
 }
 
 void updateBar() {
-	semmety_log(ERR, "in update bar");
 	auto workspace_wrapper = workspace_for_action();
 	if (workspace_wrapper == nullptr) {
 		semmety_log(ERR, "no workspace");
@@ -215,3 +212,5 @@ void focusWindow(PHLWINDOWREF window) {
 		g_pCompositor->focusWindow(nullptr);
 	}
 }
+
+void shouldUpdateBar() { g_SemmetyLayout->_shouldUpdateBar = true; }

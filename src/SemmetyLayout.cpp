@@ -23,7 +23,6 @@ SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE
 }
 
 json SemmetyLayout::getWorkspacesJson() {
-	semmety_log(ERR, "in getWorkspacesJson");
 	const auto ws = workspace_for_action();
 
 	json jsonWorkspaces = json::array();
@@ -69,7 +68,7 @@ void SemmetyLayout::activateWindow(PHLWINDOW window) {
 
 	ww.activateWindow(window);
 
-	updateBar();
+	shouldUpdateBar();
 	g_pAnimationManager->scheduleTick();
 	semmety_log(ERR, "EXIT activateWindow");
 }
@@ -123,5 +122,22 @@ void SemmetyLayout::moveWindowToWorkspace(std::string wsname) {
 	focused_window->updateDynamicRules();
 	focused_window->uncacheWindowDecos();
 
-	updateBar();
+	shouldUpdateBar();
+}
+
+void SemmetyLayout::testWorkspaceInvariance() {
+	for (auto& ws: workspaceWrappers) {
+		auto errors = ws.testInvariants();
+		if (errors.empty()) {
+			continue;
+		}
+
+		semmety_log(ERR, "Found {} errors", errors.size());
+		for (auto& error: errors) {
+			semmety_log(ERR, "{}", error);
+		}
+
+		ws.printDebug();
+		semmety_critical_error("invariant failed");
+	}
 }
