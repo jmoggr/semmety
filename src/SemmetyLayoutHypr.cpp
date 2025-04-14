@@ -101,6 +101,14 @@ void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW window) {
 		    window->m_pWorkspace->m_iID,
 		    window->fetchTitle()
 		);
+
+		// from dwindle for unknown reasons
+		window->unsetWindowData(PRIORITY_LAYOUT);
+		window->updateWindowData();
+		if (window->isFullscreen()) {
+		    g_pCompositor->setWindowFullscreenInternal(window, FSMODE_NONE);
+		}
+
 		auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
 		workspace_wrapper.removeWindow(window);
 
