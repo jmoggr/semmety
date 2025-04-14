@@ -16,6 +16,9 @@
 #include "log.hpp"
 #include "src/desktop/DesktopTypes.hpp"
 
+// defined in log.hpp
+std::string getSemmetyIndent() { return std::string(g_SemmetyLayout->entryCount * 4, ' '); }
+
 std::optional<size_t> getFocusHistoryIndex(PHLWINDOW wnd) {
 	const auto& history = g_pCompositor->m_vWindowFocusHistory;
 

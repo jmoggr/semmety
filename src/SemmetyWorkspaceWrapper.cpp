@@ -66,7 +66,6 @@ void SemmetyWorkspaceWrapper::putWindowInFocussedFrame(PHLWINDOWREF window) {
 	}
 
 	const auto replacedWindow = focused_frame->replaceWindow(*this, window);
-	focusWindow(window);
 	if (!replacedWindow) {
 		return;
 	}

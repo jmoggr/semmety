@@ -1,4 +1,5 @@
 #include "SemmetyLayout.hpp"
+#include <optional>
 
 #include "SemmetyWorkspaceWrapper.hpp"
 #include "log.hpp"
@@ -62,66 +63,67 @@ json SemmetyLayout::getWorkspacesJson() {
 }
 
 void SemmetyLayout::activateWindow(PHLWINDOW window) {
-	semmety_log(ERR, "ENTER activateWindow");
-	auto layout = g_SemmetyLayout.get();
-	auto ww = layout->getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+	entryWrapper("activateWindow", [&]() -> std::optional<std::string> {
+		auto layout = g_SemmetyLayout.get();
+		auto ww = layout->getOrCreateWorkspaceWrapper(window->m_pWorkspace);
 
-	ww.activateWindow(window);
+		ww.activateWindow(window);
 
-	shouldUpdateBar();
-	g_pAnimationManager->scheduleTick();
-	semmety_log(ERR, "EXIT activateWindow");
+		shouldUpdateBar();
+		g_pAnimationManager->scheduleTick();
+
+		return std::nullopt;
+	});
 }
 
 void SemmetyLayout::moveWindowToWorkspace(std::string wsname) {
-	// TODO: follow?
-	auto focused_window = g_pCompositor->m_pLastWindow.lock();
-	if (!focused_window) {
-		semmety_log(ERR, "no focused window {}", wsname);
-		return;
-	}
-
-	const auto sourceWorkspace = focused_window->m_pWorkspace;
-	if (!sourceWorkspace) {
-		semmety_log(ERR, "no source workspace");
-		return;
-	}
-
-	auto target = getWorkspaceIDNameFromString(wsname);
-	if (target.id == WORKSPACE_INVALID) {
-		semmety_log(ERR, "moveNodeToWorkspace called with invalid workspace {}", wsname);
-		return;
-	}
-
-	auto targetWorkspace = g_pCompositor->getWorkspaceByID(target.id);
-	if (!targetWorkspace) {
-		semmety_log(LOG, "creating target workspace {} for node move", target.id);
-
-		targetWorkspace =
-		    g_pCompositor->createNewWorkspace(target.id, sourceWorkspace->monitorID(), target.name);
-		if (!targetWorkspace) {
-			semmety_log(ERR, "could not find target workspace '{}', '{}'", wsname, target.id);
-			return;
+	entryWrapper("moveWindowToWorkspace", [&]() -> std::optional<std::string> {
+		// TODO: follow?
+		auto focused_window = g_pCompositor->m_pLastWindow.lock();
+		if (!focused_window) {
+			return format("no focused window {}", wsname);
 		}
-	}
 
-	if (sourceWorkspace == targetWorkspace) {
-		semmety_log(ERR, "source and target workspaces are the same");
-		return;
-	}
+		const auto sourceWorkspace = focused_window->m_pWorkspace;
+		if (!sourceWorkspace) {
+			return "no source workspace";
+		}
 
-	auto sourceWrapper = getOrCreateWorkspaceWrapper(sourceWorkspace);
-	auto targetWrapper = getOrCreateWorkspaceWrapper(targetWorkspace);
+		auto target = getWorkspaceIDNameFromString(wsname);
+		if (target.id == WORKSPACE_INVALID) {
+			return format("moveNodeToWorkspace called with invalid workspace {}", wsname);
+		}
 
-	sourceWrapper.removeWindow(focused_window);
-	g_pHyprRenderer->damageWindow(focused_window);
-	// onWindowCreatedTiling is called when the new window is put in the target workspace
-	g_pCompositor->moveWindowToWorkspaceSafe(focused_window, targetWorkspace);
-	focused_window->updateToplevel();
-	focused_window->updateDynamicRules();
-	focused_window->uncacheWindowDecos();
+		auto targetWorkspace = g_pCompositor->getWorkspaceByID(target.id);
+		if (!targetWorkspace) {
+			semmety_log(LOG, "creating target workspace {} for node move", target.id);
 
-	shouldUpdateBar();
+			targetWorkspace =
+			    g_pCompositor->createNewWorkspace(target.id, sourceWorkspace->monitorID(), target.name);
+			if (!targetWorkspace) {
+				return format("could not find target workspace '{}', '{}'", wsname, target.id);
+			}
+		}
+
+		if (sourceWorkspace == targetWorkspace) {
+			return "source and target workspaces are the same";
+		}
+
+		auto sourceWrapper = getOrCreateWorkspaceWrapper(sourceWorkspace);
+		auto targetWrapper = getOrCreateWorkspaceWrapper(targetWorkspace);
+
+		// onWindowCreatedTiling is called when the new window is put in the target workspace
+		g_pCompositor->moveWindowToWorkspaceSafe(focused_window, targetWorkspace);
+		// focused_window->updateToplevel();
+		// focused_window->updateDynamicRules();
+		// focused_window->uncacheWindowDecos();
+
+		sourceWrapper.removeWindow(focused_window);
+		g_pHyprRenderer->damageWindow(focused_window);
+
+		shouldUpdateBar();
+		return std::nullopt;
+	});
 }
 
 void SemmetyLayout::testWorkspaceInvariance() {

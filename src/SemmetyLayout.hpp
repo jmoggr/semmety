@@ -131,6 +131,5 @@ public:
 
 	bool _shouldUpdateBar = false;
 
-private:
 	int entryCount = 0;
 };
