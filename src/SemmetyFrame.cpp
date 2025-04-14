@@ -343,6 +343,9 @@ void SemmetyLeafFrame::applyRecursive(
 
 	*window->m_vRealSize = wb.size();
 	*window->m_vRealPosition = wb.pos();
+
+	window->m_vRealPosition->warp();
+	window->m_vRealSize->warp();
 }
 
 // from CHyprBorderDecoration::draw
