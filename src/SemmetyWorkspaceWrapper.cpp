@@ -103,6 +103,10 @@ void SemmetyWorkspaceWrapper::addWindow(PHLWINDOWREF window) {
 }
 
 void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
+	if (window->m_bIsFloating) {
+		return;
+	}
+
 	auto it = std::find(windows.begin(), windows.end(), window);
 	if (it == windows.end()) {
 		semmety_critical_error("removeWindow called with window that is not in the workspace");
