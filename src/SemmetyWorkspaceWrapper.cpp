@@ -66,6 +66,13 @@ void SemmetyWorkspaceWrapper::putWindowInFocussedFrame(PHLWINDOWREF window) {
 	}
 
 	const auto replacedWindow = focused_frame->replaceWindow(*this, window);
+
+	// Don't focus the window unless it is on the active workspace. This prevents active workspace
+	// changing when a window is addded to an inactive workspace.
+	if (workspace == g_pCompositor->m_pLastMonitor->activeWorkspace) {
+		focusWindow(window);
+	}
+
 	if (!replacedWindow) {
 		return;
 	}
