@@ -271,10 +271,17 @@ void SemmetyLayout::replaceWindowDataWith(PHLWINDOW from, PHLWINDOW to) {
 }
 
 Vector2D SemmetyLayout::predictSizeForNewWindowTiled() {
-	semmety_log(LOG, "STUB predictSizeForNewWindowTiled");
-	return {};
+	return entryWrapper("predictSizeForNewWindowTiled", [&]() -> Vector2D {
+		auto ws = workspace_for_action();
+
+		if (!ws) {
+			return {};
+		}
+
+		return ws->getFocusedFrame()->geometry.size();
+	});
 }
 
-std::string SemmetyLayout::getLayoutName() { return "dwindle"; }
+std::string SemmetyLayout::getLayoutName() { return "semmety"; }
 
 bool SemmetyLayout::isWindowReachable(PHLWINDOW win) { return !!win; }
