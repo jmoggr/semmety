@@ -23,9 +23,10 @@ std::string directionToString(const Direction dir);
 std::string getGeometryString(const CBox geometry);
 std::optional<size_t> getFocusHistoryIndex(PHLWINDOW wnd);
 SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = true);
+SemmetyWorkspaceWrapper* workspace_for_window(PHLWINDOW window);
 void focusWindow(PHLWINDOWREF window);
 
-size_t getWrappedOffsetIndex3(size_t index, int offset, size_t size);
+size_t getWrappedOffsetIndex4(size_t index, int offset, size_t size);
 
 void updateBar();
 void shouldUpdateBar();
@@ -41,6 +42,21 @@ hyprland_dynamic_pointer_cast(const Hyprutils::Memory::CSharedPointer<U>& ptr) {
 	// If the cast fails, return an empty pointer.
 	return Hyprutils::Memory::CSharedPointer<T>(nullptr);
 }
+
+template <>
+struct std::formatter<eFullscreenMode, char>: std::formatter<std::string_view, char> {
+	auto format(const eFullscreenMode& mode, std::format_context& ctx) const
+	    -> std::format_context::iterator {
+		std::string_view name = "UNKNOWN";
+		switch (mode) {
+		case FSMODE_NONE: name = "FSMODE_NONE"; break;
+		case FSMODE_MAXIMIZED: name = "FSMODE_MAXIMIZED"; break;
+		case FSMODE_FULLSCREEN: name = "FSMODE_FULLSCREEN"; break;
+		case FSMODE_MAX: name = "FSMODE_MAX"; break;
+		}
+		return std::formatter<std::string_view, char>::format(name, ctx);
+	}
+};
 
 // abandon hope all ye who enter here
 class HyprlangUnspecifiedCustomType {};

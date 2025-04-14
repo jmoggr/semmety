@@ -1,3 +1,4 @@
+#include <optional>
 #include <type_traits>
 
 #include <hyprland/src/Compositor.hpp>
@@ -106,7 +107,7 @@ void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW window) {
 		window->unsetWindowData(PRIORITY_LAYOUT);
 		window->updateWindowData();
 		if (window->isFullscreen()) {
-		    g_pCompositor->setWindowFullscreenInternal(window, FSMODE_NONE);
+			g_pCompositor->setWindowFullscreenInternal(window, FSMODE_NONE);
 		}
 
 		auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
@@ -206,6 +207,10 @@ bool SemmetyLayout::isWindowTiled(PHLWINDOW pWindow) {
 
 PHLWINDOW SemmetyLayout::getNextWindowCandidate(PHLWINDOW window) {
 	return entryWrapper("getNextWindowCandidate", [&]() -> PHLWINDOW {
+		if (window->m_pWorkspace->m_bHasFullscreenWindow) {
+			return window->m_pWorkspace->getFullscreenWindow();
+		}
+
 		// This is only called from the hyprland code that closes windows. If the window is
 		// tiled then the logic for closing a tiled window would have already been handled by
 		// onWindowRemovedTiling.
@@ -214,8 +219,7 @@ PHLWINDOW SemmetyLayout::getNextWindowCandidate(PHLWINDOW window) {
 			return {};
 		}
 
-		auto ws = workspace_for_action();
-
+		auto ws = workspace_for_window(window);
 		if (!ws) {
 			return {};
 		}
@@ -244,11 +248,54 @@ void SemmetyLayout::resizeActiveWindow(
 }
 
 void SemmetyLayout::fullscreenRequestForWindow(
-    PHLWINDOW pWindow,
+    PHLWINDOW window,
     const eFullscreenMode CURRENT_EFFECTIVE_MODE,
     const eFullscreenMode EFFECTIVE_MODE
 ) {
-	semmety_log(LOG, "STUB fullscreenRequestForWindow");
+	entryWrapper("fullscreenRequestForWindow", [&]() -> std::optional<std::string> {
+		auto workspace = workspace_for_window(window);
+		if (!workspace) {
+			return "Failed to get workspace for window";
+		}
+
+		semmety_log(ERR, "current: {}, effective: {}", CURRENT_EFFECTIVE_MODE, EFFECTIVE_MODE);
+
+		if (EFFECTIVE_MODE == FSMODE_NONE) {
+			auto frame = workspace->getFrameForWindow(window);
+			if (frame) {
+				frame->applyRecursive(*workspace, std::nullopt);
+			} else {
+				// TODO: is floating?
+				*window->m_vRealPosition = window->m_vLastFloatingPosition;
+				*window->m_vRealSize = window->m_vLastFloatingSize;
+
+				window->unsetWindowData(PRIORITY_LAYOUT);
+			}
+		} else {
+			// if (target_mode == FSMODE_FULLSCREEN) {
+
+			// save position and size if floating
+			if (window->m_bIsFloating && CURRENT_EFFECTIVE_MODE == FSMODE_NONE) {
+				window->m_vLastFloatingSize = window->m_vRealSize->goal();
+				window->m_vLastFloatingPosition = window->m_vRealPosition->goal();
+				window->m_vPosition = window->m_vRealPosition->goal();
+				window->m_vSize = window->m_vRealSize->goal();
+			}
+
+			window->updateDynamicRules();
+			window->updateWindowDecos();
+
+			const auto& monitor = window->m_pMonitor;
+
+			*window->m_vRealPosition = monitor->vecPosition;
+			*window->m_vRealSize = monitor->vecSize;
+			g_pCompositor->changeWindowZOrder(window, true);
+
+			// TODO: maximize
+		}
+
+		return std::nullopt;
+	});
 }
 
 void SemmetyLayout::recalculateWindow(PHLWINDOW pWindow) {

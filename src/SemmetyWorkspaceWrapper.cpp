@@ -282,7 +282,7 @@ void SemmetyWorkspaceWrapper::changeWindowOrder(bool prev) {
 
 	size_t index = std::distance(windows.begin(), it);
 	int offset = prev ? -1 : 1;
-	size_t newIndex = getWrappedOffsetIndex3(index, offset, windows.size());
+	size_t newIndex = getWrappedOffsetIndex4(index, offset, windows.size());
 
 	std::swap(windows[index], windows[newIndex]);
 }

@@ -12,6 +12,7 @@
 #include <hyprland/src/render/pass/BorderPassElement.hpp>
 #include <hyprlang.hpp>
 
+#include "globals.hpp"
 #include "log.hpp"
 #include "src/desktop/DesktopTypes.hpp"
 
@@ -87,6 +88,18 @@ SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
 	}
 
 	return &layout->getOrCreateWorkspaceWrapper(workspace);
+}
+
+SemmetyWorkspaceWrapper* workspace_for_window(PHLWINDOW window) {
+	if (!window->m_pWorkspace) return nullptr;
+
+	for (auto& workspace: g_SemmetyLayout->workspaceWrappers) {
+		if (window->m_pWorkspace == workspace.workspace) {
+			return &workspace;
+		}
+	}
+
+	return &g_SemmetyLayout->getOrCreateWorkspaceWrapper(window->m_pWorkspace);
 }
 
 uint64_t spawnRawProc(std::string args, PHLWORKSPACE pInitialWorkspace) {
@@ -180,7 +193,7 @@ void updateBar() {
 	// semmety_log(ERR, "calling qs with {}", escapedJsonString);
 }
 
-size_t getWrappedOffsetIndex3(size_t index, int offset, size_t size) {
+size_t getWrappedOffsetIndex4(size_t index, int offset, size_t size) {
 	if (size == 0) {
 		semmety_critical_error("getWrappedOffsetIndex called with size 0");
 	}

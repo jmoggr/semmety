@@ -74,6 +74,7 @@ void SemmetyLayout::activateWindow(PHLWINDOW window) {
 }
 
 void SemmetyLayout::moveWindowToWorkspace(std::string wsname) {
+	// TODO: follow?
 	auto focused_window = g_pCompositor->m_pLastWindow.lock();
 	if (!focused_window) {
 		semmety_log(ERR, "no focused window {}", wsname);
@@ -87,7 +88,6 @@ void SemmetyLayout::moveWindowToWorkspace(std::string wsname) {
 	}
 
 	auto target = getWorkspaceIDNameFromString(wsname);
-
 	if (target.id == WORKSPACE_INVALID) {
 		semmety_log(ERR, "moveNodeToWorkspace called with invalid workspace {}", wsname);
 		return;
@@ -114,9 +114,8 @@ void SemmetyLayout::moveWindowToWorkspace(std::string wsname) {
 	auto targetWrapper = getOrCreateWorkspaceWrapper(targetWorkspace);
 
 	sourceWrapper.removeWindow(focused_window);
-	// onWindowCreatedTiling is called when the new window is put on the new monitor
-
 	g_pHyprRenderer->damageWindow(focused_window);
+	// onWindowCreatedTiling is called when the new window is put in the target workspace
 	g_pCompositor->moveWindowToWorkspaceSafe(focused_window, targetWorkspace);
 	focused_window->updateToplevel();
 	focused_window->updateDynamicRules();
