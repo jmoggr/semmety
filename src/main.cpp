@@ -7,6 +7,7 @@
 #include "SemmetyLayout.hpp"
 #include "dispatchers.hpp"
 #include "globals.hpp"
+#include "src/log.hpp"
 
 APICALL EXPORT std::string PLUGIN_API_VERSION() { return HYPRLAND_API_VERSION; }
 
@@ -22,7 +23,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 		    CHyprColor {1.0, 0.2, 0.2, 1.0},
 		    5000
 		);
-		throw std::runtime_error("[MyPlugin] Version mismatch");
+		semmety_critical_error("[MyPlugin] Version mismatch {} != {}", HASH, GIT_COMMIT_HASH);
 	}
 
 	g_SemmetyLayout = std::make_unique<SemmetyLayout>();
