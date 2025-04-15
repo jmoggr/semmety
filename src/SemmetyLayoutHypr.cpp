@@ -348,9 +348,6 @@ void SemmetyLayout::recalculateWorkspace(const PHLWORKSPACE& workspace) {
 		    monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight
 		};
 
-		// TODO: figure out why this breaks, maybe re-entry?
-		// DO NOT apply here, it breaks mouse focus, result is that first render has incorrectly
-		// sized frames ww.apply(); g_pAnimationManager->scheduleTick();
 		return std::nullopt;
 	});
 }
@@ -360,12 +357,8 @@ bool SemmetyLayout::isWindowTiled(PHLWINDOW pWindow) {
 		for (const auto& ws: workspaceWrappers) {
 			if (std::find(ws.windows.begin(), ws.windows.end(), pWindow) != ws.windows.end()) {
 				return !!ws.getFrameForWindow(pWindow);
-				// semmety_log(ERR, "isWindowTiled true {}", pWindow->fetchTitle());
-				// return true;
 			}
 		}
-
-		semmety_log(ERR, "isWindowTiled false {}", pWindow->fetchTitle());
 		return false;
 	});
 }
