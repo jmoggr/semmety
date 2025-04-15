@@ -5,6 +5,8 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/managers/AnimationManager.hpp>
+#include <hyprland/src/managers/EventManager.hpp>
+#include <hyprland/src/managers/HookSystemManager.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/render/Renderer.hpp>
@@ -85,6 +87,131 @@ void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection direction
 
 		return std::nullopt;
 	});
+}
+
+void SemmetyLayout::onWindowCreatedFloating(PHLWINDOW window) {
+	entryWrapper("onWindowCreatedFloating", [&]() -> std::optional<std::string> {
+		if (window->m_pWorkspace == nullptr) {
+			return "called with a window that has an invalid workspace";
+		}
+
+		semmety_log(
+		    LOG,
+		    "onWindowCreatedTiling called with window {:x} (floating: {}, monitor: {}, workspace: {})",
+		    (uintptr_t) window.get(),
+		    window->m_bIsFloating,
+		    window->monitorID(),
+		    window->m_pWorkspace->m_iID
+		);
+
+		if (window->m_bIsFloating) {
+			return "window is floating";
+		}
+
+		auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+		workspace_wrapper.addWindow(window);
+
+		shouldUpdateBar();
+		g_pAnimationManager->scheduleTick();
+
+		return std::nullopt;
+	});
+}
+
+void SemmetyLayout::changeWindowFloatingMode(PHLWINDOW window) {
+	if (window->isFullscreen()) {
+		Debug::log(LOG, "changeWindowFloatingMode: fullscreen");
+		g_pCompositor->setWindowFullscreenInternal(window, FSMODE_NONE);
+	}
+
+	window->m_bPinned = false;
+
+	g_pHyprRenderer->damageWindow(window, true);
+
+	const auto TILED = isWindowTiled(window);
+
+	// event
+	g_pEventManager->postEvent(SHyprIPCEvent {
+	    "changefloatingmode",
+	    std::format("{:x},{}", (uintptr_t) window.get(), (int) TILED)
+	});
+	EMIT_HOOK_EVENT("changeFloatingMode", window);
+	const auto ws = workspace_for_window(window);
+	if (!ws) {
+		semmety_log(ERR, "can't get workspace");
+	}
+
+	if (!TILED) {
+		const auto PNEWMON = g_pCompositor->getMonitorFromVector(
+		    window->m_vRealPosition->value() + window->m_vRealSize->value() / 2.f
+		);
+		const auto workspace = PNEWMON->activeSpecialWorkspace ? PNEWMON->activeSpecialWorkspace
+		                                                       : PNEWMON->activeWorkspace;
+		window->m_pMonitor = PNEWMON;
+		window->moveToWorkspace(workspace);
+		window->updateGroupOutputs();
+
+		const auto PWORKSPACE = PNEWMON->activeSpecialWorkspace ? PNEWMON->activeSpecialWorkspace
+		                                                        : PNEWMON->activeWorkspace;
+
+		if (PWORKSPACE->m_bHasFullscreenWindow)
+			g_pCompositor->setWindowFullscreenInternal(PWORKSPACE->getFullscreenWindow(), FSMODE_NONE);
+
+		// save real pos cuz the func applies the default 5,5 mid
+		const auto PSAVEDPOS = window->m_vRealPosition->goal();
+		const auto PSAVEDSIZE = window->m_vRealSize->goal();
+
+		// if the window is pseudo, update its size
+		if (!window->m_bDraggingTiled) window->m_vPseudoSize = window->m_vRealSize->goal();
+
+		window->m_vLastFloatingSize = PSAVEDSIZE;
+
+		// move to narnia because we don't wanna find our own node. onWindowCreatedTiling should apply
+		// the coords back.
+		window->m_vPosition = Vector2D(-999999, -999999);
+
+		ws->setWindowTiled(window, true);
+
+		window->m_vRealPosition->setValue(PSAVEDPOS);
+		window->m_vRealSize->setValue(PSAVEDSIZE);
+
+		// fix pseudo leaving artifacts
+		g_pHyprRenderer->damageMonitor(window->m_pMonitor.lock());
+	} else {
+		ws->setWindowTiled(window, false);
+		// onWindowRemovedTiling(window);
+
+		g_pCompositor->changeWindowZOrder(window, true);
+
+		CBox wb = {
+		    window->m_vRealPosition->goal()
+		        + (window->m_vRealSize->goal() - window->m_vLastFloatingSize) / 2.f,
+		    window->m_vLastFloatingSize
+		};
+		wb.round();
+
+		if (!(window->m_bIsFloating && window->m_bIsPseudotiled)
+		    && DELTALESSTHAN(window->m_vRealSize->value().x, window->m_vLastFloatingSize.x, 10)
+		    && DELTALESSTHAN(window->m_vRealSize->value().y, window->m_vLastFloatingSize.y, 10))
+		{
+			wb = {wb.pos() + Vector2D {10, 10}, wb.size() - Vector2D {20, 20}};
+		}
+
+		*window->m_vRealPosition = wb.pos();
+		*window->m_vRealSize = wb.size();
+
+		window->m_vSize = wb.size();
+		window->m_vPosition = wb.pos();
+
+		g_pHyprRenderer->damageMonitor(window->m_pMonitor.lock());
+
+		window->unsetWindowData(PRIORITY_LAYOUT);
+		window->updateWindowData();
+	}
+
+	g_pCompositor->updateWindowAnimatedDecorationValues(window);
+	window->updateToplevel();
+	g_pHyprRenderer->damageWindow(window);
 }
 
 void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW window) {

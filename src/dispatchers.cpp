@@ -46,7 +46,7 @@ dispatchDebug(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame>, CVarList
 std::optional<std::string>
 dispatchSplit(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame> focussedFrame, CVarList) {
 	auto firstChild = focussedFrame;
-	auto secondChild = SemmetyLeafFrame::create(workspace.getNextMinimizedWindow());
+	auto secondChild = SemmetyLeafFrame::create(workspace.getNextWindow(nextTiledWindowParams));
 	auto newSplit = SemmetySplitFrame::create(firstChild, secondChild, focussedFrame->geometry);
 
 	replaceNode(focussedFrame, newSplit, workspace);
@@ -81,11 +81,13 @@ std::optional<std::string> dispatchCycle(
     SP<SemmetyLeafFrame> focussedFrame,
     CVarList args
 ) {
+	auto params = nextTiledWindowParams;
 	PHLWINDOWREF window;
 	if (args[0] == "prev") {
-		window = workspace.getPrevMinimizedWindow();
+		params.backward = true;
+		window = workspace.getNextWindow(params);
 	} else {
-		window = workspace.getNextMinimizedWindow();
+		window = workspace.getNextWindow(params);
 	}
 
 	if (!window) {

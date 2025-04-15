@@ -24,7 +24,7 @@ public:
 	void onDisable() override;
 	// void onWindowCreated(PHLWINDOW, eDirection direction = DIRECTION_DEFAULT) override;
 	void onWindowCreatedTiling(PHLWINDOW, eDirection direction = DIRECTION_DEFAULT) override;
-	// void onWindowCreatedFloating(PHLWINDOW) override;
+	void onWindowCreatedFloating(PHLWINDOW) override;
 	// bool onWindowCreatedAutoGroup(PHLWINDOW) override;
 	bool isWindowTiled(PHLWINDOW) override;
 	// void onWindowRemoved(PHLWINDOW) override;
@@ -32,7 +32,7 @@ public:
 	// void onWindowRemovedFloating(PHLWINDOW) override;
 	void recalculateMonitor(const MONITORID&) override;
 	void recalculateWindow(PHLWINDOW) override;
-	// void changeWindowFloatingMode(PHLWINDOW) override;
+	void changeWindowFloatingMode(PHLWINDOW) override;
 	void onBeginDragWindow() override;
 	// void onEndDragWindow() override;
 	// void onMouseMove(const Vector2D&) override;
