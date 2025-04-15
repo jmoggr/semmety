@@ -3,6 +3,7 @@
 
 #include "SemmetyWorkspaceWrapper.hpp"
 #include "log.hpp"
+#include "src/globals.hpp"
 #include "utils.hpp"
 
 SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE workspace) {
@@ -113,12 +114,21 @@ void SemmetyLayout::moveWindowToWorkspace(std::string wsname) {
 		auto targetWrapper = getOrCreateWorkspaceWrapper(targetWorkspace);
 
 		// onWindowCreatedTiling is called when the new window is put in the target workspace
+
+		if (focused_window->m_bIsFloating) {
+			g_SemmetyLayout->onWindowRemovedFloating(focused_window);
+		}
 		g_pCompositor->moveWindowToWorkspaceSafe(focused_window, targetWorkspace);
+		sourceWrapper.removeWindow(focused_window);
+
+		if (focused_window->m_bIsFloating) {
+			g_SemmetyLayout->onWindowCreatedFloating(focused_window);
+		}
+
 		// focused_window->updateToplevel();
 		// focused_window->updateDynamicRules();
 		// focused_window->uncacheWindowDecos();
 
-		sourceWrapper.removeWindow(focused_window);
 		g_pHyprRenderer->damageWindow(focused_window);
 
 		shouldUpdateBar();

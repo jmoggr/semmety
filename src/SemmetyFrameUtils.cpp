@@ -24,7 +24,6 @@ void replaceNode(
 
 	*slot = source;
 
-	workspace.rebalance();
 	source->applyRecursive(workspace, target->geometry);
 
 	std::vector<PHLWINDOWREF> oldWindows;
@@ -41,12 +40,23 @@ void replaceNode(
 		}
 	}
 
+	auto emptyFrames = workspace.root->getEmptyFrames();
+
+	// sort empty frames by size, largest first
+	std::sort(emptyFrames.begin(), emptyFrames.end(), frameAreaGreater);
+	size_t emptyFramesIndex = 0;
+
 	for (const auto& win: oldWindows) {
 		if (currentWindows.contains(win)) {
 			continue;
 		}
 
-		win->setHidden(true);
+		if (emptyFramesIndex < emptyFrames.size()) {
+			emptyFrames[emptyFramesIndex]->setWindow(workspace, win);
+			emptyFramesIndex += 1;
+		} else {
+			win->setHidden(true);
+		}
 	}
 }
 

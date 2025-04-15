@@ -47,22 +47,6 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 	semmety_log(ERR, "workspace has root frame: {}", frame->print(*this));
 }
 
-void SemmetyWorkspaceWrapper::rebalance() {
-	auto emptyFrames = root->getEmptyFrames();
-
-	// sort empty frames by size, largest first
-	std::sort(emptyFrames.begin(), emptyFrames.end(), frameAreaGreater);
-
-	for (auto& frame: emptyFrames) {
-		auto window = getNextWindow(nextTiledWindowParams);
-		if (window == nullptr) {
-			break;
-		}
-
-		frame->setWindow(*this, window);
-	}
-}
-
 void SemmetyWorkspaceWrapper::putWindowInFocussedFrame(PHLWINDOWREF window) {
 	if (!window) {
 		return;
@@ -101,14 +85,30 @@ void SemmetyWorkspaceWrapper::addWindow(PHLWINDOWREF window) {
 	}
 
 	windows.push_back(window);
-	putWindowInFocussedFrame(window);
+	if (!window->m_bIsFloating) {
+		putWindowInFocussedFrame(window);
+	}
 }
 
 void SemmetyWorkspaceWrapper::setWindowTiled(PHLWINDOWREF window, bool isTiled) {
 	if (isTiled) {
-		rebalance();
-		if (!isWindowInFrame(window) && !isWindowHidden(window)) {
+		auto lastFocussed = root->getLastFocussedLeaf();
+		setFocusedFrame(lastFocussed);
+
+		auto emptyFrames = root->getEmptyFrames();
+
+		if (emptyFrames.size() == 0) {
 			window->setHidden(true);
+			return;
+		}
+
+		// TODO: put floating window in closest frame
+
+		// sort empty frames by size, largest first
+		std::sort(emptyFrames.begin(), emptyFrames.end(), frameAreaGreater);
+		emptyFrames[0]->setWindow(*this, window);
+		if (emptyFrames[0] == focused_frame) {
+			focusWindow(window);
 		}
 	} else {
 		advanceFrameWithWindow(window, false);
@@ -203,6 +203,10 @@ SemmetyWorkspaceWrapper::getNextWindow(const GetNextWindowParams& params) {
 	auto windowVisibility = params.windowVisibility.value_or(SemmetyWindowVisibility::Either);
 	auto backward = params.backward.value_or(false);
 
+	if (windows.size() == 0) {
+		return {};
+	}
+
 	auto advanceIndex = [&](size_t currentIndex) -> size_t {
 		return (windows.size() + currentIndex + (backward ? -1 : 1)) % windows.size();
 	};
@@ -215,13 +219,22 @@ SemmetyWorkspaceWrapper::getNextWindow(const GetNextWindowParams& params) {
 		index = advanceIndex(index);
 	}
 
-	// It's possible that this returns the window at getLastFocusedWindowIndex, which is likely to be
-	// the focussed window. It's not obvious how much of a problem that is.
+	// auto numSteps = windows.size();
+	// if (!params.startFromIndex.has_value()) {
+	// 	numSteps -= 1;
+	// }
+
 	for (size_t i = 0; i < windows.size(); i++) {
 		const auto window = windows[index];
 
 		if (windowMatchesMode(window, windowMode) && windowMatchesVisibility(window, windowVisibility))
 		{
+			auto f = getFrameForWindow(window);
+			if (f) {
+				semmety_log(ERR, "next winodw already in frame");
+			}
+			semmety_log(ERR, "Found next window {} {}", window->fetchTitle(), window->isHidden());
+
 			return window;
 		}
 
@@ -257,6 +270,7 @@ void SemmetyWorkspaceWrapper::setFocusedFrame(SP<SemmetyFrame> frame) {
 	}
 
 	if (focused_frame == frame) {
+		focusWindow(focused_frame->getWindow());
 		return;
 	}
 
@@ -266,8 +280,13 @@ void SemmetyWorkspaceWrapper::setFocusedFrame(SP<SemmetyFrame> frame) {
 }
 
 void SemmetyWorkspaceWrapper::activateWindow(PHLWINDOWREF window) {
-	if (window.get() && window->m_bIsFloating) {
+	if (!window) {
+		return;
+	}
+
+	if (window->m_bIsFloating) {
 		g_pCompositor->changeWindowZOrder(window.lock(), true);
+		return;
 	}
 
 	auto frameWithWindow = getFrameForWindow(window);

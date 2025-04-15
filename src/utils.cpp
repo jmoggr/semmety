@@ -201,8 +201,9 @@ void focusWindow(PHLWINDOWREF window) {
 	if (focused_window == window) {
 		return;
 	}
-
 	if (window) {
+		semmety_log(ERR, "Focusing window {}", window->fetchTitle());
+
 		if (window->isHidden()) {
 			window->setHidden(false);
 		}

@@ -29,7 +29,8 @@ public:
 	bool isWindowTiled(PHLWINDOW) override;
 	// void onWindowRemoved(PHLWINDOW) override;
 	void onWindowRemovedTiling(PHLWINDOW) override;
-	// void onWindowRemovedFloating(PHLWINDOW) override;
+	void onWindowRemovedFloating(PHLWINDOW) override;
+
 	void recalculateMonitor(const MONITORID&) override;
 	void recalculateWindow(PHLWINDOW) override;
 	void changeWindowFloatingMode(PHLWINDOW) override;

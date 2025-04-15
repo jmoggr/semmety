@@ -55,7 +55,6 @@ public:
 	void advanceFrameWithWindow(PHLWINDOWREF window, bool focusNextWindow);
 	std::vector<PHLWINDOWREF>::iterator findWindowIt(PHLWINDOWREF window);
 	bool isWindowInFrame(PHLWINDOWREF window) const;
-	void rebalance();
 	void putWindowInFocussedFrame(PHLWINDOWREF window);
 	void setWindowTiled(PHLWINDOWREF window, bool isTiled);
 	void printDebug();
