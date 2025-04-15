@@ -364,13 +364,21 @@ PHLWINDOW SemmetyLayout::getNextWindowCandidate(PHLWINDOW window) {
 	});
 }
 
-void SemmetyLayout::onBeginDragWindow() { semmety_log(LOG, "STUB onBeginDragWindow"); }
+// void SemmetyLayout::onBeginDragWindow() { semmety_log(LOG, "STUB onBeginDragWindow"); }
 
 void SemmetyLayout::resizeActiveWindow(
-    const Vector2D& pixResize,
+    const Vector2D& delta,
     eRectCorner corner,
-    PHLWINDOW pWindow
+    PHLWINDOW window
 ) {
+	if (window->m_bIsFloating) {
+		const auto required_size = Vector2D(
+		    std::max((window->m_vRealSize->goal() + delta).x, 20.0),
+		    std::max((window->m_vRealSize->goal() + delta).y, 20.0)
+		);
+		*window->m_vRealSize = required_size;
+	}
+
 	semmety_log(LOG, "STUB resizeActiveWindow");
 }
 

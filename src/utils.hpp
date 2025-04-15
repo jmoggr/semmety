@@ -26,8 +26,6 @@ SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = true);
 SemmetyWorkspaceWrapper* workspace_for_window(PHLWINDOW window);
 void focusWindow(PHLWINDOWREF window);
 
-size_t getWrappedOffsetIndex4(size_t index, int offset, size_t size);
-
 void updateBar();
 void shouldUpdateBar();
 

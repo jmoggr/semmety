@@ -196,23 +196,6 @@ void updateBar() {
 	// semmety_log(ERR, "calling qs with {}", escapedJsonString);
 }
 
-size_t getWrappedOffsetIndex4(size_t index, int offset, size_t size) {
-	if (size == 0) {
-		semmety_critical_error("getWrappedOffsetIndex called with size 0");
-	}
-
-	// TODO: can maybe be simplified
-	if (static_cast<size_t>(std::abs(offset)) > size) {
-		semmety_critical_error(
-		    "getWrappedOffsetIndex called with an offset ({}) greater than size ({})",
-		    offset,
-		    size
-		);
-	}
-
-	return (index + (offset + size)) % size;
-}
-
 void focusWindow(PHLWINDOWREF window) {
 	auto focused_window = g_pCompositor->m_pLastWindow.lock();
 	if (focused_window == window) {

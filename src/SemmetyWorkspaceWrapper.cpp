@@ -337,9 +337,17 @@ void SemmetyWorkspaceWrapper::changeWindowOrder(bool prev) {
 	auto it = findWindowIt(focusedWindow);
 	size_t index = std::distance(windows.begin(), it);
 	int offset = prev ? -1 : 1;
-	size_t newIndex = getWrappedOffsetIndex4(index, offset, windows.size());
+	size_t n = windows.size();
 
-	std::swap(windows[index], windows[newIndex]);
+	size_t finalPos = (index + offset + n) % n;
+
+	auto element = windows[index];
+	windows.erase(windows.begin() + index);
+
+	// Insert it at the computed final position.
+	// (Using finalPos directly works: when the element is removed the indices shift exactly so
+	// that inserting at position finalPos puts it in the correct spot in the final ordering.)
+	windows.insert(windows.begin() + finalPos, element);
 }
 
 std::vector<std::string> SemmetyWorkspaceWrapper::testInvariants() {

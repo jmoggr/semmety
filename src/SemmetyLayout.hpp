@@ -33,7 +33,7 @@ public:
 	void recalculateMonitor(const MONITORID&) override;
 	void recalculateWindow(PHLWINDOW) override;
 	void changeWindowFloatingMode(PHLWINDOW) override;
-	void onBeginDragWindow() override;
+	// void onBeginDragWindow() override;
 	// void onEndDragWindow() override;
 	// void onMouseMove(const Vector2D&) override;
 	void
