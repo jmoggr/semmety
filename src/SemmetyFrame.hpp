@@ -70,7 +70,7 @@ public:
 	static SP<SemmetyLeafFrame> create(PHLWINDOWREF window);
 
 	bool isEmpty() const;
-	PHLWINDOWREF getWindow() const;
+	PHLWINDOWREF getWindow();
 	void setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win);
 	PHLWINDOWREF replaceWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win);
 	CBox getStandardWindowArea(CBox area, SBoxExtents extents, PHLWORKSPACE workspace) const;

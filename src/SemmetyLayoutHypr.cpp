@@ -285,6 +285,10 @@ void SemmetyLayout::onWindowRemovedFloating(PHLWINDOW window) {
 }
 
 void SemmetyLayout::onWindowFocusChange(PHLWINDOW window) {
+	if (entryCount > 0) {
+		return;
+	}
+
 	entryWrapper("onWindowFocusChange", [&]() -> std::optional<std::string> {
 		auto title = window == nullptr ? "none" : window->fetchTitle();
 		semmety_log(ERR, "focus changed for window {}", title);

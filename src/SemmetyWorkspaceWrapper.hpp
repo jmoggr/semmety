@@ -1,5 +1,6 @@
 #pragma once
 
+#include <unordered_map>
 #include <vector>
 
 #include <hyprland/src/plugins/PluginAPI.hpp>
@@ -42,6 +43,7 @@ public:
 	PHLWORKSPACEREF workspace;
 	SemmetyLayout& layout;
 	std::vector<PHLWINDOWREF> windows;
+	std::unordered_map<std::string, std::vector<PHLWINDOWREF>> frameHistoryMap;
 
 	size_t getLastFocusedWindowIndex();
 
@@ -55,12 +57,17 @@ public:
 	void advanceFrameWithWindow(PHLWINDOWREF window, bool focusNextWindow);
 	std::vector<PHLWINDOWREF>::iterator findWindowIt(PHLWINDOWREF window);
 	bool isWindowInFrame(PHLWINDOWREF window) const;
+	bool isWindowVisible(PHLWINDOWREF window) const;
 	void putWindowInFocussedFrame(PHLWINDOWREF window);
 	void setWindowTiled(PHLWINDOWREF window, bool isTiled);
 	void printDebug();
 	void changeWindowOrder(bool prev);
 	json getWorkspaceWindowsJson() const;
 	void activateWindow(PHLWINDOWREF window);
+	SP<SemmetyLeafFrame> getLargestEmptyFrame();
+	void updateFrameHistory(SP<SemmetyFrame> frame, PHLWINDOWREF window);
+	bool windowMatchesVisibility(PHLWINDOWREF window, SemmetyWindowVisibility mode);
+	PHLWINDOWREF getNextWindowForFrame(SP<SemmetyLeafFrame> frame);
 	std::vector<std::string> testInvariants();
 
 	// TODO: should also be private

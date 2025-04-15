@@ -23,39 +23,25 @@ void replaceNode(
 	}
 
 	*slot = source;
+	(*slot)->applyRecursive(workspace, target->geometry);
 
-	source->applyRecursive(workspace, target->geometry);
-
-	std::vector<PHLWINDOWREF> oldWindows;
-	for (const auto& leaf: target->getLeafFrames()) {
-		if (auto win = leaf->getWindow()) {
-			oldWindows.push_back(win);
+	while (true) {
+		auto frame = workspace.getLargestEmptyFrame();
+		if (!frame) {
+			break;
 		}
+
+		auto window = workspace.getNextWindowForFrame(frame);
+		if (!window) {
+			break;
+		}
+
+		frame->setWindow(workspace, window);
 	}
 
-	std::unordered_set<PHLWINDOWREF> currentWindows;
-	for (const auto& leaf: workspace.root->getLeafFrames()) {
-		if (auto win = leaf->getWindow()) {
-			currentWindows.insert(win);
-		}
-	}
-
-	auto emptyFrames = workspace.root->getEmptyFrames();
-
-	// sort empty frames by size, largest first
-	std::sort(emptyFrames.begin(), emptyFrames.end(), frameAreaGreater);
-	size_t emptyFramesIndex = 0;
-
-	for (const auto& win: oldWindows) {
-		if (currentWindows.contains(win)) {
-			continue;
-		}
-
-		if (emptyFramesIndex < emptyFrames.size()) {
-			emptyFrames[emptyFramesIndex]->setWindow(workspace, win);
-			emptyFramesIndex += 1;
-		} else {
-			win->setHidden(true);
+	for (auto& window: workspace.windows) {
+		if (!window->isHidden() && !workspace.isWindowVisible(window)) {
+			window->setHidden(true);
 		}
 	}
 }
@@ -219,4 +205,57 @@ bool frameAreaGreater(const SP<SemmetyLeafFrame>& a, const SP<SemmetyLeafFrame>&
 	const double areaB = sb.x * sb.y;
 
 	return areaA > areaB; // descending order
+}
+
+// Recursive helper function that searches for the target frame in the tree and records the path.
+// The path is recorded as a vector of integers, where 0 refers to children.first and 1 refers to
+// children.second.
+bool frameDepthFirstSearch(
+    const SP<SemmetyFrame>& current,
+    const SP<SemmetyFrame>& target,
+    std::vector<int>& path
+) {
+	// If the current frame is the target, we have found the path.
+	if (current == target) {
+		return true;
+	}
+
+	// Only split frames have children.
+	if (current->isSplit()) {
+		auto split = current->asSplit();
+
+		// Explore the first child (index 0)
+		path.push_back(0);
+		if (frameDepthFirstSearch(split->children.first, target, path)) {
+			return true;
+		}
+		path.pop_back(); // Backtrack if not found in first child
+
+		// Explore the second child (index 1)
+		path.push_back(1);
+		if (frameDepthFirstSearch(split->children.second, target, path)) {
+			return true;
+		}
+		path.pop_back(); // Backtrack if not found in second child
+	}
+
+	return false;
+}
+
+std::string getFramePath(const SP<SemmetyFrame>& targetFrame, const SP<SemmetyFrame>& rootFrame) {
+	std::vector<int> pathIndices;
+	if (!frameDepthFirstSearch(rootFrame, targetFrame, pathIndices)) {
+		return "";
+	}
+
+	if (pathIndices.empty()) {
+		return "root";
+	}
+
+	std::ostringstream oss;
+	for (size_t i = 0; i < pathIndices.size(); ++i) {
+		oss << pathIndices[i];
+		if (i + 1 < pathIndices.size()) oss << "/";
+	}
+	return oss.str();
 }

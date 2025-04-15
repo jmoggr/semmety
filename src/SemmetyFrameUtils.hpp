@@ -14,3 +14,4 @@ SP<SemmetyLeafFrame> getNeighborByDirection(
     const Direction dir
 );
 bool frameAreaGreater(const SP<SemmetyLeafFrame>& a, const SP<SemmetyLeafFrame>& b);
+std::string getFramePath(const SP<SemmetyFrame>& targetFrame, const SP<SemmetyFrame>& rootFrame);

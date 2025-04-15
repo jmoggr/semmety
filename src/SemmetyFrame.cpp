@@ -216,7 +216,7 @@ SemmetyLeafFrame::SemmetyLeafFrame(PHLWINDOWREF window): window(window) {}
 
 bool SemmetyLeafFrame::isEmpty() const { return window == nullptr; }
 
-PHLWINDOWREF SemmetyLeafFrame::getWindow() const { return window; }
+PHLWINDOWREF SemmetyLeafFrame::getWindow() { return window; }
 
 void SemmetyLeafFrame::setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win) {
 	if (window) {
@@ -245,6 +245,9 @@ void SemmetyLeafFrame::swapContents(
 void SemmetyLeafFrame::_setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win) {
 	window = win;
 	applyRecursive(workspace, std::nullopt);
+	if (window) {
+		workspace.updateFrameHistory(self.lock(), window);
+	}
 }
 
 std::string SemmetyLeafFrame::print(SemmetyWorkspaceWrapper& workspace, int indentLevel) const {
@@ -259,8 +262,8 @@ std::string SemmetyLeafFrame::print(SemmetyWorkspaceWrapper& workspace, int inde
 	//     window ? std::to_string(reinterpret_cast<uintptr_t>(window.lock().get())) : "";
 
 	if (window) {
-		result += indent + "SemmetyFrame (WindowId: " + window->m_szTitle + ")" + focusIndicator
-		        + geometryString + "\n";
+		result += indent + "SemmetyFrame (WindowId: " + std::format("{:x}", (uintptr_t) window.get())
+		        + ")" + focusIndicator + geometryString + "\n";
 	} else {
 		result += indent + "SemmetyFrame (Empty)" + focusIndicator + geometryString + "\n";
 	}

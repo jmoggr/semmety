@@ -64,6 +64,10 @@ json SemmetyLayout::getWorkspacesJson() {
 }
 
 void SemmetyLayout::activateWindow(PHLWINDOW window) {
+	if (entryCount > 0) {
+		return;
+	}
+
 	entryWrapper("activateWindow", [&]() -> std::optional<std::string> {
 		auto layout = g_SemmetyLayout.get();
 		auto ww = layout->getOrCreateWorkspaceWrapper(window->m_pWorkspace);

@@ -46,7 +46,17 @@ dispatchDebug(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame>, CVarList
 std::optional<std::string>
 dispatchSplit(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame> focussedFrame, CVarList) {
 	auto firstChild = focussedFrame;
-	auto secondChild = SemmetyLeafFrame::create(workspace.getNextWindow(nextTiledWindowParams));
+
+	auto next = workspace.getNextWindow(nextTiledWindowParams);
+	if (next) {
+		semmety_log(
+		    ERR,
+		    "Split found next window {} {}",
+		    next->fetchTitle(),
+		    workspace.isWindowInFrame(next)
+		);
+	}
+	auto secondChild = SemmetyLeafFrame::create({});
 	auto newSplit = SemmetySplitFrame::create(firstChild, secondChild, focussedFrame->geometry);
 
 	replaceNode(focussedFrame, newSplit, workspace);
@@ -161,8 +171,9 @@ dispatchActivate(SemmetyWorkspaceWrapper&, SP<SemmetyLeafFrame>, CVarList args) 
 		return "No window matched the regex";
 	}
 
-	// TODO: should call workspace.activateWindow, but we don't know what workspace the window is in
-	g_SemmetyLayout->activateWindow(window);
+	auto workspace = workspace_for_window(window);
+	workspace->activateWindow(window);
+
 	return std::nullopt;
 }
 

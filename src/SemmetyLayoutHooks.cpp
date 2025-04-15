@@ -1,6 +1,7 @@
 #include "SemmetyLayout.hpp"
 #include "SemmetyWorkspaceWrapper.hpp"
 #include "log.hpp"
+#include "src/globals.hpp"
 #include "utils.hpp"
 
 void SemmetyLayout::workspaceHook(void*, SCallbackInfo&, std::any data) {
@@ -108,10 +109,6 @@ void SemmetyLayout::activeWindowHook(void*, SCallbackInfo&, std::any data) {
 	semmety_log(ERR, "activate hook");
 	const auto PWINDOW = std::any_cast<PHLWINDOW>(data);
 	if (PWINDOW == nullptr) {
-		return;
-	}
-
-	if (PWINDOW->m_bIsFloating) {
 		return;
 	}
 
