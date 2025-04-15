@@ -91,6 +91,8 @@ void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection direction
 
 void SemmetyLayout::onWindowCreatedFloating(PHLWINDOW window) {
 	entryWrapper("onWindowCreatedFloating", [&]() -> std::optional<std::string> {
+		IHyprLayout::onWindowCreatedFloating(window);
+
 		if (window->m_pWorkspace == nullptr) {
 			return "called with a window that has an invalid workspace";
 		}
