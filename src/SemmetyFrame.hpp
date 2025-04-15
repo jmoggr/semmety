@@ -34,8 +34,11 @@ public:
 
 	virtual bool isLeaf() const = 0;
 	virtual bool isSplit() const = 0;
-	virtual void
-	applyRecursive(SemmetyWorkspaceWrapper& workspace, std::optional<CBox> newGeometry) = 0;
+	virtual void applyRecursive(
+	    SemmetyWorkspaceWrapper& workspace,
+	    std::optional<CBox> newGeometry,
+	    std::optional<bool> force
+	) = 0;
 	virtual std::vector<SP<SemmetyLeafFrame>> getLeafFrames() const = 0;
 	virtual std::string print(SemmetyWorkspaceWrapper& workspace, int indentLevel = 0) const = 0;
 };
@@ -55,7 +58,11 @@ public:
 
 	bool isLeaf() const override;
 	bool isSplit() const override;
-	void applyRecursive(SemmetyWorkspaceWrapper& workspace, std::optional<CBox> newGeometry) override;
+	void applyRecursive(
+	    SemmetyWorkspaceWrapper& workspace,
+	    std::optional<CBox> newGeometry,
+	    std::optional<bool> force
+	) override;
 	std::vector<SP<SemmetyLeafFrame>> getLeafFrames() const override;
 	std::string print(SemmetyWorkspaceWrapper& workspace, int indentLevel = 0) const override;
 
@@ -80,14 +87,18 @@ public:
 
 	bool isLeaf() const override;
 	bool isSplit() const override;
-	void applyRecursive(SemmetyWorkspaceWrapper& workspace, std::optional<CBox> newGeometry) override;
+	void applyRecursive(
+	    SemmetyWorkspaceWrapper& workspace,
+	    std::optional<CBox> newGeometry,
+	    std::optional<bool> force
+	) override;
 	std::vector<SP<SemmetyLeafFrame>> getLeafFrames() const override;
 	std::string print(SemmetyWorkspaceWrapper& workspace, int indentLevel = 0) const override;
 
 private:
 	PHLWINDOWREF window;
 	SemmetyLeafFrame(PHLWINDOWREF window);
-	void _setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win);
+	void _setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win, bool force);
 
 	template <typename U, typename... Args>
 	friend Hyprutils::Memory::CSharedPointer<U> Hyprutils::Memory::makeShared(Args&&...);

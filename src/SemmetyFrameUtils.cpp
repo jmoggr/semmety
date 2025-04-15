@@ -23,7 +23,7 @@ void replaceNode(
 	}
 
 	*slot = source;
-	(*slot)->applyRecursive(workspace, target->geometry);
+	(*slot)->applyRecursive(workspace, target->geometry, true);
 
 	while (true) {
 		auto frame = workspace.getLargestEmptyFrame();

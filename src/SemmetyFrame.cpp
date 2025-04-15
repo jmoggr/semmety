@@ -98,7 +98,8 @@ SemmetySplitFrame::SemmetySplitFrame(
 
 void SemmetySplitFrame::applyRecursive(
     SemmetyWorkspaceWrapper& workspace,
-    std::optional<CBox> newGeometry
+    std::optional<CBox> newGeometry,
+    std::optional<bool> force
 ) {
 	if (newGeometry.has_value()) {
 		geometry = newGeometry.value();
@@ -106,8 +107,8 @@ void SemmetySplitFrame::applyRecursive(
 
 	auto childGeometries = getChildGeometries();
 
-	children.first->applyRecursive(workspace, childGeometries.first);
-	children.second->applyRecursive(workspace, childGeometries.second);
+	children.first->applyRecursive(workspace, childGeometries.first, force);
+	children.second->applyRecursive(workspace, childGeometries.second, force);
 }
 
 std::vector<SP<SemmetyLeafFrame>> SemmetySplitFrame::getLeafFrames() const {
@@ -224,12 +225,12 @@ void SemmetyLeafFrame::setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWRE
 		semmety_critical_error("setWindow called on non-empty frame");
 	}
 
-	_setWindow(workspace, win);
+	_setWindow(workspace, win, true);
 }
 
 PHLWINDOWREF SemmetyLeafFrame::replaceWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win) {
 	const auto oldWin = window;
-	_setWindow(workspace, win);
+	_setWindow(workspace, win, true);
 	return oldWin;
 }
 
@@ -238,13 +239,17 @@ void SemmetyLeafFrame::swapContents(
     SP<SemmetyLeafFrame> other
 ) {
 	const auto tmp = window;
-	_setWindow(workspace, other->window);
-	other->_setWindow(workspace, tmp);
+	_setWindow(workspace, other->window, false);
+	other->_setWindow(workspace, tmp, false);
 }
 
-void SemmetyLeafFrame::_setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win) {
+void SemmetyLeafFrame::_setWindow(
+    SemmetyWorkspaceWrapper& workspace,
+    PHLWINDOWREF win,
+    bool force
+) {
 	window = win;
-	applyRecursive(workspace, std::nullopt);
+	applyRecursive(workspace, std::nullopt, force);
 	if (window) {
 		workspace.updateFrameHistory(self.lock(), window);
 	}
@@ -306,7 +311,8 @@ CBox SemmetyLeafFrame::getStandardWindowArea(CBox area, SBoxExtents extents, PHL
 
 void SemmetyLeafFrame::applyRecursive(
     SemmetyWorkspaceWrapper& workspace,
-    std::optional<CBox> newGeometry
+    std::optional<CBox> newGeometry,
+    std::optional<bool> force
 ) {
 	if (newGeometry.has_value()) {
 		geometry = newGeometry.value();
@@ -335,8 +341,6 @@ void SemmetyLeafFrame::applyRecursive(
 	window->m_vSize = geometry.size();
 	window->m_vPosition = geometry.pos();
 
-	window->updateWindowDecos();
-
 	auto reserved = window->getFullWindowReservedArea();
 	auto wb = this->getStandardWindowArea(
 	    this->geometry,
@@ -347,10 +351,16 @@ void SemmetyLeafFrame::applyRecursive(
 	*window->m_vRealSize = wb.size();
 	*window->m_vRealPosition = wb.pos();
 
-	g_pHyprRenderer->damageWindow(window.lock());
-	window->m_vRealPosition->warp();
-	window->m_vRealSize->warp();
-	g_pHyprRenderer->damageWindow(window.lock());
+	if (force.has_value() && force.value()) {
+		g_pHyprRenderer->damageWindow(window.lock());
+
+		window->m_vRealPosition->warp();
+		window->m_vRealSize->warp();
+
+		g_pHyprRenderer->damageWindow(window.lock());
+	}
+
+	window->updateWindowDecos();
 }
 
 // from CHyprBorderDecoration::draw

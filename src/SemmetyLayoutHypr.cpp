@@ -433,7 +433,7 @@ void SemmetyLayout::fullscreenRequestForWindow(
 		if (EFFECTIVE_MODE == FSMODE_NONE) {
 			auto frame = workspace->getFrameForWindow(window);
 			if (frame) {
-				frame->applyRecursive(*workspace, std::nullopt);
+				frame->applyRecursive(*workspace, std::nullopt, false);
 			} else {
 				// TODO: is floating?
 				*window->m_vRealPosition = window->m_vLastFloatingPosition;
