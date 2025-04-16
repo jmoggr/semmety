@@ -91,14 +91,11 @@ public:
 		semmety_log(ERR, "ENTER {} {}", name, entryCount);
 
 		if (entryCount == 0) {
+			testWorkspaceInvariance();
 			debugStringOnEntry = getDebugString();
 		}
 
 		entryCount += 1;
-
-		if (entryCount == 1) {
-			testWorkspaceInvariance();
-		}
 
 		using ReturnType = std::invoke_result_t<Fn>;
 		std::optional<ReturnType> result;

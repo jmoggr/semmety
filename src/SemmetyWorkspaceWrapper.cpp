@@ -134,6 +134,7 @@ void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
 
 	auto frameWithWindow = getFrameForWindow(window);
 	if (!frameWithWindow) {
+		windows.erase(findWindowIt(window));
 		return;
 	}
 
@@ -147,15 +148,7 @@ void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
 }
 
 std::vector<PHLWINDOWREF>::iterator SemmetyWorkspaceWrapper::findWindowIt(PHLWINDOWREF window) {
-	auto it = std::find(windows.begin(), windows.end(), window);
-	if (it == windows.end()) {
-		semmety_critical_error(
-		    "Window '{}' is not in workspace '{}'",
-		    windowToString(window),
-		    workspace->m_iID
-		);
-	}
-	return it;
+	return std::find(windows.begin(), windows.end(), window);
 }
 
 PHLWINDOWREF SemmetyWorkspaceWrapper::getNextWindowForFrame(SP<SemmetyLeafFrame> frame) {
