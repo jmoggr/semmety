@@ -131,7 +131,6 @@ SP<SemmetyLeafFrame> getNeighborByDirection(
 		vertical = false;
 		sign = 1;
 		break;
-	default: return nullptr;
 	}
 
 	auto candidates = workspace.root->getLeafFrames();

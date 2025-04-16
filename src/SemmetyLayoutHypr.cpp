@@ -402,6 +402,17 @@ PHLWINDOW SemmetyLayout::getNextWindowCandidate(PHLWINDOW window) {
 	});
 }
 
+static constexpr std::pair<Direction, Direction> getResizeDirections(eRectCorner corner) {
+	switch (corner) {
+	case CORNER_TOPLEFT: return {Direction::Left, Direction::Up};
+	case CORNER_TOPRIGHT: return {Direction::Right, Direction::Up};
+	case CORNER_BOTTOMRIGHT: return {Direction::Right, Direction::Down};
+	case CORNER_BOTTOMLEFT: return {Direction::Left, Direction::Down};
+	case CORNER_NONE: __builtin_unreachable();
+	}
+	__builtin_unreachable();
+}
+
 void SemmetyLayout::resizeActiveWindow(
     const Vector2D& delta,
     eRectCorner corner,
@@ -426,29 +437,7 @@ void SemmetyLayout::resizeActiveWindow(
 		return;
 	}
 
-	Direction resizeDirectionX;
-	Direction resizeDirectionY;
-
-	switch (corner) {
-	case CORNER_TOPLEFT:
-		resizeDirectionX = Direction::Left;
-		resizeDirectionY = Direction::Up;
-		break;
-	case CORNER_TOPRIGHT:
-		resizeDirectionX = Direction::Right;
-		resizeDirectionY = Direction::Up;
-		break;
-	case CORNER_BOTTOMRIGHT:
-		resizeDirectionX = Direction::Right;
-		resizeDirectionY = Direction::Down;
-		break;
-	case CORNER_BOTTOMLEFT:
-		resizeDirectionX = Direction::Left;
-		resizeDirectionY = Direction::Down;
-		break;
-	case CORNER_NONE: return;
-	default: semmety_critical_error("impossible");
-	}
+	auto [resizeDirectionX, resizeDirectionY] = getResizeDirections(corner);
 
 	auto horizontalParent = getResizeTarget(*workspace, frame, resizeDirectionX);
 	auto verticalParent = getResizeTarget(*workspace, frame, resizeDirectionY);

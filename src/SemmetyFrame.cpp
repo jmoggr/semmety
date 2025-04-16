@@ -161,10 +161,9 @@ std::pair<CBox, CBox> SemmetySplitFrame::getChildGeometries() const {
 
 		return {topRect, bottomRect};
 	}
-	default: {
-		semmety_critical_error("Invalid split direction");
 	}
-	}
+
+	__builtin_unreachable();
 }
 
 std::string SemmetySplitFrame::print(SemmetyWorkspaceWrapper& workspace, int indentLevel) const {
@@ -206,7 +205,8 @@ void SemmetyLeafFrame::setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWRE
 	_setWindow(workspace, win, true);
 }
 
-PHLWINDOWREF SemmetyLeafFrame::replaceWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win) {
+PHLWINDOWREF
+SemmetyLeafFrame::replaceWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win) {
 	const auto oldWin = window;
 	_setWindow(workspace, win, true);
 	return oldWin;
