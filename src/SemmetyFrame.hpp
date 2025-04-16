@@ -32,6 +32,7 @@ public:
 	std::vector<SP<SemmetyLeafFrame>> getEmptyFrames() const;
 	SP<SemmetyLeafFrame> getLastFocussedLeaf() const;
 
+	virtual bool isSameOrDescendant(const SP<SemmetyFrame>& target) const = 0;
 	virtual bool isLeaf() const = 0;
 	virtual bool isSplit() const = 0;
 	virtual void applyRecursive(
@@ -55,7 +56,9 @@ public:
 
 	SP<SemmetyFrame> getOtherChild(const SP<SemmetyFrame>& child);
 	std::pair<CBox, CBox> getChildGeometries() const;
+	void resize(double distance);
 
+	bool isSameOrDescendant(const SP<SemmetyFrame>& target) const override;
 	bool isLeaf() const override;
 	bool isSplit() const override;
 	void applyRecursive(
@@ -64,6 +67,7 @@ public:
 	    std::optional<bool> force
 	) override;
 	std::vector<SP<SemmetyLeafFrame>> getLeafFrames() const override;
+	std::optional<size_t> pathLengthToDescendant(const SP<SemmetyFrame>& target) const;
 	std::string print(SemmetyWorkspaceWrapper& workspace, int indentLevel = 0) const override;
 
 private:
@@ -85,6 +89,7 @@ public:
 	CBox getEmptyFrameBox(const CMonitor& monitor);
 	void swapContents(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame> leafFrame);
 
+	bool isSameOrDescendant(const SP<SemmetyFrame>& target) const override;
 	bool isLeaf() const override;
 	bool isSplit() const override;
 	void applyRecursive(

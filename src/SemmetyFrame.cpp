@@ -1,4 +1,5 @@
 #include "SemmetyFrame.hpp"
+#include <utility>
 
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
@@ -163,7 +164,71 @@ std::pair<CBox, CBox> SemmetySplitFrame::getChildGeometries() const {
 	}
 	}
 
-	__builtin_unreachable();
+	std::unreachable();
+}
+
+bool SemmetySplitFrame::isSameOrDescendant(const SP<SemmetyFrame>& target) const {
+	if (self == target) {
+		return true;
+	}
+
+	if (children.first == target || children.second == target) {
+		return true;
+	}
+
+	if (children.first->isSplit()) {
+		if (children.first->asSplit()->isSameOrDescendant(target)) {
+			return true;
+		}
+	}
+
+	if (children.second->isSplit()) {
+		if (children.second->asSplit()->isSameOrDescendant(target)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+std::optional<size_t> SemmetySplitFrame::pathLengthToDescendant(const SP<SemmetyFrame>& target
+) const {
+	if (self == target) {
+		return 0;
+	}
+
+	if (children.first == target || children.second == target) {
+		return 1;
+	}
+
+	if (children.first->isSplit()) {
+		if (auto d = children.first->asSplit()->pathLengthToDescendant(target)) {
+			return *d + 1;
+		}
+	}
+
+	if (children.second->isSplit()) {
+		if (auto d = children.second->asSplit()->pathLengthToDescendant(target)) {
+			return *d + 1;
+		}
+	}
+
+	return std::nullopt;
+}
+
+void SemmetySplitFrame::resize(double distance) {
+	double newRatio;
+
+	switch (splitDirection) {
+	case SemmetySplitDirection::SplitV:
+		newRatio = (children.first->geometry.size().x + distance) / geometry.size().x;
+		break;
+	case SemmetySplitDirection::SplitH:
+		newRatio = (children.first->geometry.size().y + distance) / geometry.size().y;
+		break;
+	}
+
+	splitRatio = std::clamp(newRatio, 0.1, 0.9);
 }
 
 std::string SemmetySplitFrame::print(SemmetyWorkspaceWrapper& workspace, int indentLevel) const {
@@ -231,6 +296,10 @@ void SemmetyLeafFrame::_setWindow(
 	if (window) {
 		workspace.updateFrameHistory(self.lock(), window);
 	}
+}
+
+bool SemmetyLeafFrame::isSameOrDescendant(const SP<SemmetyFrame>& target) const {
+	return self == target;
 }
 
 std::string SemmetyLeafFrame::print(SemmetyWorkspaceWrapper& workspace, int indentLevel) const {
