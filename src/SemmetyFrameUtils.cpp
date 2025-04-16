@@ -255,6 +255,44 @@ SP<SemmetySplitFrame> getCommonParent(
 	return commonAncestor->asSplit();
 }
 
+SP<SemmetySplitFrame> getResizeTarget(
+    SemmetyWorkspaceWrapper& workspace,
+    SP<SemmetyLeafFrame> frame,
+    Direction posDirection,
+    Direction negDirection
+) {
+	auto neighborPos = getNeighborByDirection(workspace, frame, posDirection);
+	auto neighborNeg = getNeighborByDirection(workspace, frame, negDirection);
+
+	if (!neighborPos && !neighborNeg) {
+		return {};
+	}
+
+	if (!neighborPos) {
+		return getCommonParent(workspace, frame, neighborNeg);
+	} else if (!neighborNeg) {
+		return getCommonParent(workspace, frame, neighborPos);
+	} else {
+		auto commonParentPos = getCommonParent(workspace, frame, neighborPos);
+		if (!commonParentPos) {
+			semmety_critical_error("not possible");
+		}
+
+		auto commonParentNeg = getCommonParent(workspace, frame, neighborNeg);
+		if (!commonParentNeg) {
+			semmety_critical_error("not possible");
+		}
+
+		auto posLength = commonParentPos->pathLengthToDescendant(frame).value_or(0)
+		               + commonParentPos->pathLengthToDescendant(neighborPos).value_or(0);
+
+		auto negLength = commonParentNeg->pathLengthToDescendant(frame).value_or(0)
+		               + commonParentNeg->pathLengthToDescendant(neighborNeg).value_or(0);
+
+		return posLength > negLength ? commonParentNeg : commonParentPos;
+	}
+}
+
 SP<SemmetySplitFrame>
 getResizeTarget(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame> basis, Direction dir) {
 	auto neighbor = getNeighborByDirection(workspace, basis, dir);

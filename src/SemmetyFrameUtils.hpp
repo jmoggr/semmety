@@ -17,6 +17,12 @@ bool frameAreaGreater(const SP<SemmetyLeafFrame>& a, const SP<SemmetyLeafFrame>&
 std::string getFramePath(const SP<SemmetyFrame>& targetFrame, const SP<SemmetyFrame>& rootFrame);
 SP<SemmetySplitFrame>
 getResizeTarget(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame> basis, Direction dir);
+SP<SemmetySplitFrame> getResizeTarget(
+    SemmetyWorkspaceWrapper& workspace,
+    SP<SemmetyLeafFrame> frame,
+    Direction posDirection,
+    Direction negDirection
+);
 bool getPathNodes(
     const SP<SemmetyFrame>& target,
     const SP<SemmetyFrame>& current,

@@ -417,13 +417,16 @@ Direction oppositeDirection(Direction dir) {
 
 	std::unreachable();
 }
+
 void SemmetyLayout::resizeActiveWindow(
     const Vector2D& delta,
     eRectCorner corner,
     PHLWINDOW pWindow
 ) {
 	auto window = pWindow ? pWindow : g_pCompositor->m_pLastWindow.lock();
-	if (!valid(window)) return;
+	if (!valid(window)) {
+		return;
+	}
 
 	if (window->m_bIsFloating) {
 		const auto required_size = Vector2D(
@@ -445,118 +448,36 @@ void SemmetyLayout::resizeActiveWindow(
 	}
 
 	auto resizeDelta = delta;
-
-	// TODO: refactor
-	Direction resizeDirectionX, resizeDirectionY;
 	SP<SemmetySplitFrame> horizontalParent, verticalParent;
 
 	switch (corner) {
 	case CORNER_TOPLEFT:
-		resizeDirectionX = Direction::Left;
+		horizontalParent = getResizeTarget(*workspace, frame, Direction::Left);
+		verticalParent = getResizeTarget(*workspace, frame, Direction::Up);
+
+		// Not sure why the signs on top and left corners are flipped. We could work with them as is,
+		// but flipping them makes the rest of the code a bit simpler.
 		resizeDelta.x *= -1;
-		resizeDirectionY = Direction::Up;
 		resizeDelta.y *= -1;
 		break;
 	case CORNER_TOPRIGHT:
-		resizeDirectionX = Direction::Right;
-		resizeDirectionY = Direction::Up;
+		horizontalParent = getResizeTarget(*workspace, frame, Direction::Right);
+		verticalParent = getResizeTarget(*workspace, frame, Direction::Up);
 		resizeDelta.y *= -1;
 		break;
 	case CORNER_BOTTOMRIGHT:
-		resizeDirectionX = Direction::Right;
-		resizeDirectionY = Direction::Down;
+		horizontalParent = getResizeTarget(*workspace, frame, Direction::Right);
+		verticalParent = getResizeTarget(*workspace, frame, Direction::Down);
 		break;
 	case CORNER_BOTTOMLEFT:
-		resizeDirectionX = Direction::Left;
+		horizontalParent = getResizeTarget(*workspace, frame, Direction::Left);
+		verticalParent = getResizeTarget(*workspace, frame, Direction::Down);
 		resizeDelta.x *= -1;
-		resizeDirectionY = Direction::Down;
 		break;
 	case CORNER_NONE:
-		auto neighborLeft = getNeighborByDirection(*workspace, frame, Direction::Left);
-		auto neighborRight = getNeighborByDirection(*workspace, frame, Direction::Right);
-
-		if (neighborLeft || neighborRight) {
-			if (!neighborLeft) {
-				resizeDirectionX = Direction::Right;
-				horizontalParent = getCommonParent(*workspace, frame, neighborRight);
-			} else if (!neighborRight) {
-				resizeDirectionX = Direction::Left;
-				horizontalParent = getCommonParent(*workspace, frame, neighborLeft);
-			} else {
-				auto commonParentLeft = getCommonParent(*workspace, frame, neighborLeft);
-				if (!commonParentLeft) {
-					semmety_critical_error("not possible");
-				}
-
-				auto commonParentRight = getCommonParent(*workspace, frame, neighborRight);
-				if (!commonParentRight) {
-					semmety_critical_error("not possible");
-				}
-
-				auto leftLength = commonParentLeft->pathLengthToDescendant(frame).value_or(0)
-				                + commonParentLeft->pathLengthToDescendant(neighborLeft).value_or(0);
-
-				auto rightLength = commonParentRight->pathLengthToDescendant(frame).value_or(0)
-				                 + commonParentRight->pathLengthToDescendant(neighborRight).value_or(0);
-
-				resizeDirectionX = leftLength > rightLength ? Direction::Right : Direction::Left;
-				horizontalParent = leftLength > rightLength ? commonParentRight : commonParentLeft;
-			}
-		}
-
-		auto neighborUp = getNeighborByDirection(*workspace, frame, Direction::Up);
-		auto neighborDown = getNeighborByDirection(*workspace, frame, Direction::Down);
-
-		if (neighborUp || neighborDown) {
-			if (!neighborUp) {
-				resizeDirectionY = Direction::Down;
-				verticalParent = getCommonParent(*workspace, frame, neighborDown);
-			} else if (!neighborDown) {
-				resizeDirectionY = Direction::Up;
-				verticalParent = getCommonParent(*workspace, frame, neighborUp);
-			} else {
-				auto commonParentUp = getCommonParent(*workspace, frame, neighborUp);
-				if (!commonParentUp) {
-					semmety_critical_error("not possible");
-				}
-
-				auto commonParentDown = getCommonParent(*workspace, frame, neighborDown);
-				if (!commonParentDown) {
-					semmety_critical_error("not possible");
-				}
-
-				auto upLength = commonParentUp->pathLengthToDescendant(frame).value_or(0)
-				              + commonParentUp->pathLengthToDescendant(neighborUp).value_or(0);
-
-				auto downLength = commonParentDown->pathLengthToDescendant(frame).value_or(0)
-				                + commonParentDown->pathLengthToDescendant(neighborDown).value_or(0);
-
-				resizeDirectionY = upLength > downLength ? Direction::Down : Direction::Up;
-				verticalParent = upLength > downLength ? commonParentDown : commonParentUp;
-			}
-		}
-
+		horizontalParent = getResizeTarget(*workspace, frame, Direction::Left, Direction::Right);
+		verticalParent = getResizeTarget(*workspace, frame, Direction::Up, Direction::Down);
 		break;
-	}
-
-	if (!horizontalParent) {
-		horizontalParent = getResizeTarget(*workspace, frame, resizeDirectionX);
-	}
-
-	if (!verticalParent) {
-		verticalParent = getResizeTarget(*workspace, frame, resizeDirectionY);
-	}
-
-	if (verticalParent) {
-		if (verticalParent->children.second->isSameOrDescendant(frame)) {
-			resizeDelta.y *= -1;
-		}
-	}
-
-	if (horizontalParent) {
-		if (horizontalParent->children.second->isSameOrDescendant(frame)) {
-			resizeDelta.x *= -1;
-		}
 	}
 
 	if (!horizontalParent && !verticalParent) {
@@ -564,10 +485,18 @@ void SemmetyLayout::resizeActiveWindow(
 	}
 
 	if (horizontalParent) {
+		if (horizontalParent->children.second->isSameOrDescendant(frame)) {
+			resizeDelta.x *= -1;
+		}
+
 		horizontalParent->resize(resizeDelta.x);
 	}
 
 	if (verticalParent) {
+		if (verticalParent->children.second->isSameOrDescendant(frame)) {
+			resizeDelta.y *= -1;
+		}
+
 		verticalParent->resize(resizeDelta.y);
 	}
 

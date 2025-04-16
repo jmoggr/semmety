@@ -217,18 +217,13 @@ std::optional<size_t> SemmetySplitFrame::pathLengthToDescendant(const SP<Semmety
 }
 
 void SemmetySplitFrame::resize(double distance) {
-	double newRatio;
+	const bool isVertical = splitDirection == SemmetySplitDirection::SplitV;
+	const auto firstChildSize = children.first->geometry.size();
+	const double baseSize = isVertical ? firstChildSize.x : firstChildSize.y;
+	const double totalSize = isVertical ? geometry.size().x : geometry.size().y;
 
-	switch (splitDirection) {
-	case SemmetySplitDirection::SplitV:
-		newRatio = (children.first->geometry.size().x + distance) / geometry.size().x;
-		break;
-	case SemmetySplitDirection::SplitH:
-		newRatio = (children.first->geometry.size().y + distance) / geometry.size().y;
-		break;
-	}
-
-	splitRatio = std::clamp(newRatio, 0.1, 0.9);
+	const double rawRatio = (baseSize + distance) / totalSize;
+	splitRatio = std::clamp(rawRatio, 0.1, 0.9);
 }
 
 std::string SemmetySplitFrame::print(SemmetyWorkspaceWrapper& workspace, int indentLevel) const {
