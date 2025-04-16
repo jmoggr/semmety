@@ -149,7 +149,11 @@ void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
 std::vector<PHLWINDOWREF>::iterator SemmetyWorkspaceWrapper::findWindowIt(PHLWINDOWREF window) {
 	auto it = std::find(windows.begin(), windows.end(), window);
 	if (it == windows.end()) {
-		semmety_critical_error("Window is not in the workspace");
+		semmety_critical_error(
+		    "Window '{}' is not in workspace '{}'",
+		    windowToString(window),
+		    workspace->m_iID
+		);
 	}
 	return it;
 }
@@ -342,9 +346,13 @@ bool isWindowFocussed(PHLWINDOWREF window) {
 	return g_pCompositor->m_pLastWindow && g_pCompositor->m_pLastWindow == window;
 }
 
-void SemmetyWorkspaceWrapper::printDebug() {
-	semmety_log(ERR, "DEBUG\n{}", root->print(*this));
+std::string SemmetyWorkspaceWrapper::getDebugString() {
+	std::string out = "";
 
+	out += format("workspace id + name '{}' '{}'\n", workspace->m_szName, workspace->m_iID);
+	out += "tiles:\n" + root->print(*this);
+
+	out += "\nwindows:\n";
 	for (const auto& window: windows) {
 		const auto ptrString = std::format("{:x}", (uintptr_t) window.get());
 		const auto focusString = isWindowFocussed(window) ? "focus" : "     ";
@@ -352,9 +360,8 @@ void SemmetyWorkspaceWrapper::printDebug() {
 		const auto floatingString = isWindowFloating(window) ? "floating" : "tiled   ";
 		const auto frameString = isWindowInFrame(window) ? "inframe" : "       ";
 
-		semmety_log(
-		    ERR,
-		    "{} {} {} {} {} {}",
+		out += format(
+		    "{} {} {} {} {} {}\n",
 		    ptrString,
 		    focusString,
 		    hiddenString,
@@ -364,19 +371,26 @@ void SemmetyWorkspaceWrapper::printDebug() {
 		);
 	}
 
-	semmety_log(ERR, "");
-	for (auto& [key, vec]: frameHistoryMap) {
-		std::string ids = "";
-		for (auto& window: vec) {
-			ids = format("{} {}", ids, std::format("{:x}", (uintptr_t) window.get()));
-		}
+	// out += "\n";
+	// for (auto& [key, vec]: frameHistoryMap) {
+	// 	std::string ids = "";
+	// 	for (auto& window: vec) {
+	// 		ids = format("{} {}", ids, std::format("{:x}", (uintptr_t) window.get()));
+	// 	}
 
-		semmety_log(ERR, "{} {}", key, ids);
+	// 	out += format("{} {}\n", key, ids);
+	// }
+
+	return out;
+}
+
+void SemmetyWorkspaceWrapper::printDebug() {
+	std::string debugStr = getDebugString();
+	std::istringstream stream(debugStr);
+	std::string line;
+	while (std::getline(stream, line)) {
+		semmety_log(ERR, "{}", line);
 	}
-
-	semmety_log(ERR, "");
-	semmety_log(ERR, "workspace id + name '{}' '{}'", workspace->m_szName, workspace->m_iID);
-	semmety_log(ERR, "DEBUG END");
 }
 
 json SemmetyWorkspaceWrapper::getWorkspaceWindowsJson() const {

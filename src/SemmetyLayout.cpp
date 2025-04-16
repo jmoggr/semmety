@@ -156,3 +156,14 @@ void SemmetyLayout::testWorkspaceInvariance() {
 		semmety_critical_error("invariant failed");
 	}
 }
+
+std::string SemmetyLayout::getDebugString() {
+	std::string out;
+	for (auto it = workspaceWrappers.begin(); it != workspaceWrappers.end(); ++it) {
+		out += it->getDebugString();
+		if (std::next(it) != workspaceWrappers.end()) {
+			out += "\n";
+		}
+	}
+	return out;
+}

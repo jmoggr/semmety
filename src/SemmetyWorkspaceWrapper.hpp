@@ -61,6 +61,7 @@ public:
 	void putWindowInFocussedFrame(PHLWINDOWREF window);
 	void setWindowTiled(PHLWINDOWREF window, bool isTiled);
 	void printDebug();
+	std::string getDebugString();
 	void changeWindowOrder(bool prev);
 	json getWorkspaceWindowsJson() const;
 	void activateWindow(PHLWINDOWREF window);

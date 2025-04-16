@@ -25,6 +25,8 @@ std::optional<size_t> getFocusHistoryIndex(PHLWINDOW wnd);
 SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen = true);
 SemmetyWorkspaceWrapper* workspace_for_window(PHLWINDOW window);
 void focusWindow(PHLWINDOWREF window);
+std::string windowToString(PHLWINDOWREF window);
+std::string getCallStackAsString(int maxFrames);
 
 void updateBar();
 void shouldUpdateBar();

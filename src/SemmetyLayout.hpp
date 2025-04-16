@@ -84,9 +84,15 @@ public:
 	void changeWindowOrder(bool prev);
 	json getWorkspacesJson();
 
+	std::string getDebugString();
+
 	template <typename Fn>
 	auto entryWrapper(std::string name, Fn&& fn) {
 		semmety_log(ERR, "ENTER {} {}", name, entryCount);
+
+		if (entryCount == 0) {
+			debugStringOnEntry = getDebugString();
+		}
 
 		entryCount += 1;
 
@@ -133,4 +139,5 @@ public:
 	bool _shouldUpdateBar = false;
 
 	int entryCount = 0;
+	std::string debugStringOnEntry = "";
 };

@@ -1,5 +1,10 @@
 #include "utils.hpp"
+#include <cstdlib>
+#include <sstream>
+#include <string>
 
+#include <cxxabi.h>
+#include <execinfo.h>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
@@ -18,6 +23,8 @@
 
 // defined in log.hpp
 std::string getSemmetyIndent() { return std::string(g_SemmetyLayout->entryCount * 4, ' '); }
+std::string getInitialDebugString() { return g_SemmetyLayout->debugStringOnEntry; }
+std::string getCurrentDebugString() { return g_SemmetyLayout->getDebugString(); }
 
 std::optional<size_t> getFocusHistoryIndex(PHLWINDOW wnd) {
 	const auto& history = g_pCompositor->m_vWindowFocusHistory;
@@ -214,3 +221,49 @@ void focusWindow(PHLWINDOWREF window) {
 }
 
 void shouldUpdateBar() { g_SemmetyLayout->_shouldUpdateBar = true; }
+
+std::string windowToString(PHLWINDOWREF window) {
+	return std::format("{:x}", (uintptr_t) window.get());
+}
+
+std::string getCallStackAsString() {
+	const auto maxFrames = 64;
+	// Create a vector to hold the stack addresses.
+	std::vector<void*> addrList(maxFrames + 1);
+
+	// Retrieve current stack addresses using the vector's data pointer.
+	int addrLen = backtrace(addrList.data(), static_cast<int>(addrList.size()));
+
+	if (addrLen == 0) {
+		return "<empty, possibly corrupt stack>";
+	}
+
+	// Convert addresses to an array of symbolic strings.
+	char** symbolList = backtrace_symbols(addrList.data(), addrLen);
+	if (!symbolList) {
+		return "<failed to obtain symbols>";
+	}
+
+	std::ostringstream oss;
+	for (int i = 0; i < addrLen; ++i) {
+		std::string symbol(symbolList[i]);
+
+		// Optionally demangle the symbol name for readability.
+		std::size_t begin = symbol.find('(');
+		std::size_t end = symbol.find('+', begin);
+		if (begin != std::string::npos && end != std::string::npos) {
+			std::string mangled = symbol.substr(begin + 1, end - begin - 1);
+			int status = 0;
+			char* demangled = abi::__cxa_demangle(mangled.c_str(), nullptr, nullptr, &status);
+			if (status == 0 && demangled) {
+				symbol.replace(begin + 1, end - begin - 1, demangled);
+				free(demangled);
+			}
+		}
+
+		oss << symbol << "\n";
+	}
+
+	free(symbolList);
+	return oss.str();
+}
