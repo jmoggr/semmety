@@ -132,8 +132,6 @@ void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
 		vec.erase(std::remove(vec.begin(), vec.end(), window), vec.end());
 	}
 
-	windows.erase(findWindowIt(window));
-
 	auto frameWithWindow = getFrameForWindow(window);
 	if (!frameWithWindow) {
 		return;
@@ -144,6 +142,8 @@ void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
 	if (newWindow && frameWithWindow == focused_frame) {
 		focusWindow(newWindow);
 	}
+
+	windows.erase(findWindowIt(window));
 }
 
 std::vector<PHLWINDOWREF>::iterator SemmetyWorkspaceWrapper::findWindowIt(PHLWINDOWREF window) {
