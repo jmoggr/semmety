@@ -138,50 +138,28 @@ SP<SemmetyFrame> SemmetySplitFrame::getOtherChild(const SP<SemmetyFrame>& child)
 std::pair<CBox, CBox> SemmetySplitFrame::getChildGeometries() const {
 	switch (this->splitDirection) {
 	case SemmetySplitDirection::SplitV: {
-		const auto new_width = static_cast<int>(this->geometry.size().x / 2);
+		const auto leftWidth = geometry.size().x * splitRatio;
+		const auto rightWidth = geometry.size().x * (1 - splitRatio);
 
-		CBox left_rect(
-		    this->geometry.pos(),
-		    Vector2D(
-		        static_cast<double>(new_width + this->child0Offset),
-		        static_cast<double>(this->geometry.size().y)
-		    )
-		);
-		CBox right_rect(
-		    Vector2D(
-		        this->geometry.pos().x + new_width + this->gap_topleft_offset.x,
-		        this->geometry.pos().y
-		    ),
-		    Vector2D(
-		        static_cast<double>(new_width - this->child0Offset),
-		        static_cast<double>(this->geometry.size().y)
-		    )
+		CBox leftRect(geometry.pos(), Vector2D(leftWidth, geometry.size().y));
+		CBox rightRect(
+		    Vector2D(geometry.pos().x + leftWidth, geometry.pos().y),
+		    Vector2D(rightWidth, geometry.size().y)
 		);
 
-		return {left_rect, right_rect};
+		return {leftRect, rightRect};
 	}
 	case SemmetySplitDirection::SplitH: {
-		const auto new_height = static_cast<int>(this->geometry.size().y / 2);
+		const auto topHeight = geometry.size().y * splitRatio;
+		const auto bottomHeight = geometry.size().y * (1 - splitRatio);
 
-		CBox top_rect(
-		    this->geometry.pos(),
-		    Vector2D(
-		        static_cast<double>(this->geometry.size().x),
-		        static_cast<double>(new_height + this->child0Offset)
-		    )
-		);
-		CBox bottom_rect(
-		    Vector2D(
-		        this->geometry.pos().x,
-		        this->geometry.pos().y + new_height + this->gap_topleft_offset.y
-		    ),
-		    Vector2D(
-		        static_cast<double>(this->geometry.size().x),
-		        static_cast<double>(new_height - this->child0Offset)
-		    )
+		CBox topRect(geometry.pos(), Vector2D(geometry.size().x, topHeight));
+		CBox bottomRect(
+		    Vector2D(geometry.pos().x, geometry.pos().y + topHeight),
+		    Vector2D(geometry.size().x, bottomHeight)
 		);
 
-		return {top_rect, bottom_rect};
+		return {topRect, bottomRect};
 	}
 	default: {
 		semmety_critical_error("Invalid split direction");

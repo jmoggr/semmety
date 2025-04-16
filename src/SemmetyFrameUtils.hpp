@@ -15,3 +15,15 @@ SP<SemmetyLeafFrame> getNeighborByDirection(
 );
 bool frameAreaGreater(const SP<SemmetyLeafFrame>& a, const SP<SemmetyLeafFrame>& b);
 std::string getFramePath(const SP<SemmetyFrame>& targetFrame, const SP<SemmetyFrame>& rootFrame);
+SP<SemmetySplitFrame>
+getResizeTarget(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame> basis, Direction dir);
+bool getPathNodes(
+    const SP<SemmetyFrame>& target,
+    const SP<SemmetyFrame>& current,
+    std::vector<SP<SemmetyFrame>>& path
+);
+SP<SemmetySplitFrame> getCommonParent(
+    SemmetyWorkspaceWrapper& workspace,
+    SP<SemmetyFrame> frameA,
+    SP<SemmetyFrame> frameB
+);

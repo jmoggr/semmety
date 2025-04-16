@@ -13,6 +13,7 @@
 #include <hyprland/src/render/pass/BorderPassElement.hpp>
 
 #include "SemmetyFrame.hpp"
+#include "SemmetyFrameUtils.hpp"
 #include "SemmetyLayout.hpp"
 #include "SemmetyWorkspaceWrapper.hpp"
 #include "globals.hpp"
@@ -401,8 +402,6 @@ PHLWINDOW SemmetyLayout::getNextWindowCandidate(PHLWINDOW window) {
 	});
 }
 
-// void SemmetyLayout::onBeginDragWindow() { semmety_log(LOG, "STUB onBeginDragWindow"); }
-
 void SemmetyLayout::resizeActiveWindow(
     const Vector2D& delta,
     eRectCorner corner,
@@ -414,9 +413,74 @@ void SemmetyLayout::resizeActiveWindow(
 		    std::max((window->m_vRealSize->goal() + delta).y, 20.0)
 		);
 		*window->m_vRealSize = required_size;
+		return;
 	}
 
-	semmety_log(LOG, "STUB resizeActiveWindow");
+	auto workspace = workspace_for_window(window);
+	if (!workspace) {
+		return;
+	}
+
+	auto frame = workspace->getFrameForWindow(window);
+	if (!frame) {
+		return;
+	}
+
+	Direction resizeDirectionX;
+	Direction resizeDirectionY;
+
+	switch (corner) {
+	case CORNER_TOPLEFT:
+		resizeDirectionX = Direction::Left;
+		resizeDirectionY = Direction::Up;
+		break;
+	case CORNER_TOPRIGHT:
+		resizeDirectionX = Direction::Right;
+		resizeDirectionY = Direction::Up;
+		break;
+	case CORNER_BOTTOMRIGHT:
+		resizeDirectionX = Direction::Right;
+		resizeDirectionY = Direction::Down;
+		break;
+	case CORNER_BOTTOMLEFT:
+		resizeDirectionX = Direction::Left;
+		resizeDirectionY = Direction::Down;
+		break;
+	case CORNER_NONE: return;
+	default: semmety_critical_error("impossible");
+	}
+
+	auto horizontalParent = getResizeTarget(*workspace, frame, resizeDirectionX);
+	auto verticalParent = getResizeTarget(*workspace, frame, resizeDirectionY);
+
+	if (!horizontalParent && !verticalParent) {
+		return;
+	}
+
+	if (horizontalParent) {
+		auto horizontalParentWidth = horizontalParent->geometry.size().x;
+		auto newFirstChildWidth = horizontalParent->children.first->geometry.size().x + delta.x;
+
+		horizontalParent->splitRatio = std::clamp(newFirstChildWidth / horizontalParentWidth, 0.1, 0.9);
+	}
+
+	if (verticalParent) {
+		auto verticalParentHeight = verticalParent->geometry.size().y;
+		auto newFirstChildHeight = verticalParent->children.first->geometry.size().y + delta.y;
+
+		verticalParent->splitRatio = std::clamp(newFirstChildHeight / verticalParentHeight, 0.1, 0.9);
+	}
+
+	SP<SemmetyFrame> commonParent;
+	if (!horizontalParent) {
+		commonParent = verticalParent;
+	} else if (!verticalParent) {
+		commonParent = horizontalParent;
+	} else {
+		commonParent = getCommonParent(*workspace, horizontalParent, verticalParent);
+	}
+
+	commonParent->applyRecursive(*workspace, std::nullopt, true);
 }
 
 void SemmetyLayout::fullscreenRequestForWindow(

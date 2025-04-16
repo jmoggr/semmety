@@ -197,6 +197,75 @@ SP<SemmetyLeafFrame> getNeighborByDirection(
 	return getMaxFocusOrderLeaf(closest);
 }
 
+bool getPathNodes(
+    const SP<SemmetyFrame>& target,
+    const SP<SemmetyFrame>& current,
+    std::vector<SP<SemmetyFrame>>& path
+) {
+	path.push_back(current);
+
+	if (current == target) {
+		return true;
+	}
+
+	if (current->isSplit()) {
+		auto split = current->asSplit();
+		if (getPathNodes(target, split->children.first, path)) {
+			return true;
+		}
+		if (getPathNodes(target, split->children.second, path)) {
+			return true;
+		}
+	}
+
+	path.pop_back();
+	return false;
+}
+
+SP<SemmetySplitFrame> getCommonParent(
+    SemmetyWorkspaceWrapper& workspace,
+    SP<SemmetyFrame> frameA,
+    SP<SemmetyFrame> frameB
+) {
+	std::vector<SP<SemmetyFrame>> pathA, pathB;
+	if (!getPathNodes(frameA, workspace.root, pathA)) {
+		semmety_critical_error("Frame A not found in the tree");
+	}
+	if (!getPathNodes(frameB, workspace.root, pathB)) {
+		semmety_critical_error("Frame B not found in the tree");
+	}
+
+	SP<SemmetyFrame> commonAncestor = nullptr;
+	size_t minSize = std::min(pathA.size(), pathB.size());
+	for (size_t i = 0; i < minSize; ++i) {
+		if (pathA[i] == pathB[i]) {
+			commonAncestor = pathA[i];
+		} else {
+			break;
+		}
+	}
+
+	if (!commonAncestor) {
+		semmety_critical_error("No common parent found");
+	}
+
+	if (commonAncestor->isLeaf()) {
+		semmety_critical_error("Commond parent is a leaf, this should not be possible");
+	}
+
+	return commonAncestor->asSplit();
+}
+
+SP<SemmetySplitFrame>
+getResizeTarget(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame> basis, Direction dir) {
+	auto neighbor = getNeighborByDirection(workspace, basis, dir);
+	if (!neighbor) {
+		return {};
+	}
+
+	return getCommonParent(workspace, basis, neighbor);
+}
+
 bool frameAreaGreater(const SP<SemmetyLeafFrame>& a, const SP<SemmetyLeafFrame>& b) {
 	const auto sa = a->geometry.size();
 	const auto sb = b->geometry.size();

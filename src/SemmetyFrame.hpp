@@ -46,7 +46,7 @@ public:
 class SemmetySplitFrame: public SemmetyFrame {
 public:
 	// how much larger the 1st child is
-	int child0Offset = 0;
+	float splitRatio = 0.5;
 	SemmetySplitDirection splitDirection;
 	std::pair<SP<SemmetyFrame>, SP<SemmetyFrame>> children;
 
