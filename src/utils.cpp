@@ -20,6 +20,7 @@
 #include "globals.hpp"
 #include "log.hpp"
 #include "src/desktop/DesktopTypes.hpp"
+#include "src/managers/EventManager.hpp"
 
 // defined in log.hpp
 std::string getSemmetyIndent() { return std::string(g_SemmetyLayout->entryCount * 4, ' '); }
@@ -114,64 +115,6 @@ SemmetyWorkspaceWrapper* workspace_for_window(PHLWINDOW window) {
 	return &g_SemmetyLayout->getOrCreateWorkspaceWrapper(window->m_pWorkspace);
 }
 
-uint64_t spawnRawProc(std::string args, PHLWORKSPACE pInitialWorkspace) {
-	// Debug::log(LOG, "Executing {}", args);
-
-	// const auto HLENV = getHyprlandLaunchEnv(pInitialWorkspace);
-
-	int socket[2];
-	if (pipe(socket) != 0) {
-		Debug::log(LOG, "Unable to create pipe for fork");
-	}
-
-	Hyprutils::OS::CFileDescriptor pipeSock[2] = {
-	    Hyprutils::OS::CFileDescriptor {socket[0]},
-	    Hyprutils::OS::CFileDescriptor {socket[1]}
-	};
-
-	pid_t child, grandchild;
-	child = fork();
-	if (child < 0) {
-		Debug::log(LOG, "Fail to create the first fork");
-		return 0;
-	}
-	if (child == 0) {
-		// run in child
-		g_pCompositor->restoreNofile();
-
-		sigset_t set;
-		sigemptyset(&set);
-		sigprocmask(SIG_SETMASK, &set, nullptr);
-
-		grandchild = fork();
-		if (grandchild == 0) {
-			// run in grandchild
-			// for (auto const& e: HLENV) {
-			// 	setenv(e.first.c_str(), e.second.c_str(), 1);
-			// }
-			setenv("WAYLAND_DISPLAY", g_pCompositor->m_szWLDisplaySocket.c_str(), 1);
-			execl("/bin/sh", "/bin/sh", "-c", args.c_str(), nullptr);
-			// exit grandchild
-			_exit(0);
-		}
-		[[maybe_unused]] auto wret = write(pipeSock[1].get(), &grandchild, sizeof(grandchild));
-		// exit child
-		_exit(0);
-	}
-	// run in parent
-	[[maybe_unused]] auto rret = read(pipeSock[0].get(), &grandchild, sizeof(grandchild));
-	// clear child and leave grandchild to init
-	waitpid(child, nullptr, 0);
-	if (grandchild < 0) {
-		Debug::log(LOG, "Fail to create the second fork");
-		return 0;
-	}
-
-	Debug::log(LOG, "Process Created with pid {}", grandchild);
-
-	return grandchild;
-}
-
 std::string escapeSingleQuotes(const std::string& input) {
 	std::ostringstream ss;
 	for (char c: input) {
@@ -190,19 +133,12 @@ void updateBar() {
 		return;
 	}
 
-	const auto windowsJson = workspace_wrapper->getWorkspaceWindowsJson();
-	const auto workspacesJson = g_SemmetyLayout->getWorkspacesJson();
+	const json updateJson = {
+	    {"windows", workspace_wrapper->getWorkspaceWindowsJson()},
+	    {"workspaces", g_SemmetyLayout->getWorkspacesJson()}
+	};
 
-	const json updateJson = {{"windows", windowsJson}, {"workspaces", workspacesJson}};
-
-	auto jsonString = updateJson.dump();
-	auto escapedJsonString = "\'" + escapeSingleQuotes(jsonString) + "\'";
-	spawnRawProc(
-	    "qs ipc call taskManager setWindows " + escapedJsonString,
-	    workspace_wrapper->workspace.lock()
-	);
-
-	// semmety_log(ERR, "calling qs with {}", escapedJsonString);
+	g_pEventManager->postEvent(SHyprIPCEvent {"semmetyupdate", updateJson.dump()});
 }
 
 void focusWindow(PHLWINDOWREF window) {
