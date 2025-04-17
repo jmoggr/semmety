@@ -69,6 +69,7 @@ public:
 	void updateFrameHistory(SP<SemmetyFrame> frame, PHLWINDOWREF window);
 	bool windowMatchesVisibility(PHLWINDOWREF window, SemmetyWindowVisibility mode);
 	PHLWINDOWREF getNextWindowForFrame(SP<SemmetyLeafFrame> frame);
+	void putWindowInFrame(PHLWINDOWREF window, SP<SemmetyLeafFrame> frame);
 	std::vector<std::string> testInvariants();
 
 	// TODO: should also be private

@@ -13,6 +13,8 @@ SP<SemmetyLeafFrame> getNeighborByDirection(
     const SP<SemmetyLeafFrame> basis,
     const Direction dir
 );
+SP<SemmetyLeafFrame>
+getMostOverlappingLeafFrame(SemmetyWorkspaceWrapper& workspace, const PHLWINDOWREF& window);
 bool frameAreaGreater(const SP<SemmetyLeafFrame>& a, const SP<SemmetyLeafFrame>& b);
 std::string getFramePath(const SP<SemmetyFrame>& targetFrame, const SP<SemmetyFrame>& rootFrame);
 SP<SemmetySplitFrame>

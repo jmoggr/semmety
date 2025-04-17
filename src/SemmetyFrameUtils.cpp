@@ -196,6 +196,46 @@ SP<SemmetyLeafFrame> getNeighborByDirection(
 	return getMaxFocusOrderLeaf(closest);
 }
 
+SP<SemmetyLeafFrame>
+getMostOverlappingLeafFrame(SemmetyWorkspaceWrapper& workspace, const PHLWINDOWREF& window) {
+	if (!window) {
+		return nullptr;
+	}
+
+	const auto windowBox = CBox(window->m_vPosition, window->m_vSize);
+
+	double maxOverlapArea = 0.0;
+	SP<SemmetyLeafFrame> bestFrame = nullptr;
+
+	for (const auto& leaf: workspace.root->getLeafFrames()) {
+		const auto& frameBox = leaf->geometry;
+
+		const double windowLeft = windowBox.pos().x;
+		const double windowRight = windowBox.pos().x + windowBox.size().x;
+		const double windowTop = windowBox.pos().y;
+		const double windowBottom = windowBox.pos().y + windowBox.size().y;
+
+		const double frameLeft = frameBox.pos().x;
+		const double frameRight = frameBox.pos().x + frameBox.size().x;
+		const double frameTop = frameBox.pos().y;
+		const double frameBottom = frameBox.pos().y + frameBox.size().y;
+
+		const double overlapX =
+		    std::max(0.0, std::min(windowRight, frameRight) - std::max(windowLeft, frameLeft));
+		const double overlapY =
+		    std::max(0.0, std::min(windowBottom, frameBottom) - std::max(windowTop, frameTop));
+
+		const double overlapArea = overlapX * overlapY;
+
+		if (overlapArea > maxOverlapArea) {
+			maxOverlapArea = overlapArea;
+			bestFrame = leaf;
+		}
+	}
+
+	return bestFrame;
+}
+
 bool getPathNodes(
     const SP<SemmetyFrame>& target,
     const SP<SemmetyFrame>& current,

@@ -47,12 +47,12 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 	semmety_log(ERR, "workspace has root frame: {}", frame->print(*this));
 }
 
-void SemmetyWorkspaceWrapper::putWindowInFocussedFrame(PHLWINDOWREF window) {
+void SemmetyWorkspaceWrapper::putWindowInFrame(PHLWINDOWREF window, SP<SemmetyLeafFrame> frame) {
 	if (!window) {
 		return;
 	}
 
-	const auto replacedWindow = focused_frame->replaceWindow(*this, window);
+	const auto replacedWindow = frame->replaceWindow(*this, window);
 
 	// Don't focus the window unless it is on the active workspace. This prevents active workspace
 	// changing when a window is addded to an inactive workspace.
@@ -71,6 +71,10 @@ void SemmetyWorkspaceWrapper::putWindowInFocussedFrame(PHLWINDOWREF window) {
 	}
 
 	emptyFrame->setWindow(*this, replacedWindow);
+}
+
+void SemmetyWorkspaceWrapper::putWindowInFocussedFrame(PHLWINDOWREF window) {
+	putWindowInFrame(window, focused_frame);
 }
 
 SP<SemmetyLeafFrame> SemmetyWorkspaceWrapper::getLargestEmptyFrame() {
@@ -103,19 +107,22 @@ void SemmetyWorkspaceWrapper::setWindowTiled(PHLWINDOWREF window, bool isTiled) 
 	}
 
 	if (isTiled) {
-		auto lastFocussed = root->getLastFocussedLeaf();
-		setFocusedFrame(lastFocussed);
-
-		auto emptyFrame = getLargestEmptyFrame();
-		if (!emptyFrame) {
-			window->setHidden(true);
-			return;
+		auto frame = getMostOverlappingLeafFrame(*this, window);
+		if (!frame) {
+			frame = getLargestEmptyFrame();
 		}
 
-		emptyFrame->setWindow(*this, window);
-		if (emptyFrame == focused_frame) {
-			focusWindow(window);
+		if (!frame) {
+			frame = root->getLastFocussedLeaf();
 		}
+
+		if (!frame) {
+			semmety_critical_error("frame is null, this should no be possible, getLastFocussedLeaf "
+			                       "should always return something");
+		}
+
+		putWindowInFrame(window, frame);
+		setFocusedFrame(frame);
 	} else {
 		auto frameWithWindow = getFrameForWindow(window);
 		if (!frameWithWindow) {
