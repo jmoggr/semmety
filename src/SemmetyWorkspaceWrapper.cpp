@@ -349,11 +349,20 @@ bool isWindowFocussed(PHLWINDOWREF window) {
 std::string SemmetyWorkspaceWrapper::getDebugString() {
 	std::string out = "";
 
+	if (!workspace) {
+		return "workspace is empty";
+	}
+
 	out += format("workspace id + name '{}' '{}'\n", workspace->m_szName, workspace->m_iID);
 	out += "tiles:\n" + root->print(*this);
 
 	out += "\nwindows:\n";
 	for (const auto& window: windows) {
+		if (!window) {
+			out += "window is null";
+			continue;
+		}
+
 		const auto ptrString = std::format("{:x}", (uintptr_t) window.get());
 		const auto focusString = isWindowFocussed(window) ? "focus" : "     ";
 		const auto hiddenString = isWindowVisible(window) ? "visible" : "hidden ";
