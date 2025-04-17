@@ -101,7 +101,9 @@ SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
 }
 
 SemmetyWorkspaceWrapper* workspace_for_window(PHLWINDOW window) {
-	if (!window->m_pWorkspace) return nullptr;
+	if (!window || !window->m_pWorkspace) {
+		return nullptr;
+	}
 
 	for (auto& workspace: g_SemmetyLayout->workspaceWrappers) {
 		if (window->m_pWorkspace == workspace.workspace) {
