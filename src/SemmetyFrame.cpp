@@ -149,7 +149,7 @@ std::pair<CBox, CBox> SemmetySplitFrame::getChildGeometries() const {
 		    Vector2D(rightWidth, geometry.size().y)
 		);
 
-		return {leftRect, rightRect};
+		return {leftRect.round(), rightRect.round()};
 	}
 	case SemmetySplitDirection::SplitH: {
 		const auto topHeight = geometry.size().y * splitRatio;
@@ -161,7 +161,7 @@ std::pair<CBox, CBox> SemmetySplitFrame::getChildGeometries() const {
 		    Vector2D(geometry.size().x, bottomHeight)
 		);
 
-		return {topRect, bottomRect};
+		return {topRect.round(), bottomRect.round()};
 	}
 	}
 
