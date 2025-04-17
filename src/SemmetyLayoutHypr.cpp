@@ -563,8 +563,26 @@ void SemmetyLayout::fullscreenRequestForWindow(
 	});
 }
 
-void SemmetyLayout::recalculateWindow(PHLWINDOW pWindow) {
-	semmety_log(LOG, "STUB recalculateWindow");
+void SemmetyLayout::recalculateWindow(PHLWINDOW window) {
+	entryWrapper("recalculateWindow", [&]() -> std::optional<std::string> {
+		if (!window) {
+			return "window is null";
+		}
+
+		auto workspace = workspace_for_window(window);
+		if (!workspace) {
+			return "Failed to find workspace for window";
+		}
+
+		auto frame = workspace->getFrameForWindow(window);
+		if (!frame) {
+			return "Failed to find frame for window";
+		}
+
+		frame->applyRecursive(*workspace);
+
+		return std::nullopt;
+	});
 }
 
 SWindowRenderLayoutHints SemmetyLayout::requestRenderHints(PHLWINDOW pWindow) { return {}; }
