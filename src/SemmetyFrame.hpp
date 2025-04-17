@@ -103,8 +103,8 @@ public:
 	bool isSplit() const override;
 	void applyRecursive(
 	    SemmetyWorkspaceWrapper& workspace,
-	    std::optional<CBox> newGeometry,
-	    std::optional<bool> force
+	    std::optional<CBox> newGeometry = std::nullopt,
+	    std::optional<bool> force = std::nullopt
 	) override;
 	std::vector<SP<SemmetyLeafFrame>> getLeafFrames() const override;
 	std::string print(SemmetyWorkspaceWrapper& workspace, int indentLevel = 0) const override;
