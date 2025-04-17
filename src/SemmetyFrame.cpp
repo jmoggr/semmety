@@ -250,7 +250,19 @@ SP<SemmetyLeafFrame> SemmetyLeafFrame::create(PHLWINDOWREF window) {
 	ptr->self = ptr;
 	return ptr;
 }
-SemmetyLeafFrame::SemmetyLeafFrame(PHLWINDOWREF window): window(window) {}
+
+SemmetyLeafFrame::SemmetyLeafFrame(PHLWINDOWREF window): window(window) {
+	static auto PINACTIVECOL = CConfigValue<Hyprlang::CUSTOMTYPE>("general:col.inactive_border");
+	g_pAnimationManager->createAnimation(
+	    0.f,
+	    this->m_fBorderFadeAnimationProgress,
+	    g_pConfigManager->getAnimationPropertyConfig("border"),
+	    AVARDAMAGE_ENTIRE
+	);
+
+	auto* const INACTIVECOL = (CGradientValueData*) (PINACTIVECOL.ptr())->getData();
+	setBorderColor(*INACTIVECOL);
+}
 
 bool SemmetyLeafFrame::isEmpty() const { return window == nullptr; }
 
@@ -403,6 +415,18 @@ void SemmetyLeafFrame::applyRecursive(
 	}
 
 	window->updateWindowDecos();
+}
+
+// from void CCompositor::updateWindowAnimatedDecorationValues(PHLWINDOW pWindow) {
+void SemmetyLeafFrame::setBorderColor(CGradientValueData grad) {
+	if (grad == m_cRealBorderColor) {
+		return;
+	}
+
+	m_cRealBorderColorPrevious = m_cRealBorderColor;
+	m_cRealBorderColor = grad;
+	m_fBorderFadeAnimationProgress->setValueAndWarp(0.f);
+	*m_fBorderFadeAnimationProgress = 1.f;
 }
 
 // from CHyprBorderDecoration::draw

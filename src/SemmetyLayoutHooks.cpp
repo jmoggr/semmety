@@ -21,17 +21,11 @@ void SemmetyLayout::urgentHook(void*, SCallbackInfo&, std::any data) {
 }
 
 void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
-	auto render_stage = std::any_cast<eRenderStage>(data);
-
-	static auto PACTIVECOL = CConfigValue<Hyprlang::CUSTOMTYPE>("general:col.active_border");
-	static auto PINACTIVECOL = CConfigValue<Hyprlang::CUSTOMTYPE>("general:col.inactive_border");
 	static auto PBORDERSIZE = CConfigValue<Hyprlang::INT>("general:border_size");
-
 	static auto PROUNDING = CConfigValue<Hyprlang::INT>("decoration:rounding");
 	static auto PROUNDINGPOWER = CConfigValue<Hyprlang::FLOAT>("decoration:rounding_power");
 
-	auto* const ACTIVECOL = (CGradientValueData*) (PACTIVECOL.ptr())->getData();
-	auto* const INACTIVECOL = (CGradientValueData*) (PINACTIVECOL.ptr())->getData();
+	auto render_stage = std::any_cast<eRenderStage>(data);
 
 	auto monitor = g_pHyprOpenGL->m_RenderData.pMonitor.lock();
 	if (monitor == nullptr) {
@@ -53,16 +47,31 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 	case RENDER_PRE_WINDOWS:
 		for (const auto& frame: emptyFrames) {
 			CBorderPassElement::SBorderData borderData;
-			if (ww.getFocusedFrame() == frame) {
-				borderData.grad1 = *ACTIVECOL;
-			} else {
-				borderData.grad1 = *INACTIVECOL;
-			}
 			borderData.box = frame->getEmptyFrameBox(*monitor);
-
 			borderData.borderSize = *PBORDERSIZE;
 			borderData.roundingPower = *PROUNDINGPOWER;
 			borderData.round = *PROUNDING;
+
+			auto grad = frame->m_cRealBorderColor;
+			// angle animation it not enabled yet
+			// if (frame.m_fBorderAngleAnimationProgress->enabled()) {
+			//     grad.m_fAngle += frame.m_fBorderAngleAnimationProgress->value() * M_PI * 2;
+			//     grad.m_fAngle = normalizeAngleRad(grad.m_fAngle);
+			// }
+
+			// TODO: what does a do?
+			// data.a             = a;
+
+			const bool ANIMATED = frame->m_fBorderFadeAnimationProgress->isBeingAnimated();
+			if (ANIMATED) {
+				borderData.hasGrad2 = true;
+				borderData.grad1 = frame->m_cRealBorderColorPrevious;
+				borderData.grad2 = grad;
+				borderData.lerp = frame->m_fBorderFadeAnimationProgress->value();
+			} else {
+				borderData.grad1 = grad;
+			}
+
 			auto element = CBorderPassElement(borderData);
 			auto pass = makeShared<CBorderPassElement>(element);
 			g_pHyprRenderer->m_sRenderPass.add(pass);

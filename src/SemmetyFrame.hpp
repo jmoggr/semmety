@@ -6,6 +6,9 @@
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprutils/math/Box.hpp>
 
+#include "src/config/ConfigDataValues.hpp"
+#include "src/helpers/AnimatedVariable.hpp"
+
 using namespace Hyprutils::Math;
 
 enum class SemmetySplitDirection {
@@ -79,9 +82,13 @@ private:
 class SemmetyLeafFrame: public SemmetyFrame {
 public:
 	static SP<SemmetyLeafFrame> create(PHLWINDOWREF window);
+	CGradientValueData m_cRealBorderColor = {0};
+	CGradientValueData m_cRealBorderColorPrevious = {0};
+	PHLANIMVAR<float> m_fBorderFadeAnimationProgress;
 
 	bool isEmpty() const;
 	PHLWINDOWREF getWindow();
+	void setBorderColor(CGradientValueData grad);
 	void setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win);
 	PHLWINDOWREF replaceWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win);
 	CBox getStandardWindowArea(CBox area, SBoxExtents extents, PHLWORKSPACE workspace) const;
