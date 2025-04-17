@@ -113,17 +113,3 @@ void SemmetyLayout::tickHook(void*, SCallbackInfo&, std::any) {
 		}
 	}
 }
-
-void SemmetyLayout::activeWindowHook(void*, SCallbackInfo&, std::any data) {
-	semmety_log(ERR, "activate hook");
-	const auto PWINDOW = std::any_cast<PHLWINDOW>(data);
-	if (PWINDOW == nullptr) {
-		return;
-	}
-
-	if (PWINDOW->m_pWorkspace == nullptr) {
-		return;
-	}
-
-	g_SemmetyLayout->activateWindow(PWINDOW);
-}
