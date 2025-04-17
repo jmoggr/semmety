@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -81,7 +82,8 @@ private:
 
 class SemmetyLeafFrame: public SemmetyFrame {
 public:
-	static SP<SemmetyLeafFrame> create(PHLWINDOWREF window);
+	static SP<SemmetyLeafFrame>
+	create(PHLWINDOWREF window, std::optional<bool> isActive = std::nullopt);
 	CGradientValueData m_cRealBorderColor = {0};
 	CGradientValueData m_cRealBorderColorPrevious = {0};
 	PHLANIMVAR<float> m_fBorderFadeAnimationProgress;
@@ -109,7 +111,7 @@ public:
 
 private:
 	PHLWINDOWREF window;
-	SemmetyLeafFrame(PHLWINDOWREF window);
+	SemmetyLeafFrame(PHLWINDOWREF window, std::optional<bool> isActive = std::nullopt);
 	void _setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win, bool force);
 
 	template <typename U, typename... Args>

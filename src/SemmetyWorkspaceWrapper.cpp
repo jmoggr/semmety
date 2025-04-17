@@ -36,13 +36,13 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 	auto& monitor = w->m_pMonitor;
 	auto pos = monitor->vecPosition + monitor->vecReservedTopLeft;
 	auto size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
-	PHLWINDOWREF empty = {};
-	auto frame = SemmetyLeafFrame::create(empty);
 
-	this->root = frame;
-	this->focused_frame = frame;
-
+	auto frame = SemmetyLeafFrame::create({}, true);
 	frame->geometry = {pos, size};
+
+	root = frame;
+	focused_frame = frame;
+
 	semmety_log(ERR, "init workspace monitor size {} {}", monitor->vecSize.x, monitor->vecSize.y);
 	semmety_log(ERR, "workspace has root frame: {}", frame->print(*this));
 }

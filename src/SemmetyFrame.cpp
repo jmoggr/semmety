@@ -12,6 +12,7 @@
 
 #include "SemmetyFrameUtils.hpp"
 #include "log.hpp"
+#include "src/config/ConfigDataValues.hpp"
 #include "utils.hpp"
 
 //
@@ -245,14 +246,17 @@ bool SemmetySplitFrame::isSplit() const { return true; }
 // SemmetyLeafFrame
 //
 
-SP<SemmetyLeafFrame> SemmetyLeafFrame::create(PHLWINDOWREF window) {
-	auto ptr = makeShared<SemmetyLeafFrame>(window);
+SP<SemmetyLeafFrame> SemmetyLeafFrame::create(PHLWINDOWREF window, std::optional<bool> isActive) {
+	auto ptr = makeShared<SemmetyLeafFrame>(window, isActive);
 	ptr->self = ptr;
 	return ptr;
 }
 
-SemmetyLeafFrame::SemmetyLeafFrame(PHLWINDOWREF window): window(window) {
+SemmetyLeafFrame::SemmetyLeafFrame(PHLWINDOWREF window, std::optional<bool> isActive):
+    window(window) {
 	static auto PINACTIVECOL = CConfigValue<Hyprlang::CUSTOMTYPE>("general:col.inactive_border");
+	static auto PACTIVECOL = CConfigValue<Hyprlang::CUSTOMTYPE>("general:col.active_border");
+
 	g_pAnimationManager->createAnimation(
 	    0.f,
 	    this->m_fBorderFadeAnimationProgress,
@@ -260,8 +264,14 @@ SemmetyLeafFrame::SemmetyLeafFrame(PHLWINDOWREF window): window(window) {
 	    AVARDAMAGE_ENTIRE
 	);
 
-	auto* const INACTIVECOL = (CGradientValueData*) (PINACTIVECOL.ptr())->getData();
-	setBorderColor(*INACTIVECOL);
+	CGradientValueData* color;
+	if (isActive.value_or(false)) {
+		color = (CGradientValueData*) (PACTIVECOL.ptr())->getData();
+	} else {
+		color = (CGradientValueData*) (PINACTIVECOL.ptr())->getData();
+	}
+
+	m_cRealBorderColor = *color;
 }
 
 bool SemmetyLeafFrame::isEmpty() const { return window == nullptr; }
