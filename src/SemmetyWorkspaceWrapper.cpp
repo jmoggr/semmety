@@ -141,7 +141,12 @@ void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
 
 	auto frameWithWindow = getFrameForWindow(window);
 	if (!frameWithWindow) {
-		windows.erase(findWindowIt(window));
+		auto it = findWindowIt(window);
+		if (it == windows.end()) {
+			return;
+		}
+
+		windows.erase(it);
 		return;
 	}
 

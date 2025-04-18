@@ -248,6 +248,10 @@ void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW window) {
 
 void SemmetyLayout::onWindowRemovedFloating(PHLWINDOW window) {
 	entryWrapper("onWindowRemovedFloating", [&]() -> std::optional<std::string> {
+		if (!window) {
+			return "window is null";
+		}
+
 		if (window->m_pWorkspace == nullptr) {
 			// TODO: workspace being null is likely a bug in hyprland
 			for (auto workspace: workspaceWrappers) {
