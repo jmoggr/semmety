@@ -13,6 +13,7 @@ src = files(
   './src/SemmetyLayout.cpp',
   './src/SemmetyLayoutHypr.cpp',
   './src/SemmetyLayoutHooks.cpp',
+  './src/SemmetyEventManager.cpp',
   './src/SemmetyWorkspaceWrapper.cpp',
   './src/utils.cpp',
   './src/main.cpp',

@@ -4,6 +4,7 @@
 #include <hyprland/src/version.h>
 #include <hyprlang.hpp>
 
+#include "SemmetyEventManager.hpp"
 #include "SemmetyLayout.hpp"
 #include "dispatchers.hpp"
 #include "globals.hpp"
@@ -26,6 +27,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 		semmety_critical_error("[MyPlugin] Version mismatch {} != {}", HASH, GIT_COMMIT_HASH);
 	}
 
+	g_SemmetyEventManager = makeUnique<SemmetyEventManager>();
 	g_SemmetyLayout = std::make_unique<SemmetyLayout>();
 	[[maybe_unused]] auto res = HyprlandAPI::addLayout(PHANDLE, "semmety", g_SemmetyLayout.get());
 	if (res) {
