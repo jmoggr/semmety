@@ -400,20 +400,28 @@ void SemmetyLeafFrame::applyRecursive(
 
 	window->unsetWindowData(PRIORITY_LAYOUT);
 	window->updateWindowData();
-	geometry.round();
 
-	window->m_vSize = geometry.size();
-	window->m_vPosition = geometry.pos();
+	if (window->isFullscreen()) {
+		const auto& monitor = window->m_pMonitor;
 
-	auto reserved = window->getFullWindowReservedArea();
-	auto wb = this->getStandardWindowArea(
-	    this->geometry,
-	    {-reserved.topLeft, -reserved.bottomRight},
-	    workspace.workspace.lock()
-	);
+		*window->m_vRealPosition = monitor->vecPosition;
+		*window->m_vRealSize = monitor->vecSize;
+	} else {
+		geometry.round();
 
-	*window->m_vRealSize = wb.size();
-	*window->m_vRealPosition = wb.pos();
+		window->m_vSize = geometry.size();
+		window->m_vPosition = geometry.pos();
+
+		auto reserved = window->getFullWindowReservedArea();
+		auto wb = this->getStandardWindowArea(
+		    this->geometry,
+		    {-reserved.topLeft, -reserved.bottomRight},
+		    workspace.workspace.lock()
+		);
+
+		*window->m_vRealSize = wb.size();
+		*window->m_vRealPosition = wb.pos();
+	}
 
 	if (force.has_value() && force.value()) {
 		g_pHyprRenderer->damageWindow(window.lock());
