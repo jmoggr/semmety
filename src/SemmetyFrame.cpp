@@ -298,6 +298,16 @@ void SemmetyLeafFrame::swapContents(
     SemmetyWorkspaceWrapper& workspace,
     SP<SemmetyLeafFrame> other
 ) {
+	// update the Z order of the windows so that they appear over other windows during the swap
+	// animation
+	if (other->window) {
+		g_pCompositor->changeWindowZOrder(other->window.lock(), true);
+	}
+
+	if (window) {
+		g_pCompositor->changeWindowZOrder(window.lock(), true);
+	}
+
 	const auto tmp = window;
 	_setWindow(workspace, other->window, false);
 	other->_setWindow(workspace, tmp, false);
