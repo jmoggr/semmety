@@ -20,7 +20,7 @@ SemmetyEventManager::SemmetyEventManager():
 	}
 
 	sockaddr_un SERVERADDRESS = {.sun_family = AF_UNIX};
-	const auto PATH = g_pCompositor->m_szInstancePath + "/.semmety-socket2.sock";
+	const auto PATH = g_pCompositor->m_instancePath + "/.semmety-socket2.sock";
 	if (PATH.length() > sizeof(SERVERADDRESS.sun_path) - 1) {
 		Debug::log(ERR, "Socket2 path is too long. (2) IPC will not work.");
 		return;
@@ -40,7 +40,7 @@ SemmetyEventManager::SemmetyEventManager():
 	}
 
 	m_pEventSource = wl_event_loop_add_fd(
-	    g_pCompositor->m_sWLEventLoop,
+	    g_pCompositor->m_wlEventLoop,
 	    m_iSocketFD.get(),
 	    WL_EVENT_READABLE,
 	    onClientEvent,
@@ -98,7 +98,7 @@ int SemmetyEventManager::onServerEvent(int fd, uint32_t mask) {
 
 	// add to event loop so we can close it when we need to
 	auto* eventSource = wl_event_loop_add_fd(
-	    g_pCompositor->m_sWLEventLoop,
+	    g_pCompositor->m_wlEventLoop,
 	    ACCEPTEDCONNECTION.get(),
 	    0,
 	    onServerEvent,
@@ -152,7 +152,7 @@ std::vector<SemmetyEventManager::SClient>::iterator SemmetyEventManager::removeC
 }
 
 void SemmetyEventManager::postBarUpdate(std::string updateJson) {
-	if (g_pCompositor->m_bIsShuttingDown) {
+	if (g_pCompositor->m_isShuttingDown) {
 		Debug::log(WARN, "Suppressed (shutting down) postBarUpdate event");
 		return;
 	}

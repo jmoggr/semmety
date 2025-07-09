@@ -202,7 +202,7 @@ getMostOverlappingLeafFrame(SemmetyWorkspaceWrapper& workspace, const PHLWINDOWR
 		return nullptr;
 	}
 
-	const auto windowBox = CBox(window->m_vPosition, window->m_vSize);
+	const auto windowBox = CBox(window->m_position, window->m_size);
 
 	double maxOverlapArea = 0.0;
 	SP<SemmetyLeafFrame> bestFrame = nullptr;

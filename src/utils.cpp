@@ -28,7 +28,7 @@ std::string getInitialDebugString() { return g_SemmetyLayout->debugStringOnEntry
 std::string getCurrentDebugString() { return g_SemmetyLayout->getDebugString(); }
 
 std::optional<size_t> getFocusHistoryIndex(PHLWINDOW wnd) {
-	const auto& history = g_pCompositor->m_vWindowFocusHistory;
+	const auto& history = g_pCompositor->m_windowFocusHistory;
 
 	for (size_t i = 0; i < history.size(); ++i) {
 		if (history[i].lock() == wnd) return i;
@@ -86,15 +86,15 @@ SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
 		return nullptr;
 	}
 
-	auto workspace = g_pCompositor->m_pLastMonitor->activeSpecialWorkspace;
+	auto workspace = g_pCompositor->m_lastMonitor->m_activeSpecialWorkspace;
 	if (!valid(workspace)) {
-		workspace = g_pCompositor->m_pLastMonitor->activeWorkspace;
+		workspace = g_pCompositor->m_lastMonitor->m_activeWorkspace;
 	}
 
 	if (!valid(workspace)) {
 		return nullptr;
 	}
-	if (!allow_fullscreen && workspace->m_bHasFullscreenWindow) {
+	if (!allow_fullscreen && workspace->m_hasFullscreenWindow) {
 		return nullptr;
 	}
 
@@ -102,17 +102,17 @@ SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
 }
 
 SemmetyWorkspaceWrapper* workspace_for_window(PHLWINDOW window) {
-	if (!window || !window->m_pWorkspace) {
+	if (!window || !window->m_workspace) {
 		return nullptr;
 	}
 
 	for (auto& workspace: g_SemmetyLayout->workspaceWrappers) {
-		if (window->m_pWorkspace == workspace.workspace) {
+		if (window->m_workspace == workspace.workspace) {
 			return &workspace;
 		}
 	}
 
-	return &g_SemmetyLayout->getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+	return &g_SemmetyLayout->getOrCreateWorkspaceWrapper(window->m_workspace);
 }
 
 std::string escapeSingleQuotes(const std::string& input) {
@@ -144,7 +144,7 @@ void updateBar() {
 }
 
 void focusWindow(PHLWINDOWREF window) {
-	auto focused_window = g_pCompositor->m_pLastWindow.lock();
+	auto focused_window = g_pCompositor->m_lastWindow.lock();
 	if (focused_window == window) {
 		return;
 	}

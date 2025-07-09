@@ -11,6 +11,7 @@ std::string getCallStackAsString();
 template <typename... Args>
 void semmety_log(eLogLevel level, std::format_string<Args...> fmt, Args&&... args) {
 	auto msg = std::vformat(fmt.get(), std::make_format_args(args...));
+	// TODO: handle if you can't get the indent
 	std::string indent = getSemmetyIndent();
 	Debug::log(level, "[semmety] {}{}", indent, msg);
 }
