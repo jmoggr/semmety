@@ -28,14 +28,14 @@
 #include "src/SemmetyFrame.hpp"
 #include "utils.hpp"
 
-bool isWindowFloating(PHLWINDOWREF window) { return window && window->m_bIsFloating; }
+bool isWindowFloating(PHLWINDOWREF window) { return window && window->m_isFloating; }
 
 SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayout& l): layout(l) {
 	workspace = w;
 
-	auto& monitor = w->m_pMonitor;
-	auto pos = monitor->vecPosition + monitor->vecReservedTopLeft;
-	auto size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
+	auto& monitor = w->m_monitor;
+	auto pos = monitor->m_position + monitor->m_reservedTopLeft;
+	auto size = monitor->m_size - monitor->m_reservedTopLeft - monitor->m_reservedBottomRight;
 	PHLWINDOWREF empty = {};
 	auto frame = SemmetyLeafFrame::create(empty);
 
@@ -43,7 +43,7 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 	this->focused_frame = frame;
 
 	frame->geometry = {pos, size};
-	semmety_log(ERR, "init workspace monitor size {} {}", monitor->vecSize.x, monitor->vecSize.y);
+	semmety_log(ERR, "init workspace monitor size {} {}", monitor->m_size.x, monitor->m_size.y);
 	semmety_log(ERR, "workspace has root frame: {}", frame->print(*this));
 }
 
@@ -56,7 +56,7 @@ void SemmetyWorkspaceWrapper::putWindowInFocussedFrame(PHLWINDOWREF window) {
 
 	// Don't focus the window unless it is on the active workspace. This prevents active workspace
 	// changing when a window is addded to an inactive workspace.
-	if (workspace == g_pCompositor->m_pLastMonitor->activeWorkspace) {
+	if (workspace == g_pCompositor->m_lastMonitor->m_activeWorkspace) {
 		focusWindow(window);
 	}
 
@@ -91,7 +91,7 @@ void SemmetyWorkspaceWrapper::addWindow(PHLWINDOWREF window) {
 	}
 
 	windows.push_back(window);
-	if (!window->m_bIsFloating) {
+	if (!window->m_isFloating) {
 		putWindowInFocussedFrame(window);
 	}
 }
@@ -174,7 +174,7 @@ PHLWINDOWREF SemmetyWorkspaceWrapper::getNextWindowForFrame(SP<SemmetyLeafFrame>
 }
 
 bool SemmetyWorkspaceWrapper::isWindowVisible(PHLWINDOWREF window) const {
-	if (window->m_bIsFloating) {
+	if (window->m_isFloating) {
 		return !window->isHidden();
 	}
 
@@ -211,8 +211,8 @@ bool windowMatchesMode(PHLWINDOWREF window, SemmetyWindowMode mode) {
 
 	switch (mode) {
 	case SemmetyWindowMode::Either: return true;
-	case SemmetyWindowMode::Tiled: return !window->m_bIsFloating;
-	case SemmetyWindowMode::Floating: return window->m_bIsFloating;
+	case SemmetyWindowMode::Tiled: return !window->m_isFloating;
+	case SemmetyWindowMode::Floating: return window->m_isFloating;
 	}
 
 	return false;
@@ -311,7 +311,7 @@ void SemmetyWorkspaceWrapper::activateWindow(PHLWINDOWREF window) {
 		return;
 	}
 
-	if (window->m_bIsFloating) {
+	if (window->m_isFloating) {
 		g_pCompositor->changeWindowZOrder(window.lock(), true);
 		return;
 	}
@@ -342,7 +342,7 @@ bool isWindowFocussed(PHLWINDOWREF window) {
 std::string SemmetyWorkspaceWrapper::getDebugString() {
 	std::string out = "";
 
-	out += format("workspace id + name '{}' '{}'\n", workspace->m_name, workspace->m_iID);
+	out += format("workspace id + name '{}' '{}'\n", workspace->m_name, workspace->m_id);
 	out += "tiles:\n" + root->print(*this);
 
 	out += "\nwindows:\n";
@@ -360,7 +360,7 @@ std::string SemmetyWorkspaceWrapper::getDebugString() {
 		    hiddenString,
 		    floatingString,
 		    frameString,
-		    window.lock()->m_szTitle
+		    window.lock()->m_title
 		);
 	}
 
@@ -391,7 +391,7 @@ json SemmetyWorkspaceWrapper::getWorkspaceWindowsJson() const {
 	for (const auto& window: windows) {
 		jsonWindows.push_back(
 		    {{"address", std::format("{:x}", (uintptr_t) window.get())},
-		     {"urgent", window->m_bIsUrgent},
+		     {"urgent", window->m_isUrgent},
 		     {"title", window->fetchTitle()},
 		     {"appid", window->fetchClass()},
 		     {"focused", isWindowFocussed(window)},

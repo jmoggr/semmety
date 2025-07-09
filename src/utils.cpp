@@ -27,7 +27,7 @@ std::string getInitialDebugString() { return g_SemmetyLayout->debugStringOnEntry
 std::string getCurrentDebugString() { return g_SemmetyLayout->getDebugString(); }
 
 std::optional<size_t> getFocusHistoryIndex(PHLWINDOW wnd) {
-	const auto& history = g_pCompositor->m_vWindowFocusHistory;
+	const auto& history = g_pCompositor->m_windowFocusHistory;
 
 	for (size_t i = 0; i < history.size(); ++i) {
 		if (history[i].lock() == wnd) return i;
@@ -85,15 +85,15 @@ SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
 		return nullptr;
 	}
 
-	auto workspace = g_pCompositor->m_lastMonitor->activeSpecialWorkspace;
+	auto workspace = g_pCompositor->m_lastMonitor->m_activeSpecialWorkspace;
 	if (!valid(workspace)) {
-		workspace = g_pCompositor->m_lastMonitor->activeWorkspace;
+		workspace = g_pCompositor->m_lastMonitor->m_activeWorkspace;
 	}
 
 	if (!valid(workspace)) {
 		return nullptr;
 	}
-	if (!allow_fullscreen && workspace->m_bHasFullscreenWindow) {
+	if (!allow_fullscreen && workspace->m_hasFullscreenWindow) {
 		return nullptr;
 	}
 
@@ -147,7 +147,7 @@ uint64_t spawnRawProc(std::string args, PHLWORKSPACE pInitialWorkspace) {
 			// for (auto const& e: HLENV) {
 			// 	setenv(e.first.c_str(), e.second.c_str(), 1);
 			// }
-			setenv("WAYLAND_DISPLAY", g_pCompositor->m_szWLDisplaySocket.c_str(), 1);
+			setenv("WAYLAND_DISPLAY", g_pCompositor->m_wlDisplaySocket.c_str(), 1);
 			execl("/bin/sh", "/bin/sh", "-c", args.c_str(), nullptr);
 			// exit grandchild
 			_exit(0);
@@ -204,7 +204,7 @@ void updateBar() {
 }
 
 void focusWindow(PHLWINDOWREF window) {
-	auto focused_window = g_pCompositor->m_pLastWindow.lock();
+	auto focused_window = g_pCompositor->m_lastWindow.lock();
 	if (focused_window == window) {
 		return;
 	}

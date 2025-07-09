@@ -15,7 +15,7 @@ void SemmetyLayout::urgentHook(void*, SCallbackInfo&, std::any data) {
 		return;
 	}
 
-	// m_bIsUrgent is not set until after the hook event is handled, so we hack it this way
+	// m_isUrgent is not set until after the hook event is handled, so we hack it this way
 	layout->updateBarOnNextTick = true;
 	g_pAnimationManager->scheduleTick();
 }
@@ -38,7 +38,7 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 		return;
 	}
 
-	if (monitor->activeWorkspace == nullptr) {
+	if (monitor->m_activeWorkspace == nullptr) {
 		return;
 	}
 
@@ -46,7 +46,7 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 	if (layout == nullptr) {
 		return;
 	}
-	auto ww = layout->getOrCreateWorkspaceWrapper(monitor->activeWorkspace);
+	auto ww = layout->getOrCreateWorkspaceWrapper(monitor->m_activeWorkspace);
 	auto emptyFrames = ww.root->getEmptyFrames();
 
 	switch (render_stage) {
@@ -86,17 +86,17 @@ void SemmetyLayout::tickHook(void*, SCallbackInfo&, std::any) {
 
 	if (g_pLayoutManager->getCurrentLayout() != layout) return;
 
-	for (const auto& monitor: g_pCompositor->m_vMonitors) {
-		if (monitor->activeWorkspace == nullptr) {
+	for (const auto& monitor: g_pCompositor->m_monitors) {
+		if (monitor->m_activeWorkspace == nullptr) {
 			continue;
 		}
 
-		const auto activeWorkspace = monitor->activeWorkspace;
+		const auto activeWorkspace = monitor->m_activeWorkspace;
 		if (activeWorkspace == nullptr) {
 			continue;
 		}
 
-		const auto ww = layout->getOrCreateWorkspaceWrapper(monitor->activeWorkspace);
+		const auto ww = layout->getOrCreateWorkspaceWrapper(monitor->m_activeWorkspace);
 		auto emptyFrames = ww.root->getEmptyFrames();
 
 		for (const auto& frame: emptyFrames) {

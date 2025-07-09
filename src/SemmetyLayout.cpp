@@ -17,7 +17,7 @@ SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE
 		}
 	}
 
-	semmety_log(ERR, "Creating new workspace wrapper for workspace {}", workspace->m_iID);
+	semmety_log(ERR, "Creating new workspace wrapper for workspace {}", workspace->m_id);
 	auto ww = SemmetyWorkspaceWrapper(workspace, *this);
 
 	this->workspaceWrappers.emplace_back(ww);
@@ -35,7 +35,7 @@ json SemmetyLayout::getWorkspacesJson() {
 		    workspaceWrappers.end(),
 		    [workspaceIndex](const auto& workspaceWrapper) {
 			    return workspaceWrapper.workspace != nullptr
-			        && workspaceWrapper.workspace->m_iID == workspaceIndex + 1;
+			        && workspaceWrapper.workspace->m_id == workspaceIndex + 1;
 		    }
 		);
 
@@ -119,13 +119,13 @@ void SemmetyLayout::moveWindowToWorkspace(std::string wsname) {
 
 		// onWindowCreatedTiling is called when the new window is put in the target workspace
 
-		if (focused_window->m_bIsFloating) {
+		if (focused_window->m_isFloating) {
 			g_SemmetyLayout->onWindowRemovedFloating(focused_window);
 		}
 		g_pCompositor->moveWindowToWorkspaceSafe(focused_window, targetWorkspace);
 		sourceWrapper.removeWindow(focused_window);
 
-		if (focused_window->m_bIsFloating) {
+		if (focused_window->m_isFloating) {
 			g_SemmetyLayout->onWindowCreatedFloating(focused_window);
 		}
 

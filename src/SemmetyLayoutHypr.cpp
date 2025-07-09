@@ -29,8 +29,8 @@ SP<HOOK_CALLBACK_FN> workspaceHookPtr;
 SP<HOOK_CALLBACK_FN> urgentHookPtr;
 
 void SemmetyLayout::onEnable() {
-	for (auto& window: g_pCompositor->m_vWindows) {
-		if (window->isHidden() || !window->m_bIsMapped || window->m_bFadingOut || window->m_bIsFloating)
+	for (auto& window: g_pCompositor->m_windows) {
+		if (window->isHidden() || !window->m_isMapped || window->m_fadingOut || window->m_isFloating)
 			continue;
 
 		this->onWindowCreatedTiling(window);
@@ -71,12 +71,12 @@ void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection direction
 		    LOG,
 		    "onWindowCreatedTiling called with window {:x} (floating: {}, monitor: {}, workspace: {})",
 		    (uintptr_t) window.get(),
-		    window->m_bIsFloating,
+		    window->m_isFloating,
 		    window->monitorID(),
-		    window->m_workspace->m_iID
+		    window->m_workspace->m_id
 		);
 
-		if (window->m_bIsFloating) {
+		if (window->m_isFloating) {
 			return "window is floating";
 		}
 
@@ -102,12 +102,12 @@ void SemmetyLayout::onWindowCreatedFloating(PHLWINDOW window) {
 		    LOG,
 		    "onWindowCreatedTiling called with window {:x} (floating: {}, monitor: {}, workspace: {})",
 		    (uintptr_t) window.get(),
-		    window->m_bIsFloating,
+		    window->m_isFloating,
 		    window->monitorID(),
-		    window->m_workspace->m_iID
+		    window->m_workspace->m_id
 		);
 
-		if (!window->m_bIsFloating) {
+		if (!window->m_isFloating) {
 			return "window is tiled";
 		}
 
@@ -128,7 +128,7 @@ void SemmetyLayout::changeWindowFloatingMode(PHLWINDOW window) {
 			g_pCompositor->setWindowFullscreenInternal(window, FSMODE_NONE);
 		}
 
-		window->m_bPinned = false;
+		window->m_pinned = false;
 
 		const auto TILED = isWindowTiled(window);
 
@@ -145,28 +145,28 @@ void SemmetyLayout::changeWindowFloatingMode(PHLWINDOW window) {
 
 		if (!TILED) {
 			const auto PNEWMON = g_pCompositor->getMonitorFromVector(
-			    window->m_vRealPosition->value() + window->m_vRealSize->value() / 2.f
+			    window->m_realPosition->value() + window->m_realSize->value() / 2.f
 			);
-			const auto workspace = PNEWMON->activeSpecialWorkspace ? PNEWMON->activeSpecialWorkspace
-			                                                       : PNEWMON->activeWorkspace;
-			window->m_pMonitor = PNEWMON;
+			const auto workspace = PNEWMON->m_activeSpecialWorkspace ? PNEWMON->m_activeSpecialWorkspace
+			                                                         : PNEWMON->m_activeWorkspace;
+			window->m_monitor = PNEWMON;
 			window->moveToWorkspace(workspace);
 			window->updateGroupOutputs();
 
-			const auto PWORKSPACE = PNEWMON->activeSpecialWorkspace ? PNEWMON->activeSpecialWorkspace
-			                                                        : PNEWMON->activeWorkspace;
+			const auto PWORKSPACE = PNEWMON->m_activeSpecialWorkspace ? PNEWMON->m_activeSpecialWorkspace
+			                                                          : PNEWMON->m_activeWorkspace;
 
-			if (PWORKSPACE->m_bHasFullscreenWindow)
+			if (PWORKSPACE->m_hasFullscreenWindow)
 				g_pCompositor->setWindowFullscreenInternal(PWORKSPACE->getFullscreenWindow(), FSMODE_NONE);
 
 			// save real pos cuz the func applies the default 5,5 mid
-			const auto PSAVEDPOS = window->m_vRealPosition->goal();
-			const auto PSAVEDSIZE = window->m_vRealSize->goal();
+			const auto PSAVEDPOS = window->m_realPosition->goal();
+			const auto PSAVEDSIZE = window->m_realSize->goal();
 
 			// // if the window is pseudo, update its size
-			if (!window->m_bDraggingTiled) window->m_vPseudoSize = window->m_vRealSize->goal();
+			if (!window->m_draggingTiled) window->m_pseudoSize = window->m_realSize->goal();
 
-			window->m_vLastFloatingSize = PSAVEDSIZE;
+			window->m_lastFloatingSize = PSAVEDSIZE;
 
 			// move to narnia because we don't wanna find our own node. onWindowCreatedTiling should apply
 			// the coords back.
@@ -174,11 +174,11 @@ void SemmetyLayout::changeWindowFloatingMode(PHLWINDOW window) {
 
 			ws->setWindowTiled(window, true);
 
-			// window->m_vRealPosition->setValue(PSAVEDPOS);
-			// window->m_vRealSize->setValue(PSAVEDSIZE);
+			// window->m_realPosition->setValue(PSAVEDPOS);
+			// window->m_realSize->setValue(PSAVEDSIZE);
 
 			// fix pseudo leaving artifacts
-			g_pHyprRenderer->damageMonitor(window->m_pMonitor.lock());
+			g_pHyprRenderer->damageMonitor(window->m_monitor.lock());
 		} else {
 			g_pHyprRenderer->damageWindow(window, true);
 
@@ -187,26 +187,26 @@ void SemmetyLayout::changeWindowFloatingMode(PHLWINDOW window) {
 			g_pCompositor->changeWindowZOrder(window, true);
 
 			CBox wb = {
-			    window->m_vRealPosition->goal()
-			        + (window->m_vRealSize->goal() - window->m_vLastFloatingSize) / 2.f,
-			    window->m_vLastFloatingSize
+			    window->m_realPosition->goal()
+			        + (window->m_realSize->goal() - window->m_lastFloatingSize) / 2.f,
+			    window->m_lastFloatingSize
 			};
 			wb.round();
 
-			if (!(window->m_bIsFloating && window->m_bIsPseudotiled)
-			    && DELTALESSTHAN(window->m_vRealSize->value().x, window->m_vLastFloatingSize.x, 10)
-			    && DELTALESSTHAN(window->m_vRealSize->value().y, window->m_vLastFloatingSize.y, 10))
+			if (!(window->m_isFloating && window->m_isPseudotiled)
+			    && DELTALESSTHAN(window->m_realSize->value().x, window->m_lastFloatingSize.x, 10)
+			    && DELTALESSTHAN(window->m_realSize->value().y, window->m_lastFloatingSize.y, 10))
 			{
 				wb = {wb.pos() + Vector2D {10, 10}, wb.size() - Vector2D {20, 20}};
 			}
 
-			*window->m_vRealPosition = wb.pos();
-			*window->m_vRealSize = wb.size();
+			*window->m_realPosition = wb.pos();
+			*window->m_realSize = wb.size();
 
-			window->m_vSize = wb.size();
-			window->m_vPosition = wb.pos();
+			window->m_size = wb.size();
+			window->m_position = wb.pos();
 
-			g_pHyprRenderer->damageMonitor(window->m_pMonitor.lock());
+			g_pHyprRenderer->damageMonitor(window->m_monitor.lock());
 
 			window->unsetWindowData(PRIORITY_LAYOUT);
 			window->updateWindowData();
@@ -231,9 +231,9 @@ void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW window) {
 		    LOG,
 		    "onWindowRemovedTiling window {:x} (floating: {}, monitor: {}, workspace: {}, title: {})",
 		    (uintptr_t) window.get(),
-		    window->m_bIsFloating,
+		    window->m_isFloating,
 		    window->monitorID(),
-		    window->m_workspace->m_iID,
+		    window->m_workspace->m_id,
 		    window->fetchTitle()
 		);
 
@@ -269,9 +269,9 @@ void SemmetyLayout::onWindowRemovedFloating(PHLWINDOW window) {
 		    LOG,
 		    "onWindowRemovedFloating window {:x} (floating: {}, monitor: {}, workspace: {}, title: {})",
 		    (uintptr_t) window.get(),
-		    window->m_bIsFloating,
+		    window->m_isFloating,
 		    window->monitorID(),
-		    window->m_workspace->m_iID,
+		    window->m_workspace->m_id,
 		    window->fetchTitle()
 		);
 
@@ -309,7 +309,7 @@ void SemmetyLayout::onWindowFocusChange(PHLWINDOW window) {
 			return "window workspace is null";
 		}
 
-		if (window->m_bIsFloating) {
+		if (window->m_isFloating) {
 			return "window is floating";
 		}
 
@@ -326,16 +326,16 @@ void SemmetyLayout::recalculateMonitor(const MONITORID& monid) {
 	entryWrapper("recalculateMonitor", [&]() -> std::optional<std::string> {
 		const auto PMONITOR = g_pCompositor->getMonitorFromID(monid);
 
-		if (!PMONITOR || !PMONITOR->activeWorkspace) {
+		if (!PMONITOR || !PMONITOR->m_activeWorkspace) {
 			return "null monitor or null workspace";
 		}
 		g_pHyprRenderer->damageMonitor(PMONITOR);
 
-		if (PMONITOR->activeSpecialWorkspace) {
-			recalculateWorkspace(PMONITOR->activeSpecialWorkspace);
+		if (PMONITOR->m_activeSpecialWorkspace) {
+			recalculateWorkspace(PMONITOR->m_activeSpecialWorkspace);
 		}
 
-		recalculateWorkspace(PMONITOR->activeWorkspace);
+		recalculateWorkspace(PMONITOR->m_activeWorkspace);
 
 		return std::nullopt;
 	});
@@ -347,7 +347,7 @@ void SemmetyLayout::recalculateWorkspace(const PHLWORKSPACE& workspace) {
 			return "workspace is null";
 		}
 
-		const auto monitor = workspace->m_pMonitor;
+		const auto monitor = workspace->m_monitor;
 
 		if (g_SemmetyLayout == nullptr) {
 			semmety_critical_error("semmety layout is bad");
@@ -356,8 +356,8 @@ void SemmetyLayout::recalculateWorkspace(const PHLWORKSPACE& workspace) {
 		auto ww = g_SemmetyLayout->getOrCreateWorkspaceWrapper(workspace);
 
 		ww.root->geometry = {
-		    monitor->vecPosition + monitor->vecReservedTopLeft,
-		    monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight
+		    monitor->m_position + monitor->m_reservedTopLeft,
+		    monitor->m_size - monitor->m_reservedTopLeft - monitor->m_reservedBottomRight
 		};
 
 		return std::nullopt;
@@ -377,7 +377,7 @@ bool SemmetyLayout::isWindowTiled(PHLWINDOW pWindow) {
 
 PHLWINDOW SemmetyLayout::getNextWindowCandidate(PHLWINDOW window) {
 	return entryWrapper("getNextWindowCandidate", [&]() -> PHLWINDOW {
-		if (window->m_workspace->m_bHasFullscreenWindow) {
+		if (window->m_workspace->m_hasFullscreenWindow) {
 			return window->m_workspace->getFullscreenWindow();
 		}
 
@@ -385,7 +385,7 @@ PHLWINDOW SemmetyLayout::getNextWindowCandidate(PHLWINDOW window) {
 		// tiled then the logic for closing a tiled window would have already been handled by
 		// onWindowRemovedTiling.
 		// TODO: return nothing when we have dedicated handling for floating windows
-		if (!window->m_bIsFloating) {
+		if (!window->m_isFloating) {
 			return {};
 		}
 
@@ -428,12 +428,12 @@ void SemmetyLayout::resizeActiveWindow(
 		return;
 	}
 
-	if (window->m_bIsFloating) {
+	if (window->m_isFloating) {
 		const auto required_size = Vector2D(
-		    std::max((window->m_vRealSize->goal() + delta).x, 20.0),
-		    std::max((window->m_vRealSize->goal() + delta).y, 20.0)
+		    std::max((window->m_realSize->goal() + delta).x, 20.0),
+		    std::max((window->m_realSize->goal() + delta).y, 20.0)
 		);
-		*window->m_vRealSize = required_size;
+		*window->m_realSize = required_size;
 		return;
 	}
 
@@ -531,8 +531,8 @@ void SemmetyLayout::fullscreenRequestForWindow(
 				frame->applyRecursive(*workspace, std::nullopt, false);
 			} else {
 				// TODO: is floating?
-				*window->m_vRealPosition = window->m_vLastFloatingPosition;
-				*window->m_vRealSize = window->m_vLastFloatingSize;
+				*window->m_realPosition = window->m_lastFloatingPosition;
+				*window->m_realSize = window->m_lastFloatingSize;
 
 				window->unsetWindowData(PRIORITY_LAYOUT);
 			}
@@ -540,20 +540,20 @@ void SemmetyLayout::fullscreenRequestForWindow(
 			// if (target_mode == FSMODE_FULLSCREEN) {
 
 			// save position and size if floating
-			if (window->m_bIsFloating && CURRENT_EFFECTIVE_MODE == FSMODE_NONE) {
-				window->m_vLastFloatingSize = window->m_vRealSize->goal();
-				window->m_vLastFloatingPosition = window->m_vRealPosition->goal();
-				window->m_vPosition = window->m_vRealPosition->goal();
-				window->m_vSize = window->m_vRealSize->goal();
+			if (window->m_isFloating && CURRENT_EFFECTIVE_MODE == FSMODE_NONE) {
+				window->m_lastFloatingSize = window->m_realSize->goal();
+				window->m_lastFloatingPosition = window->m_realPosition->goal();
+				window->m_position = window->m_realPosition->goal();
+				window->m_size = window->m_realSize->goal();
 			}
 
 			window->updateDynamicRules();
 			window->updateWindowDecos();
 
-			const auto& monitor = window->m_pMonitor;
+			const auto& monitor = window->m_monitor;
 
-			*window->m_vRealPosition = monitor->vecPosition;
-			*window->m_vRealSize = monitor->vecSize;
+			*window->m_realPosition = monitor->m_position;
+			*window->m_realSize = monitor->m_size;
 			g_pCompositor->changeWindowZOrder(window, true);
 
 			// TODO: maximize
