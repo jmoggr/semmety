@@ -63,7 +63,7 @@ void SemmetyLayout::onDisable() {
 
 void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection direction) {
 	entryWrapper("onWindowCreatedTiling", [&]() -> std::optional<std::string> {
-		if (window->m_pWorkspace == nullptr) {
+		if (window->m_workspace == nullptr) {
 			return "called with a window that has an invalid workspace";
 		}
 
@@ -73,14 +73,14 @@ void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection direction
 		    (uintptr_t) window.get(),
 		    window->m_bIsFloating,
 		    window->monitorID(),
-		    window->m_pWorkspace->m_iID
+		    window->m_workspace->m_iID
 		);
 
 		if (window->m_bIsFloating) {
 			return "window is floating";
 		}
 
-		auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+		auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_workspace);
 		workspace_wrapper.addWindow(window);
 
 		shouldUpdateBar();
@@ -94,7 +94,7 @@ void SemmetyLayout::onWindowCreatedFloating(PHLWINDOW window) {
 	entryWrapper("onWindowCreatedFloating", [&]() -> std::optional<std::string> {
 		IHyprLayout::onWindowCreatedFloating(window);
 
-		if (window->m_pWorkspace == nullptr) {
+		if (window->m_workspace == nullptr) {
 			return "called with a window that has an invalid workspace";
 		}
 
@@ -104,14 +104,14 @@ void SemmetyLayout::onWindowCreatedFloating(PHLWINDOW window) {
 		    (uintptr_t) window.get(),
 		    window->m_bIsFloating,
 		    window->monitorID(),
-		    window->m_pWorkspace->m_iID
+		    window->m_workspace->m_iID
 		);
 
 		if (!window->m_bIsFloating) {
 			return "window is tiled";
 		}
 
-		auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+		auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_workspace);
 		workspace_wrapper.addWindow(window);
 
 		shouldUpdateBar();
@@ -223,7 +223,7 @@ void SemmetyLayout::changeWindowFloatingMode(PHLWINDOW window) {
 
 void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW window) {
 	entryWrapper("onWindowRemovedTiling", [&]() -> std::optional<std::string> {
-		if (window->m_pWorkspace == nullptr) {
+		if (window->m_workspace == nullptr) {
 			return "workspace is null";
 		}
 
@@ -233,7 +233,7 @@ void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW window) {
 		    (uintptr_t) window.get(),
 		    window->m_bIsFloating,
 		    window->monitorID(),
-		    window->m_pWorkspace->m_iID,
+		    window->m_workspace->m_iID,
 		    window->fetchTitle()
 		);
 
@@ -244,7 +244,7 @@ void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW window) {
 			g_pCompositor->setWindowFullscreenInternal(window, FSMODE_NONE);
 		}
 
-		auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+		auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_workspace);
 		workspace_wrapper.removeWindow(window);
 
 		shouldUpdateBar();
@@ -256,7 +256,7 @@ void SemmetyLayout::onWindowRemovedTiling(PHLWINDOW window) {
 
 void SemmetyLayout::onWindowRemovedFloating(PHLWINDOW window) {
 	entryWrapper("onWindowRemovedFloating", [&]() -> std::optional<std::string> {
-		if (window->m_pWorkspace == nullptr) {
+		if (window->m_workspace == nullptr) {
 			// TODO: workspace being null is likely a bug in hyprland
 			for (auto workspace: workspaceWrappers) {
 				workspace.removeWindow(window);
@@ -271,7 +271,7 @@ void SemmetyLayout::onWindowRemovedFloating(PHLWINDOW window) {
 		    (uintptr_t) window.get(),
 		    window->m_bIsFloating,
 		    window->monitorID(),
-		    window->m_pWorkspace->m_iID,
+		    window->m_workspace->m_iID,
 		    window->fetchTitle()
 		);
 
@@ -282,7 +282,7 @@ void SemmetyLayout::onWindowRemovedFloating(PHLWINDOW window) {
 			g_pCompositor->setWindowFullscreenInternal(window, FSMODE_NONE);
 		}
 
-		auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+		auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_workspace);
 		workspace_wrapper.removeWindow(window);
 
 		shouldUpdateBar();
@@ -305,7 +305,7 @@ void SemmetyLayout::onWindowFocusChange(PHLWINDOW window) {
 			return "window is null";
 		}
 
-		if (window->m_pWorkspace == nullptr) {
+		if (window->m_workspace == nullptr) {
 			return "window workspace is null";
 		}
 
@@ -313,7 +313,7 @@ void SemmetyLayout::onWindowFocusChange(PHLWINDOW window) {
 			return "window is floating";
 		}
 
-		auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+		auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_workspace);
 		workspace_wrapper.activateWindow(window);
 
 		shouldUpdateBar();
@@ -377,8 +377,8 @@ bool SemmetyLayout::isWindowTiled(PHLWINDOW pWindow) {
 
 PHLWINDOW SemmetyLayout::getNextWindowCandidate(PHLWINDOW window) {
 	return entryWrapper("getNextWindowCandidate", [&]() -> PHLWINDOW {
-		if (window->m_pWorkspace->m_bHasFullscreenWindow) {
-			return window->m_pWorkspace->getFullscreenWindow();
+		if (window->m_workspace->m_bHasFullscreenWindow) {
+			return window->m_workspace->getFullscreenWindow();
 		}
 
 		// This is only called from the hyprland code that closes windows. If the window is
@@ -423,7 +423,7 @@ void SemmetyLayout::resizeActiveWindow(
     eRectCorner corner,
     PHLWINDOW pWindow
 ) {
-	auto window = pWindow ? pWindow : g_pCompositor->m_pLastWindow.lock();
+	auto window = pWindow ? pWindow : g_pCompositor->m_lastWindow.lock();
 	if (!valid(window)) {
 		return;
 	}

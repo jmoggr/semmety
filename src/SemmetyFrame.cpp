@@ -421,7 +421,7 @@ CBox SemmetyLeafFrame::getEmptyFrameBox(const CMonitor& monitor) {
 
 	auto frameBox = this->getStandardWindowArea(this->geometry, borderExtent, workspace);
 
-	return frameBox.translate(-monitor.vecPosition + workspaceOffset).scale(monitor.scale).round();
+	return frameBox.translate(-monitor.vecPosition + workspaceOffset).scale(monitor.m_scale).round();
 }
 
 void SemmetyLeafFrame::damageEmptyFrameBox(const CMonitor& monitor) {

@@ -54,7 +54,7 @@ json SemmetyLayout::getWorkspacesJson() {
 		jsonWorkspaces.push_back(
 		    {{"id", workspaceIndex + 1},
 		     {"numWindows", it->windows.size()},
-		     {"name", it->workspace->m_szName},
+		     {"name", it->workspace->m_name},
 		     {"urgent", it->workspace->hasUrgentWindow()},
 		     {"focused", &(*it) == &(*ws)}}
 		);
@@ -70,7 +70,7 @@ void SemmetyLayout::activateWindow(PHLWINDOW window) {
 
 	entryWrapper("activateWindow", [&]() -> std::optional<std::string> {
 		auto layout = g_SemmetyLayout.get();
-		auto ww = layout->getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+		auto ww = layout->getOrCreateWorkspaceWrapper(window->m_workspace);
 
 		ww.activateWindow(window);
 
@@ -84,12 +84,12 @@ void SemmetyLayout::activateWindow(PHLWINDOW window) {
 void SemmetyLayout::moveWindowToWorkspace(std::string wsname) {
 	entryWrapper("moveWindowToWorkspace", [&]() -> std::optional<std::string> {
 		// TODO: follow?
-		auto focused_window = g_pCompositor->m_pLastWindow.lock();
+		auto focused_window = g_pCompositor->m_lastWindow.lock();
 		if (!focused_window) {
 			return format("no focused window {}", wsname);
 		}
 
-		const auto sourceWorkspace = focused_window->m_pWorkspace;
+		const auto sourceWorkspace = focused_window->m_workspace;
 		if (!sourceWorkspace) {
 			return "no source workspace";
 		}

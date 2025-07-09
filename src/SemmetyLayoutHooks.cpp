@@ -33,7 +33,7 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 	auto* const ACTIVECOL = (CGradientValueData*) (PACTIVECOL.ptr())->getData();
 	auto* const INACTIVECOL = (CGradientValueData*) (PINACTIVECOL.ptr())->getData();
 
-	auto monitor = g_pHyprOpenGL->m_RenderData.pMonitor.lock();
+	auto monitor = g_pHyprOpenGL->m_renderData.pMonitor.lock();
 	if (monitor == nullptr) {
 		return;
 	}
@@ -65,7 +65,7 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 			borderData.round = *PROUNDING;
 			auto element = CBorderPassElement(borderData);
 			auto pass = makeShared<CBorderPassElement>(element);
-			g_pHyprRenderer->m_sRenderPass.add(pass);
+			g_pHyprRenderer->m_renderPass.add(pass);
 		}
 
 		break;
@@ -112,7 +112,7 @@ void SemmetyLayout::activeWindowHook(void*, SCallbackInfo&, std::any data) {
 		return;
 	}
 
-	if (PWINDOW->m_pWorkspace == nullptr) {
+	if (PWINDOW->m_workspace == nullptr) {
 		return;
 	}
 

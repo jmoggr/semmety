@@ -336,13 +336,13 @@ void SemmetyWorkspaceWrapper::updateFrameHistory(SP<SemmetyFrame> frame, PHLWIND
 }
 
 bool isWindowFocussed(PHLWINDOWREF window) {
-	return g_pCompositor->m_pLastWindow && g_pCompositor->m_pLastWindow == window;
+	return g_pCompositor->m_lastWindow && g_pCompositor->m_lastWindow == window;
 }
 
 std::string SemmetyWorkspaceWrapper::getDebugString() {
 	std::string out = "";
 
-	out += format("workspace id + name '{}' '{}'\n", workspace->m_szName, workspace->m_iID);
+	out += format("workspace id + name '{}' '{}'\n", workspace->m_name, workspace->m_iID);
 	out += "tiles:\n" + root->print(*this);
 
 	out += "\nwindows:\n";
@@ -407,11 +407,11 @@ void SemmetyWorkspaceWrapper::changeWindowOrder(bool prev) {
 		return;
 	}
 
-	if (!g_pCompositor->m_pLastWindow) {
+	if (!g_pCompositor->m_lastWindow) {
 		return;
 	}
 
-	auto focusedWindow = g_pCompositor->m_pLastWindow.lock();
+	auto focusedWindow = g_pCompositor->m_lastWindow.lock();
 	auto it = findWindowIt(focusedWindow);
 	size_t index = std::distance(windows.begin(), it);
 	int offset = prev ? -1 : 1;

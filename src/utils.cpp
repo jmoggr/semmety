@@ -85,9 +85,9 @@ SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
 		return nullptr;
 	}
 
-	auto workspace = g_pCompositor->m_pLastMonitor->activeSpecialWorkspace;
+	auto workspace = g_pCompositor->m_lastMonitor->activeSpecialWorkspace;
 	if (!valid(workspace)) {
-		workspace = g_pCompositor->m_pLastMonitor->activeWorkspace;
+		workspace = g_pCompositor->m_lastMonitor->activeWorkspace;
 	}
 
 	if (!valid(workspace)) {
@@ -101,15 +101,15 @@ SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
 }
 
 SemmetyWorkspaceWrapper* workspace_for_window(PHLWINDOW window) {
-	if (!window->m_pWorkspace) return nullptr;
+	if (!window->m_workspace) return nullptr;
 
 	for (auto& workspace: g_SemmetyLayout->workspaceWrappers) {
-		if (window->m_pWorkspace == workspace.workspace) {
+		if (window->m_workspace == workspace.workspace) {
 			return &workspace;
 		}
 	}
 
-	return &g_SemmetyLayout->getOrCreateWorkspaceWrapper(window->m_pWorkspace);
+	return &g_SemmetyLayout->getOrCreateWorkspaceWrapper(window->m_workspace);
 }
 
 uint64_t spawnRawProc(std::string args, PHLWORKSPACE pInitialWorkspace) {
