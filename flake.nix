@@ -5,8 +5,7 @@
 
   inputs = {
     hyprland = {
-      # url = "github:hyprwm/Hyprland/f4e19d3f1e27b4cf1236e93d767f9f6e916730ea";
-      url = "github:hyprwm/Hyprland/v0.49.0";
+      url = "github:hyprwm/Hyprland/v0.52.2";
     };
   };
 
@@ -24,7 +23,7 @@
           pkgs = pkgsFor.${system};
         in
         {
-          semmety = pkgs.stdenv.mkDerivation {
+          semmety = pkgs.gcc15Stdenv.mkDerivation {
             pname = "semmety";
             version = "0.1";
 
@@ -34,7 +33,6 @@
               pkgs.meson
               pkgs.ninja
               pkgs.pkg-config
-              pkgs.gcc14
             ];
 
             buildInputs = [
@@ -54,15 +52,23 @@
           pkgs = pkgsFor.${system};
         in
         {
-          default = pkgs.mkShell {
+          default = pkgs.mkShell.override { stdenv = pkgs.gcc15Stdenv; } {
             shellHook = ''
               meson setup build --reconfigure
             '';
+
             inputsFrom = [
               self.packages.${system}.semmety
             ];
+
             packages = with pkgs; [
               clang-tools
+            ];
+
+            CPATH = pkgs.lib.concatStringsSep ":" [
+              "${pkgs.gcc15Stdenv.cc.cc}/include/c++/${pkgs.gcc15Stdenv.cc.cc.version}"
+              "${pkgs.gcc15Stdenv.cc.cc}/include/c++/${pkgs.gcc15Stdenv.cc.cc.version}/x86_64-unknown-linux-gnu"
+              "${pkgs.gcc15Stdenv.cc.libc.dev}/include"
             ];
           };
         }

@@ -5,8 +5,8 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
-#include <hyprland/src/managers/AnimationManager.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
+#include <hyprland/src/managers/animation/AnimationManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/Renderer.hpp>
@@ -30,18 +30,6 @@ std::string getCallStackAsString(int maxFrames);
 
 void updateBar();
 void shouldUpdateBar();
-
-template <typename T, typename U>
-Hyprutils::Memory::CSharedPointer<T>
-hyprland_dynamic_pointer_cast(const Hyprutils::Memory::CSharedPointer<U>& ptr) {
-	// Perform dynamic_cast on the raw pointer.
-	if (T* casted = dynamic_cast<T*>(ptr.get())) {
-		// If successful, create a new shared pointer that uses the same control block.
-		return Hyprutils::Memory::CSharedPointer<T>(ptr.impl_);
-	}
-	// If the cast fails, return an empty pointer.
-	return Hyprutils::Memory::CSharedPointer<T>(nullptr);
-}
 
 template <>
 struct std::formatter<eFullscreenMode, char>: std::formatter<std::string_view, char> {

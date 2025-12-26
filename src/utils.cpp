@@ -9,7 +9,7 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
-#include <hyprland/src/managers/AnimationManager.hpp>
+#include <hyprland/src/managers/animation/AnimationManager.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
@@ -23,9 +23,15 @@
 #include "src/desktop/DesktopTypes.hpp"
 
 // defined in log.hpp
-std::string getSemmetyIndent() { return std::string(g_SemmetyLayout->entryCount * 4, ' '); }
-std::string getInitialDebugString() { return g_SemmetyLayout->debugStringOnEntry; }
-std::string getCurrentDebugString() { return g_SemmetyLayout->getDebugString(); }
+std::string getSemmetyIndent() {
+	return g_SemmetyLayout ? std::string(g_SemmetyLayout->entryCount * 4, ' ') : "";
+}
+std::string getInitialDebugString() {
+	return g_SemmetyLayout ? g_SemmetyLayout->debugStringOnEntry : "[not initialized]";
+}
+std::string getCurrentDebugString() {
+	return g_SemmetyLayout ? g_SemmetyLayout->getDebugString() : "[not initialized]";
+}
 
 std::optional<size_t> getFocusHistoryIndex(PHLWINDOW wnd) {
 	const auto& history = g_pCompositor->m_windowFocusHistory;

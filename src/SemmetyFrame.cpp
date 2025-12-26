@@ -37,7 +37,7 @@ SP<SemmetySplitFrame> SemmetyFrame::asSplit() const {
 		semmety_critical_error("Tried to call asSplit on a frame that is not a split frame");
 	}
 
-	auto sp = hyprland_dynamic_pointer_cast<SemmetySplitFrame>(self.lock());
+	auto sp = Hyprutils::Memory::dynamicPointerCast<SemmetySplitFrame>(self.lock());
 	if (!sp) {
 		semmety_critical_error("Failed to cast to split frame");
 	}
@@ -50,7 +50,7 @@ SP<SemmetyLeafFrame> SemmetyFrame::asLeaf() const {
 		semmety_critical_error("Tried to call asLeaf on a frame that is not a leaf frame");
 	}
 
-	auto sp = hyprland_dynamic_pointer_cast<SemmetyLeafFrame>(self.lock());
+	auto sp = Hyprutils::Memory::dynamicPointerCast<SemmetyLeafFrame>(self.lock());
 	if (!sp) {
 		semmety_critical_error("Failed to cast to leaf frame");
 	}

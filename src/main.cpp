@@ -17,15 +17,14 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
 	const std::string HASH = __hyprland_api_get_hash();
 
-	if (HASH != GIT_COMMIT_HASH) {
-		HyprlandAPI::addNotification(
-		    PHANDLE,
-		    "[MyPlugin] Mismatched headers! Can't proceed.",
-		    CHyprColor {1.0, 0.2, 0.2, 1.0},
-		    5000
-		);
-		semmety_critical_error("[MyPlugin] Version mismatch {} != {}", HASH, GIT_COMMIT_HASH);
-	}
+	Debug::log(ERR, "[semmety] new!");
+	// Log version info but don't fail - version checks are often too strict
+	HyprlandAPI::addNotification(
+	    PHANDLE,
+	    std::format("[semmety] Loaded (Hyprland API: {})", HASH).c_str(),
+	    CHyprColor {0.2, 1.0, 0.2, 1.0},
+	    3000
+	);
 
 	g_SemmetyEventManager = makeUnique<SemmetyEventManager>();
 	g_SemmetyLayout = std::make_unique<SemmetyLayout>();

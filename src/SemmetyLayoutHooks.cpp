@@ -72,9 +72,7 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 				borderData.grad1 = grad;
 			}
 
-			auto element = CBorderPassElement(borderData);
-			auto pass = makeShared<CBorderPassElement>(element);
-			g_pHyprRenderer->m_renderPass.add(pass);
+			g_pHyprRenderer->m_renderPass.add(makeUnique<CBorderPassElement>(borderData));
 		}
 
 		break;
