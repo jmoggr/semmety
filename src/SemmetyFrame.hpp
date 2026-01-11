@@ -53,7 +53,6 @@ public:
 	// how much larger the 1st child is
 	float splitRatio = 0.5;
 	SemmetySplitDirection splitDirection;
-	std::pair<SP<SemmetyFrame>, SP<SemmetyFrame>> children;
 
 	static SP<SemmetySplitFrame>
 	create(SP<SemmetyFrame> firstChild, SP<SemmetyFrame> secondChild, CBox _geometry);
@@ -61,6 +60,7 @@ public:
 	SP<SemmetyFrame> getOtherChild(const SP<SemmetyFrame>& child);
 	std::pair<CBox, CBox> getChildGeometries() const;
 	void resize(double distance);
+	const std::pair<SP<SemmetyFrame>, SP<SemmetyFrame>>& getChildren() const;
 
 	bool isSameOrDescendant(const SP<SemmetyFrame>& target) const override;
 	bool isLeaf() const override;
@@ -75,9 +75,12 @@ public:
 	std::string print(SemmetyWorkspaceWrapper& workspace, int indentLevel = 0) const override;
 
 private:
+	std::pair<SP<SemmetyFrame>, SP<SemmetyFrame>> children;
+
 	SemmetySplitFrame(SP<SemmetyFrame> firstChild, SP<SemmetyFrame> secondChild, CBox _geometry);
 	template <typename U, typename... Args>
 	friend Hyprutils::Memory::CSharedPointer<U> Hyprutils::Memory::makeShared(Args&&...);
+	friend void replaceNode(SP<SemmetyFrame>, SP<SemmetyFrame>, SemmetyWorkspaceWrapper&);
 };
 
 class SemmetyLeafFrame: public SemmetyFrame {

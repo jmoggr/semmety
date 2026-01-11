@@ -496,45 +496,8 @@ std::vector<std::string> SemmetyWorkspaceWrapper::testInvariants() {
 	std::vector<SP<SemmetyFrame>> allFrames;
 	std::unordered_set<SemmetyFrame*> frameSet;
 
-	// Recursive lambda to traverse the frame tree.
-	std::function<void(const SP<SemmetyFrame>&)> traverseFrames = [&](const SP<SemmetyFrame>& frame) {
-		if (!frame) {
-			errors.push_back("Invariant violation: null frame encountered in frame tree.");
-			return;
-		}
-
-		// Check for duplicate frames.
-		if (frameSet.find(frame.get()) != frameSet.end()) {
-			errors.push_back("Invariant violation: Duplicate frame encountered in frame tree.");
-		} else {
-			frameSet.insert(frame.get());
-			allFrames.push_back(frame);
-		}
-
-		if (!frame->isSplit()) {
-			return;
-		}
-
-		// If the frame is a split frame, we need to check:
-		// - both children are valid (non-null)
-		// - then traverse both children.
-		auto splitFrame = frame->asSplit();
-		if (!splitFrame->children.first) {
-			errors.push_back("Invariant violation: Split frame has a null first child.");
-		}
-		if (!splitFrame->children.second) {
-			errors.push_back("Invariant violation: Split frame has a null second child.");
-		}
-		if (splitFrame->children.first) {
-			traverseFrames(splitFrame->children.first);
-		}
-		if (splitFrame->children.second) {
-			traverseFrames(splitFrame->children.second);
-		}
-	};
-
 	if (root) {
-		traverseFrames(root);
+		traverseFramesForInvariants(root, errors, frameSet, allFrames);
 	}
 
 	// 5. Check that in leaf frames:
@@ -607,4 +570,54 @@ std::vector<std::string> SemmetyWorkspaceWrapper::testInvariants() {
 	// }
 
 	return errors;
+}
+
+const SP<SemmetyFrame>& SemmetyWorkspaceWrapper::getRoot() const {
+	return root;
+}
+
+void SemmetyWorkspaceWrapper::setRootGeometry(const CBox& geometry) {
+	root->geometry = geometry;
+}
+
+void SemmetyWorkspaceWrapper::traverseFramesForInvariants(
+    const SP<SemmetyFrame>& frame,
+    std::vector<std::string>& errors,
+    std::unordered_set<SemmetyFrame*>& frameSet,
+    std::vector<SP<SemmetyFrame>>& allFrames
+) {
+	if (!frame) {
+		errors.push_back("Invariant violation: null frame encountered in frame tree.");
+		return;
+	}
+
+	// Check for duplicate frames.
+	if (frameSet.find(frame.get()) != frameSet.end()) {
+		errors.push_back("Invariant violation: Duplicate frame encountered in frame tree.");
+	} else {
+		frameSet.insert(frame.get());
+		allFrames.push_back(frame);
+	}
+
+	if (!frame->isSplit()) {
+		return;
+	}
+
+	// If the frame is a split frame, we need to check:
+	// - both children are valid (non-null)
+	// - then traverse both children.
+	auto splitFrame = frame->asSplit();
+	const auto& children = splitFrame->getChildren();
+	if (!children.first) {
+		errors.push_back("Invariant violation: Split frame has a null first child.");
+	}
+	if (!children.second) {
+		errors.push_back("Invariant violation: Split frame has a null second child.");
+	}
+	if (children.first) {
+		traverseFramesForInvariants(children.first, errors, frameSet, allFrames);
+	}
+	if (children.second) {
+		traverseFramesForInvariants(children.second, errors, frameSet, allFrames);
+	}
 }

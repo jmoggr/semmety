@@ -71,10 +71,19 @@ public:
 	PHLWINDOWREF getNextWindowForFrame(SP<SemmetyLeafFrame> frame);
 	void putWindowInFrame(PHLWINDOWREF window, SP<SemmetyLeafFrame> frame);
 	std::vector<std::string> testInvariants();
-
-	// TODO: should also be private
-	SP<SemmetyFrame> root;
+	const SP<SemmetyFrame>& getRoot() const;
+	void setRootGeometry(const CBox& geometry);
 
 private:
+	SP<SemmetyFrame> root;
 	SP<SemmetyLeafFrame> focused_frame;
+
+	void traverseFramesForInvariants(
+	    const SP<SemmetyFrame>& frame,
+	    std::vector<std::string>& errors,
+	    std::unordered_set<SemmetyFrame*>& frameSet,
+	    std::vector<SP<SemmetyFrame>>& allFrames
+	);
+
+	friend void replaceNode(SP<SemmetyFrame>, SP<SemmetyFrame>, SemmetyWorkspaceWrapper&);
 };

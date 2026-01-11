@@ -41,7 +41,7 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 		return;
 	}
 	auto ww = layout->getOrCreateWorkspaceWrapper(monitor->m_activeWorkspace);
-	auto emptyFrames = ww.root->getEmptyFrames();
+	auto emptyFrames = ww.getRoot()->getEmptyFrames();
 
 	switch (render_stage) {
 	case RENDER_PRE_WINDOWS:
@@ -104,7 +104,7 @@ void SemmetyLayout::tickHook(void*, SCallbackInfo&, std::any) {
 		}
 
 		const auto ww = layout->getOrCreateWorkspaceWrapper(monitor->m_activeWorkspace);
-		auto emptyFrames = ww.root->getEmptyFrames();
+		auto emptyFrames = ww.getRoot()->getEmptyFrames();
 
 		for (const auto& frame: emptyFrames) {
 			frame->damageEmptyFrameBox(*monitor);

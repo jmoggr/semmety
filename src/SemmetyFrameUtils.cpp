@@ -53,7 +53,7 @@ findParentRecursive(const SP<SemmetyFrame> current, const SP<SemmetyFrame> targe
 	}
 
 	auto split = current->asSplit();
-	const auto& children = split->children;
+	const auto& children = split->getChildren();
 
 	// If either child is the target, return the current split.
 	if (children.first == target || children.second == target) {
@@ -75,11 +75,11 @@ findParentRecursive(const SP<SemmetyFrame> current, const SP<SemmetyFrame> targe
 // If 'target' is the root, returns nullptr.
 SP<SemmetySplitFrame>
 findParent(const SP<SemmetyFrame> target, SemmetyWorkspaceWrapper& workspace) {
-	if (workspace.root == target) {
+	if (workspace.getRoot() == target) {
 		return nullptr;
 	}
 
-	if (auto res = findParentRecursive(workspace.root, target)) {
+	if (auto res = findParentRecursive(workspace.getRoot(), target)) {
 		return res;
 	}
 
@@ -133,7 +133,7 @@ SP<SemmetyLeafFrame> getNeighborByDirection(
 		break;
 	}
 
-	auto candidates = workspace.root->getLeafFrames();
+	auto candidates = workspace.getRoot()->getLeafFrames();
 
 	candidates.erase(
 	    std::remove_if(
@@ -207,7 +207,7 @@ getMostOverlappingLeafFrame(SemmetyWorkspaceWrapper& workspace, const PHLWINDOWR
 	double maxOverlapArea = 0.0;
 	SP<SemmetyLeafFrame> bestFrame = nullptr;
 
-	for (const auto& leaf: workspace.root->getLeafFrames()) {
+	for (const auto& leaf: workspace.getRoot()->getLeafFrames()) {
 		const auto& frameBox = leaf->geometry;
 
 		const double windowLeft = windowBox.pos().x;
@@ -249,10 +249,11 @@ bool getPathNodes(
 
 	if (current->isSplit()) {
 		auto split = current->asSplit();
-		if (getPathNodes(target, split->children.first, path)) {
+		const auto& children = split->getChildren();
+		if (getPathNodes(target, children.first, path)) {
 			return true;
 		}
-		if (getPathNodes(target, split->children.second, path)) {
+		if (getPathNodes(target, children.second, path)) {
 			return true;
 		}
 	}
@@ -267,10 +268,10 @@ SP<SemmetySplitFrame> getCommonParent(
     SP<SemmetyFrame> frameB
 ) {
 	std::vector<SP<SemmetyFrame>> pathA, pathB;
-	if (!getPathNodes(frameA, workspace.root, pathA)) {
+	if (!getPathNodes(frameA, workspace.getRoot(), pathA)) {
 		semmety_critical_error("Frame A not found in the tree");
 	}
-	if (!getPathNodes(frameB, workspace.root, pathB)) {
+	if (!getPathNodes(frameB, workspace.getRoot(), pathB)) {
 		semmety_critical_error("Frame B not found in the tree");
 	}
 
@@ -369,17 +370,18 @@ bool frameDepthFirstSearch(
 	// Only split frames have children.
 	if (current->isSplit()) {
 		auto split = current->asSplit();
+		const auto& children = split->getChildren();
 
 		// Explore the first child (index 0)
 		path.push_back(0);
-		if (frameDepthFirstSearch(split->children.first, target, path)) {
+		if (frameDepthFirstSearch(children.first, target, path)) {
 			return true;
 		}
 		path.pop_back(); // Backtrack if not found in first child
 
 		// Explore the second child (index 1)
 		path.push_back(1);
-		if (frameDepthFirstSearch(split->children.second, target, path)) {
+		if (frameDepthFirstSearch(children.second, target, path)) {
 			return true;
 		}
 		path.pop_back(); // Backtrack if not found in second child

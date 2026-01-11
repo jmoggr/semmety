@@ -227,6 +227,10 @@ void SemmetySplitFrame::resize(double distance) {
 	splitRatio = std::clamp(rawRatio, 0.1, 0.9);
 }
 
+const std::pair<SP<SemmetyFrame>, SP<SemmetyFrame>>& SemmetySplitFrame::getChildren() const {
+	return children;
+}
+
 std::string SemmetySplitFrame::print(SemmetyWorkspaceWrapper& workspace, int indentLevel) const {
 	std::string indent(indentLevel * 2, ' ');
 	std::string result;

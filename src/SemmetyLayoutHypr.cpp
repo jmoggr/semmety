@@ -351,10 +351,10 @@ void SemmetyLayout::recalculateWorkspace(const PHLWORKSPACE& workspace) {
 
 		auto ww = g_SemmetyLayout->getOrCreateWorkspaceWrapper(workspace);
 
-		ww.root->geometry = {
+		ww.setRootGeometry({
 		    monitor->m_position + monitor->m_reservedTopLeft,
 		    monitor->m_size - monitor->m_reservedTopLeft - monitor->m_reservedBottomRight
-		};
+		});
 
 		return std::nullopt;
 	});
@@ -481,7 +481,7 @@ void SemmetyLayout::resizeActiveWindow(
 	}
 
 	if (horizontalParent) {
-		if (horizontalParent->children.second->isSameOrDescendant(frame)) {
+		if (horizontalParent->getChildren().second->isSameOrDescendant(frame)) {
 			resizeDelta.x *= -1;
 		}
 
@@ -489,7 +489,7 @@ void SemmetyLayout::resizeActiveWindow(
 	}
 
 	if (verticalParent) {
-		if (verticalParent->children.second->isSameOrDescendant(frame)) {
+		if (verticalParent->getChildren().second->isSameOrDescendant(frame)) {
 			resizeDelta.y *= -1;
 		}
 
