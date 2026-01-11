@@ -26,6 +26,7 @@ SP<HOOK_CALLBACK_FN> renderHookPtr;
 SP<HOOK_CALLBACK_FN> tickHookPtr;
 SP<HOOK_CALLBACK_FN> workspaceHookPtr;
 SP<HOOK_CALLBACK_FN> urgentHookPtr;
+SP<HOOK_CALLBACK_FN> windowTitleHookPtr;
 
 void SemmetyLayout::onEnable() {
 	for (auto& window: g_pCompositor->m_windows) {
@@ -44,6 +45,8 @@ void SemmetyLayout::onEnable() {
 	    HyprlandAPI::registerCallbackDynamic(PHANDLE, "workspace", &SemmetyLayout::workspaceHook);
 	urgentHookPtr =
 	    HyprlandAPI::registerCallbackDynamic(PHANDLE, "urgent", &SemmetyLayout::urgentHook);
+	windowTitleHookPtr =
+	    HyprlandAPI::registerCallbackDynamic(PHANDLE, "windowTitle", &SemmetyLayout::windowTitleHook);
 }
 
 void SemmetyLayout::onDisable() {
@@ -51,6 +54,7 @@ void SemmetyLayout::onDisable() {
 	tickHookPtr.reset();
 	workspaceHookPtr.reset();
 	urgentHookPtr.reset();
+	windowTitleHookPtr.reset();
 }
 
 void SemmetyLayout::onWindowCreatedTiling(PHLWINDOW window, eDirection direction) {

@@ -18,6 +18,10 @@ void SemmetyLayout::urgentHook(void*, SCallbackInfo&, std::any data) {
 	g_pAnimationManager->scheduleTick();
 }
 
+void SemmetyLayout::windowTitleHook(void*, SCallbackInfo&, std::any data) {
+	updateBar();
+}
+
 void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 	static auto PBORDERSIZE = CConfigValue<Hyprlang::INT>("general:border_size");
 	static auto PROUNDING = CConfigValue<Hyprlang::INT>("decoration:rounding");

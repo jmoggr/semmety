@@ -74,6 +74,7 @@ public:
 	static void activeWindowHook(void*, SCallbackInfo&, std::any);
 	static void workspaceHook(void*, SCallbackInfo&, std::any);
 	static void urgentHook(void*, SCallbackInfo&, std::any);
+	static void windowTitleHook(void*, SCallbackInfo&, std::any);
 
 	void moveWindowToWorkspace(std::string wsname);
 	void recalculateWorkspace(const PHLWORKSPACE& workspace);
