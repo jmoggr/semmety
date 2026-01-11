@@ -120,9 +120,13 @@ void SemmetyWorkspaceWrapper::setWindowTiled(PHLWINDOWREF window, bool isTiled) 
 }
 
 void SemmetyWorkspaceWrapper::removeWindow(PHLWINDOWREF window) {
+	// Clean up frame → windows mapping
 	for (auto& [key, vec]: frameHistoryMap) {
 		vec.erase(std::remove(vec.begin(), vec.end(), window), vec.end());
 	}
+
+	// Clean up window → frames mapping
+	windowFrameHistory.erase(window);
 
 	auto frameWithWindow = getFrameForWindow(window);
 	if (!frameWithWindow) {
@@ -314,10 +318,23 @@ void SemmetyWorkspaceWrapper::activateWindow(PHLWINDOWREF window) {
 void SemmetyWorkspaceWrapper::updateFrameHistory(SP<SemmetyFrame> frame, PHLWINDOWREF window) {
 	const auto path = frame->getPathString();
 
-	auto& vec = frameHistoryMap[path];
+	// Update frame → windows mapping
+	auto& frameVec = frameHistoryMap[path];
+	frameVec.erase(std::remove(frameVec.begin(), frameVec.end(), window), frameVec.end());
+	frameVec.push_back(window);
 
-	vec.erase(std::remove(vec.begin(), vec.end(), window), vec.end());
-	vec.push_back(window);
+	// Update window → frames mapping (deduplicate)
+	auto& windowVec = windowFrameHistory[window];
+	windowVec.erase(std::remove(windowVec.begin(), windowVec.end(), path), windowVec.end());
+	windowVec.push_back(path);
+}
+
+std::vector<std::string> SemmetyWorkspaceWrapper::getWindowFrameHistory(PHLWINDOWREF window) const {
+	auto it = windowFrameHistory.find(window);
+	if (it == windowFrameHistory.end()) {
+		return {}; // Window not found or has no history
+	}
+	return it->second; // Return copy of history vector
 }
 
 bool isWindowFocussed(PHLWINDOWREF window) {
@@ -539,6 +556,33 @@ std::vector<std::string> SemmetyWorkspaceWrapper::testInvariants() {
 		};
 
 		verifyPaths(root);
+	}
+
+	// 9. Verify windowFrameHistory consistency with frameHistoryMap
+	for (const auto& [window, framePaths]: windowFrameHistory) {
+		for (const auto& framePath: framePaths) {
+			// Verify that if window is in windowFrameHistory[W] with frame F,
+			// then window is also in frameHistoryMap[F]
+			auto frameIt = frameHistoryMap.find(framePath);
+			if (frameIt == frameHistoryMap.end()) {
+				errors.push_back(format(
+				    "Invariant violation: Window in windowFrameHistory claims to be in frame '{}' but "
+				    "frame has no history",
+				    framePath
+				));
+				continue;
+			}
+
+			const auto& windowsInFrame = frameIt->second;
+			if (std::find(windowsInFrame.begin(), windowsInFrame.end(), window) == windowsInFrame.end()) {
+				errors.push_back(format(
+				    "Invariant violation: Window in windowFrameHistory['{}'] but not in "
+				    "frameHistoryMap['{}']",
+				    framePath,
+				    framePath
+				));
+			}
+		}
 	}
 
 	return errors;

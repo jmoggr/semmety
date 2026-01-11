@@ -44,6 +44,7 @@ public:
 	SemmetyLayout& layout;
 	std::vector<PHLWINDOWREF> windows;
 	std::unordered_map<std::string, std::vector<PHLWINDOWREF>> frameHistoryMap;
+	std::unordered_map<PHLWINDOWREF, std::vector<std::string>> windowFrameHistory;
 
 	size_t getLastFocusedWindowIndex();
 
@@ -67,6 +68,7 @@ public:
 	void activateWindow(PHLWINDOWREF window);
 	SP<SemmetyLeafFrame> getLargestEmptyFrame();
 	void updateFrameHistory(SP<SemmetyFrame> frame, PHLWINDOWREF window);
+	std::vector<std::string> getWindowFrameHistory(PHLWINDOWREF window) const;
 	bool windowMatchesVisibility(PHLWINDOWREF window, SemmetyWindowVisibility mode);
 	PHLWINDOWREF getNextWindowForFrame(SP<SemmetyLeafFrame> frame);
 	void putWindowInFrame(PHLWINDOWREF window, SP<SemmetyLeafFrame> frame);
