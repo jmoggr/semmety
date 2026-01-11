@@ -1,4 +1,5 @@
 #include "SemmetyFrame.hpp"
+#include <sstream>
 #include <utility>
 
 #include <hyprland/src/config/ConfigManager.hpp>
@@ -68,6 +69,25 @@ SP<SemmetyLeafFrame> SemmetyFrame::getLastFocussedLeaf() const {
 	}
 
 	return maxFocusOrderLeaf;
+}
+
+std::string SemmetyFrame::getPathString() const {
+	if (framePath.empty()) {
+		return "root";
+	}
+
+	std::ostringstream oss;
+	for (size_t i = 0; i < framePath.size(); ++i) {
+		oss << framePath[i];
+		if (i + 1 < framePath.size()) {
+			oss << "/";
+		}
+	}
+	return oss.str();
+}
+
+void SemmetyFrame::setFramePath(const std::vector<int>& path) {
+	framePath = path;
 }
 
 //

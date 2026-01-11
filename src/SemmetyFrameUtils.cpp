@@ -11,11 +11,17 @@ void replaceNode(
     SemmetyWorkspaceWrapper& workspace
 ) {
 	auto* slot = &workspace.root;
+	std::vector<int> targetPath = {}; // Path to target's position
+
 	if (auto parent = findParent(target, workspace)) {
 		if (parent->children.first == target) {
 			slot = &parent->children.first;
+			targetPath = parent->framePath;
+			targetPath.push_back(0);
 		} else if (parent->children.second == target) {
 			slot = &parent->children.second;
+			targetPath = parent->framePath;
+			targetPath.push_back(1);
 		} else {
 			// this should not be possible based on findParent
 			semmety_critical_error("Parent does not have child");
@@ -23,50 +29,63 @@ void replaceNode(
 	}
 
 	*slot = source;
+
+	// Update paths for entire source subtree
+	updateFramePathsRecursive(source, targetPath);
+
 	(*slot)->applyRecursive(workspace, target->geometry, true);
 
 	while (true) {
 		auto frame = workspace.getLargestEmptyFrame();
-		if (!frame) {
-			break;
-		}
+		if (!frame) { break; }
 
 		auto window = workspace.getNextWindowForFrame(frame);
-		if (!window) {
-			break;
-		}
+		if (!window) { break; }
 
 		frame->setWindow(workspace, window);
 	}
 
 	for (auto& window: workspace.windows) {
-		if (!window->isHidden() && !workspace.isWindowVisible(window)) {
-			window->setHidden(true);
+		if (!window->isHidden() && !workspace.isWindowVisible(window)) { window->setHidden(true); }
+	}
+}
+
+void updateFramePathsRecursive(SP<SemmetyFrame> frame, const std::vector<int>& newPath) {
+	if (!frame) { return; }
+
+	frame->framePath = newPath;
+
+	if (frame->isSplit()) {
+		auto split = frame->asSplit();
+		const auto& children = split->getChildren();
+
+		if (children.first) {
+			auto firstPath = newPath;
+			firstPath.push_back(0);
+			updateFramePathsRecursive(children.first, firstPath);
+		}
+
+		if (children.second) {
+			auto secondPath = newPath;
+			secondPath.push_back(1);
+			updateFramePathsRecursive(children.second, secondPath);
 		}
 	}
 }
 
 SP<SemmetySplitFrame>
 findParentRecursive(const SP<SemmetyFrame> current, const SP<SemmetyFrame> target) {
-	if (current->isLeaf()) {
-		return nullptr;
-	}
+	if (current->isLeaf()) { return nullptr; }
 
 	auto split = current->asSplit();
 	const auto& children = split->getChildren();
 
 	// If either child is the target, return the current split.
-	if (children.first == target || children.second == target) {
-		return split;
-	}
+	if (children.first == target || children.second == target) { return split; }
 
-	if (auto res = findParentRecursive(children.first, target)) {
-		return res;
-	}
+	if (auto res = findParentRecursive(children.first, target)) { return res; }
 
-	if (auto res = findParentRecursive(children.second, target)) {
-		return res;
-	}
+	if (auto res = findParentRecursive(children.second, target)) { return res; }
 
 	return nullptr;
 }
@@ -75,13 +94,9 @@ findParentRecursive(const SP<SemmetyFrame> current, const SP<SemmetyFrame> targe
 // If 'target' is the root, returns nullptr.
 SP<SemmetySplitFrame>
 findParent(const SP<SemmetyFrame> target, SemmetyWorkspaceWrapper& workspace) {
-	if (workspace.getRoot() == target) {
-		return nullptr;
-	}
+	if (workspace.getRoot() == target) { return nullptr; }
 
-	if (auto res = findParentRecursive(workspace.getRoot(), target)) {
-		return res;
-	}
+	if (auto res = findParentRecursive(workspace.getRoot(), target)) { return res; }
 
 	semmety_critical_error("Failed to find parent");
 }
@@ -95,9 +110,7 @@ SP<SemmetyLeafFrame> getMaxFocusOrderLeaf(const std::vector<SP<SemmetyLeafFrame>
 	    }
 	);
 
-	if (maxFocusOrderLeaf == leafFrames.end()) {
-		return nullptr;
-	}
+	if (maxFocusOrderLeaf == leafFrames.end()) { return nullptr; }
 
 	return *maxFocusOrderLeaf;
 }
@@ -169,9 +182,7 @@ SP<SemmetyLeafFrame> getNeighborByDirection(
 	    candidates.end()
 	);
 
-	if (candidates.empty()) {
-		return nullptr;
-	}
+	if (candidates.empty()) { return nullptr; }
 
 	auto min = sign
 	         * std::accumulate(
@@ -198,9 +209,7 @@ SP<SemmetyLeafFrame> getNeighborByDirection(
 
 SP<SemmetyLeafFrame>
 getMostOverlappingLeafFrame(SemmetyWorkspaceWrapper& workspace, const PHLWINDOWREF& window) {
-	if (!window) {
-		return nullptr;
-	}
+	if (!window) { return nullptr; }
 
 	const auto windowBox = CBox(window->m_position, window->m_size);
 
@@ -243,19 +252,13 @@ bool getPathNodes(
 ) {
 	path.push_back(current);
 
-	if (current == target) {
-		return true;
-	}
+	if (current == target) { return true; }
 
 	if (current->isSplit()) {
 		auto split = current->asSplit();
 		const auto& children = split->getChildren();
-		if (getPathNodes(target, children.first, path)) {
-			return true;
-		}
-		if (getPathNodes(target, children.second, path)) {
-			return true;
-		}
+		if (getPathNodes(target, children.first, path)) { return true; }
+		if (getPathNodes(target, children.second, path)) { return true; }
 	}
 
 	path.pop_back();
@@ -285,9 +288,7 @@ SP<SemmetySplitFrame> getCommonParent(
 		}
 	}
 
-	if (!commonAncestor) {
-		semmety_critical_error("No common parent found");
-	}
+	if (!commonAncestor) { semmety_critical_error("No common parent found"); }
 
 	if (commonAncestor->isLeaf()) {
 		semmety_critical_error("Commond parent is a leaf, this should not be possible");
@@ -305,9 +306,7 @@ SP<SemmetySplitFrame> getResizeTarget(
 	auto neighborPos = getNeighborByDirection(workspace, frame, posDirection);
 	auto neighborNeg = getNeighborByDirection(workspace, frame, negDirection);
 
-	if (!neighborPos && !neighborNeg) {
-		return {};
-	}
+	if (!neighborPos && !neighborNeg) { return {}; }
 
 	if (!neighborPos) {
 		return getCommonParent(workspace, frame, neighborNeg);
@@ -315,14 +314,10 @@ SP<SemmetySplitFrame> getResizeTarget(
 		return getCommonParent(workspace, frame, neighborPos);
 	} else {
 		auto commonParentPos = getCommonParent(workspace, frame, neighborPos);
-		if (!commonParentPos) {
-			semmety_critical_error("not possible");
-		}
+		if (!commonParentPos) { semmety_critical_error("not possible"); }
 
 		auto commonParentNeg = getCommonParent(workspace, frame, neighborNeg);
-		if (!commonParentNeg) {
-			semmety_critical_error("not possible");
-		}
+		if (!commonParentNeg) { semmety_critical_error("not possible"); }
 
 		auto posLength = commonParentPos->pathLengthToDescendant(frame).value_or(0)
 		               + commonParentPos->pathLengthToDescendant(neighborPos).value_or(0);
@@ -337,9 +332,7 @@ SP<SemmetySplitFrame> getResizeTarget(
 SP<SemmetySplitFrame>
 getResizeTarget(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame> basis, Direction dir) {
 	auto neighbor = getNeighborByDirection(workspace, basis, dir);
-	if (!neighbor) {
-		return {};
-	}
+	if (!neighbor) { return {}; }
 
 	return getCommonParent(workspace, basis, neighbor);
 }
@@ -363,9 +356,7 @@ bool frameDepthFirstSearch(
     std::vector<int>& path
 ) {
 	// If the current frame is the target, we have found the path.
-	if (current == target) {
-		return true;
-	}
+	if (current == target) { return true; }
 
 	// Only split frames have children.
 	if (current->isSplit()) {
@@ -374,16 +365,12 @@ bool frameDepthFirstSearch(
 
 		// Explore the first child (index 0)
 		path.push_back(0);
-		if (frameDepthFirstSearch(children.first, target, path)) {
-			return true;
-		}
+		if (frameDepthFirstSearch(children.first, target, path)) { return true; }
 		path.pop_back(); // Backtrack if not found in first child
 
 		// Explore the second child (index 1)
 		path.push_back(1);
-		if (frameDepthFirstSearch(children.second, target, path)) {
-			return true;
-		}
+		if (frameDepthFirstSearch(children.second, target, path)) { return true; }
 		path.pop_back(); // Backtrack if not found in second child
 	}
 
@@ -392,13 +379,9 @@ bool frameDepthFirstSearch(
 
 std::string getFramePath(const SP<SemmetyFrame>& targetFrame, const SP<SemmetyFrame>& rootFrame) {
 	std::vector<int> pathIndices;
-	if (!frameDepthFirstSearch(rootFrame, targetFrame, pathIndices)) {
-		return "";
-	}
+	if (!frameDepthFirstSearch(rootFrame, targetFrame, pathIndices)) { return ""; }
 
-	if (pathIndices.empty()) {
-		return "root";
-	}
+	if (pathIndices.empty()) { return "root"; }
 
 	std::ostringstream oss;
 	for (size_t i = 0; i < pathIndices.size(); ++i) {

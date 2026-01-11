@@ -35,6 +35,8 @@ public:
 	SP<SemmetyLeafFrame> asLeaf() const;
 	std::vector<SP<SemmetyLeafFrame>> getEmptyFrames() const;
 	SP<SemmetyLeafFrame> getLastFocussedLeaf() const;
+	std::string getPathString() const;
+	void setFramePath(const std::vector<int>& path);
 
 	virtual bool isSameOrDescendant(const SP<SemmetyFrame>& target) const = 0;
 	virtual bool isLeaf() const = 0;
@@ -46,6 +48,12 @@ public:
 	) = 0;
 	virtual std::vector<SP<SemmetyLeafFrame>> getLeafFrames() const = 0;
 	virtual std::string print(SemmetyWorkspaceWrapper& workspace, int indentLevel = 0) const = 0;
+
+protected:
+	std::vector<int> framePath;  // Path from root: [0,1,0] means left->right->left
+
+	friend void replaceNode(SP<SemmetyFrame>, SP<SemmetyFrame>, SemmetyWorkspaceWrapper&);
+	friend void updateFramePathsRecursive(SP<SemmetyFrame>, const std::vector<int>&);
 };
 
 class SemmetySplitFrame: public SemmetyFrame {

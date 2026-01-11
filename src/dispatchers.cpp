@@ -10,10 +10,10 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
-#include <hyprland/src/managers/animation/AnimationManager.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/managers/PointerManager.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
+#include <hyprland/src/managers/animation/AnimationManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/plugins/PluginSystem.hpp>
@@ -31,13 +31,9 @@
 
 std::optional<std::string>
 dispatchDebug(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame>, CVarList) {
-	if (!valid(workspace.workspace.lock())) {
-		return "Workspace is not valid";
-	}
+	if (!valid(workspace.workspace.lock())) { return "Workspace is not valid"; }
 
-	if (workspace.workspace.lock() == nullptr) {
-		return "Workspace is null";
-	}
+	if (workspace.workspace.lock() == nullptr) { return "Workspace is null"; }
 
 	workspace.printDebug();
 	return std::nullopt;
@@ -71,9 +67,7 @@ std::optional<std::string> dispatchRemove(
     CVarList args
 ) {
 	auto parent = findParent(focussedFrame, workspace);
-	if (!parent) {
-		return "Frame has no parent, cannot remove the root frame!";
-	}
+	if (!parent) { return "Frame has no parent, cannot remove the root frame!"; }
 
 	if (args[0] == "sibling") {
 		replaceNode(parent, focussedFrame, workspace);
@@ -100,9 +94,7 @@ std::optional<std::string> dispatchCycle(
 		window = workspace.getNextWindow(params);
 	}
 
-	if (!window) {
-		return std::nullopt;
-	}
+	if (!window) { return std::nullopt; }
 
 	workspace.putWindowInFocussedFrame(window);
 
@@ -121,9 +113,7 @@ std::optional<std::string> dispatchFocus(
 	}
 
 	const auto neighbor = getNeighborByDirection(workspace, focussedFrame, direction.value());
-	if (!neighbor) {
-		return std::nullopt;
-	}
+	if (!neighbor) { return std::nullopt; }
 
 	workspace.setFocusedFrame(neighbor);
 	return std::nullopt;
@@ -140,9 +130,7 @@ std::optional<std::string> dispatchSwap(
 	}
 
 	const auto neighbor = getNeighborByDirection(workspace, focussedFrame, direction.value());
-	if (!neighbor) {
-		return std::nullopt;
-	}
+	if (!neighbor) { return std::nullopt; }
 
 	focussedFrame->swapContents(workspace, neighbor);
 	workspace.setFocusedFrame(neighbor);
@@ -152,9 +140,7 @@ std::optional<std::string> dispatchSwap(
 
 std::optional<std::string>
 dispatchMoveToWorkspace(SemmetyWorkspaceWrapper&, SP<SemmetyLeafFrame>, CVarList args) {
-	if (args.size() == 0 || args[0].empty()) {
-		return "No workspace name provided";
-	}
+	if (args.size() == 0 || args[0].empty()) { return "No workspace name provided"; }
 
 	g_SemmetyLayout->moveWindowToWorkspace(args[0]);
 	return std::nullopt;
@@ -162,14 +148,10 @@ dispatchMoveToWorkspace(SemmetyWorkspaceWrapper&, SP<SemmetyLeafFrame>, CVarList
 
 std::optional<std::string>
 dispatchActivate(SemmetyWorkspaceWrapper&, SP<SemmetyLeafFrame>, CVarList args) {
-	if (args.size() == 0 || args[0].empty()) {
-		return "No regex provided for activation";
-	}
+	if (args.size() == 0 || args[0].empty()) { return "No regex provided for activation"; }
 
 	const auto window = g_pCompositor->getWindowByRegex(args[0]);
-	if (!window) {
-		return "No window matched the regex";
-	}
+	if (!window) { return "No window matched the regex"; }
 
 	auto workspace = workspace_for_window(window);
 	workspace->activateWindow(window);
@@ -179,9 +161,7 @@ dispatchActivate(SemmetyWorkspaceWrapper&, SP<SemmetyLeafFrame>, CVarList args) 
 
 std::optional<std::string>
 dispatchChangeWindowOrder(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame>, CVarList args) {
-	if (args.size() == 0) {
-		return "Expected 'prev' or 'next' as argument";
-	}
+	if (args.size() == 0) { return "Expected 'prev' or 'next' as argument"; }
 
 	const bool prev = args[0] == "prev";
 	workspace.changeWindowOrder(prev);
@@ -200,9 +180,7 @@ using DispatchFunc = std::function<
 SDispatchResult dispatchWrapper(const std::string& arg, const DispatchFunc& action) {
 	// TODO? Check that the layout pointer is valid?
 	auto* workspace = workspace_for_action(true);
-	if (!workspace) {
-		return {.passEvent = false, .success = false, .error = ""};
-	}
+	if (!workspace) { return {.passEvent = false, .success = false, .error = ""}; }
 
 	auto args = CVarList(arg);
 	auto focused = workspace->getFocusedFrame();

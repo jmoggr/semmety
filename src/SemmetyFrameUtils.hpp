@@ -7,6 +7,7 @@ void replaceNode(
     SP<SemmetyFrame> source,
     SemmetyWorkspaceWrapper& workspace
 );
+void updateFramePathsRecursive(SP<SemmetyFrame> frame, const std::vector<int>& newPath);
 SP<SemmetyLeafFrame> getMaxFocusOrderLeaf(const std::vector<SP<SemmetyLeafFrame>> leafFrames);
 SP<SemmetyLeafFrame> getNeighborByDirection(
     const SemmetyWorkspaceWrapper& workspace,

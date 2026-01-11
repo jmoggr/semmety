@@ -39,6 +39,7 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 
 	auto frame = SemmetyLeafFrame::create({}, true);
 	frame->geometry = {pos, size};
+	frame->setFramePath({});  // Empty path for root
 
 	root = frame;
 	focused_frame = frame;
@@ -169,7 +170,7 @@ std::vector<PHLWINDOWREF>::iterator SemmetyWorkspaceWrapper::findWindowIt(PHLWIN
 }
 
 PHLWINDOWREF SemmetyWorkspaceWrapper::getNextWindowForFrame(SP<SemmetyLeafFrame> frame) {
-	const auto path = getFramePath(frame, root);
+	const auto path = frame->getPathString();
 	auto& vec = frameHistoryMap[path];
 
 	for (auto& window: std::views::reverse(vec)) {
@@ -351,7 +352,7 @@ void SemmetyWorkspaceWrapper::activateWindow(PHLWINDOWREF window) {
 }
 
 void SemmetyWorkspaceWrapper::updateFrameHistory(SP<SemmetyFrame> frame, PHLWINDOWREF window) {
-	const auto path = getFramePath(frame, root);
+	const auto path = frame->getPathString();
 
 	auto& vec = frameHistoryMap[path];
 
@@ -568,6 +569,34 @@ std::vector<std::string> SemmetyWorkspaceWrapper::testInvariants() {
 	// 		));
 	// 	}
 	// }
+
+	// 8. Verify all frame paths are correct by comparing cached vs computed
+	if (root) {
+		std::function<void(SP<SemmetyFrame>)> verifyPaths = [&](SP<SemmetyFrame> frame) {
+			if (!frame) {
+				return;
+			}
+
+			const auto cachedPath = frame->getPathString();
+			const auto computedPath = getFramePath(frame, root);
+
+			if (cachedPath != computedPath) {
+				errors.push_back(format(
+				    "Invariant violation: Frame path mismatch. Cached='{}', Computed='{}'",
+				    cachedPath,
+				    computedPath
+				));
+			}
+
+			if (frame->isSplit()) {
+				const auto& children = frame->asSplit()->getChildren();
+				verifyPaths(children.first);
+				verifyPaths(children.second);
+			}
+		};
+
+		verifyPaths(root);
+	}
 
 	return errors;
 }
