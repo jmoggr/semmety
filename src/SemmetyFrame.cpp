@@ -25,9 +25,7 @@ std::vector<SP<SemmetyLeafFrame>> SemmetyFrame::getEmptyFrames() const {
 	std::vector<SP<SemmetyLeafFrame>> emptyFrames;
 
 	for (const auto& leaf: leafFrames) {
-		if (leaf->isEmpty()) {
-			emptyFrames.push_back(leaf);
-		}
+		if (leaf->isEmpty()) { emptyFrames.push_back(leaf); }
 	}
 
 	return emptyFrames;
@@ -39,9 +37,7 @@ SP<SemmetySplitFrame> SemmetyFrame::asSplit() const {
 	}
 
 	auto sp = Hyprutils::Memory::dynamicPointerCast<SemmetySplitFrame>(self.lock());
-	if (!sp) {
-		semmety_critical_error("Failed to cast to split frame");
-	}
+	if (!sp) { semmety_critical_error("Failed to cast to split frame"); }
 
 	return sp;
 }
@@ -52,9 +48,7 @@ SP<SemmetyLeafFrame> SemmetyFrame::asLeaf() const {
 	}
 
 	auto sp = Hyprutils::Memory::dynamicPointerCast<SemmetyLeafFrame>(self.lock());
-	if (!sp) {
-		semmety_critical_error("Failed to cast to leaf frame");
-	}
+	if (!sp) { semmety_critical_error("Failed to cast to leaf frame"); }
 
 	return sp;
 }
@@ -64,31 +58,23 @@ SP<SemmetyLeafFrame> SemmetyFrame::getLastFocussedLeaf() const {
 	const auto maxFocusOrderLeaf = getMaxFocusOrderLeaf(descendantLeafs);
 
 	// this shouldn't be possible
-	if (!maxFocusOrderLeaf) {
-		semmety_critical_error("No non parent descendant leafs");
-	}
+	if (!maxFocusOrderLeaf) { semmety_critical_error("No non parent descendant leafs"); }
 
 	return maxFocusOrderLeaf;
 }
 
 std::string SemmetyFrame::getPathString() const {
-	if (framePath.empty()) {
-		return "root";
-	}
+	if (framePath.empty()) { return "root"; }
 
 	std::ostringstream oss;
 	for (size_t i = 0; i < framePath.size(); ++i) {
 		oss << framePath[i];
-		if (i + 1 < framePath.size()) {
-			oss << "/";
-		}
+		if (i + 1 < framePath.size()) { oss << "/"; }
 	}
 	return oss.str();
 }
 
-void SemmetyFrame::setFramePath(const std::vector<int>& path) {
-	framePath = path;
-}
+void SemmetyFrame::setFramePath(const std::vector<int>& path) { framePath = path; }
 
 //
 // SemmetySplitFrame
@@ -123,9 +109,7 @@ void SemmetySplitFrame::applyRecursive(
     std::optional<CBox> newGeometry,
     std::optional<bool> force
 ) {
-	if (newGeometry.has_value()) {
-		geometry = newGeometry.value();
-	}
+	if (newGeometry.has_value()) { geometry = newGeometry.value(); }
 
 	auto childGeometries = getChildGeometries();
 
@@ -189,49 +173,33 @@ std::pair<CBox, CBox> SemmetySplitFrame::getChildGeometries() const {
 }
 
 bool SemmetySplitFrame::isSameOrDescendant(const SP<SemmetyFrame>& target) const {
-	if (self == target) {
-		return true;
-	}
+	if (self == target) { return true; }
 
-	if (children.first == target || children.second == target) {
-		return true;
-	}
+	if (children.first == target || children.second == target) { return true; }
 
 	if (children.first->isSplit()) {
-		if (children.first->asSplit()->isSameOrDescendant(target)) {
-			return true;
-		}
+		if (children.first->asSplit()->isSameOrDescendant(target)) { return true; }
 	}
 
 	if (children.second->isSplit()) {
-		if (children.second->asSplit()->isSameOrDescendant(target)) {
-			return true;
-		}
+		if (children.second->asSplit()->isSameOrDescendant(target)) { return true; }
 	}
 
 	return false;
 }
 
-std::optional<size_t> SemmetySplitFrame::pathLengthToDescendant(const SP<SemmetyFrame>& target
-) const {
-	if (self == target) {
-		return 0;
-	}
+std::optional<size_t>
+SemmetySplitFrame::pathLengthToDescendant(const SP<SemmetyFrame>& target) const {
+	if (self == target) { return 0; }
 
-	if (children.first == target || children.second == target) {
-		return 1;
-	}
+	if (children.first == target || children.second == target) { return 1; }
 
 	if (children.first->isSplit()) {
-		if (auto d = children.first->asSplit()->pathLengthToDescendant(target)) {
-			return *d + 1;
-		}
+		if (auto d = children.first->asSplit()->pathLengthToDescendant(target)) { return *d + 1; }
 	}
 
 	if (children.second->isSplit()) {
-		if (auto d = children.second->asSplit()->pathLengthToDescendant(target)) {
-			return *d + 1;
-		}
+		if (auto d = children.second->asSplit()->pathLengthToDescendant(target)) { return *d + 1; }
 	}
 
 	return std::nullopt;
@@ -324,13 +292,9 @@ void SemmetyLeafFrame::swapContents(
 ) {
 	// update the Z order of the windows so that they appear over other windows during the swap
 	// animation
-	if (other->window) {
-		g_pCompositor->changeWindowZOrder(other->window.lock(), true);
-	}
+	if (other->window) { g_pCompositor->changeWindowZOrder(other->window.lock(), true); }
 
-	if (window) {
-		g_pCompositor->changeWindowZOrder(window.lock(), true);
-	}
+	if (window) { g_pCompositor->changeWindowZOrder(window.lock(), true); }
 
 	const auto tmp = window;
 	_setWindow(workspace, other->window, false);
@@ -344,9 +308,7 @@ void SemmetyLeafFrame::_setWindow(
 ) {
 	window = win;
 	applyRecursive(workspace, std::nullopt, force);
-	if (window) {
-		workspace.updateFrameHistory(self.lock(), window);
-	}
+	if (window) { workspace.updateFrameHistory(self.lock(), window); }
 }
 
 bool SemmetyLeafFrame::isSameOrDescendant(const SP<SemmetyFrame>& target) const {
@@ -383,8 +345,11 @@ std::vector<SP<SemmetyLeafFrame>> SemmetyLeafFrame::getLeafFrames() const {
 	return {l};
 }
 
-CBox SemmetyLeafFrame::getStandardWindowArea(CBox area, SBoxExtents extents, PHLWORKSPACE workspace)
-    const {
+CBox SemmetyLeafFrame::getStandardWindowArea(
+    CBox area,
+    SBoxExtents extents,
+    PHLWORKSPACE workspace
+) const {
 	static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
 
 	auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(workspace);
@@ -412,9 +377,7 @@ void SemmetyLeafFrame::applyRecursive(
     std::optional<CBox> newGeometry,
     std::optional<bool> force
 ) {
-	if (newGeometry.has_value()) {
-		geometry = newGeometry.value();
-	}
+	if (newGeometry.has_value()) { geometry = newGeometry.value(); }
 
 	if (!valid(window) || !window->m_isMapped) {
 		semmety_log(
@@ -428,9 +391,7 @@ void SemmetyLeafFrame::applyRecursive(
 		return;
 	}
 
-	if (window->isHidden()) {
-		window->setHidden(false);
-	}
+	if (window->isHidden()) { window->setHidden(false); }
 
 	window->unsetWindowData(PRIORITY_LAYOUT);
 	window->updateWindowData();
@@ -471,9 +432,7 @@ void SemmetyLeafFrame::applyRecursive(
 
 // from void CCompositor::updateWindowAnimatedDecorationValues(PHLWINDOW pWindow) {
 void SemmetyLeafFrame::setBorderColor(CGradientValueData grad) {
-	if (grad == m_cRealBorderColor) {
-		return;
-	}
+	if (grad == m_cRealBorderColor) { return; }
 
 	m_cRealBorderColorPrevious = m_cRealBorderColor;
 	m_cRealBorderColor = grad;

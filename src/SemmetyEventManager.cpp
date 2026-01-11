@@ -49,9 +49,7 @@ SemmetyEventManager::SemmetyEventManager():
 }
 
 SemmetyEventManager::~SemmetyEventManager() {
-	for (const auto& client: m_vClients) {
-		wl_event_source_remove(client.eventSource);
-	}
+	for (const auto& client: m_vClients) { wl_event_source_remove(client.eventSource); }
 
 	if (m_pEventSource != nullptr) wl_event_source_remove(m_pEventSource);
 }
@@ -104,11 +102,13 @@ int SemmetyEventManager::onServerEvent(int fd, uint32_t mask) {
 	    onServerEvent,
 	    nullptr
 	);
-	m_vClients.emplace_back(SClient {
-	    std::move(ACCEPTEDCONNECTION),
-	    {},
-	    eventSource,
-	});
+	m_vClients.emplace_back(
+	    SClient {
+	        std::move(ACCEPTEDCONNECTION),
+	        {},
+	        eventSource,
+	    }
+	);
 
 	return 0;
 }

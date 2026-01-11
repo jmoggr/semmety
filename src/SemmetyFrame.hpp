@@ -50,7 +50,7 @@ public:
 	virtual std::string print(SemmetyWorkspaceWrapper& workspace, int indentLevel = 0) const = 0;
 
 protected:
-	std::vector<int> framePath;  // Path from root: [0,1,0] means left->right->left
+	std::vector<int> framePath; // Path from root: [0,1,0] means left->right->left
 
 	friend void replaceNode(SP<SemmetyFrame>, SP<SemmetyFrame>, SemmetyWorkspaceWrapper&);
 	friend void updateFramePathsRecursive(SP<SemmetyFrame>, const std::vector<int>&);

@@ -37,9 +37,11 @@ public:
 	// void onBeginDragWindow() override;
 	// void onEndDragWindow() override;
 	// void onMouseMove(const Vector2D&) override;
-	void
-	resizeActiveWindow(const Vector2D&, eRectCorner corner = CORNER_NONE, PHLWINDOW pWindow = nullptr)
-	    override;
+	void resizeActiveWindow(
+	    const Vector2D&,
+	    eRectCorner corner = CORNER_NONE,
+	    PHLWINDOW pWindow = nullptr
+	) override;
 	void fullscreenRequestForWindow(
 	    PHLWINDOW pWindow,
 	    const eFullscreenMode CURRENT_EFFECTIVE_MODE,
@@ -103,9 +105,7 @@ public:
 
 		if constexpr (std::is_same_v<ReturnType, std::optional<std::string>>) {
 			result = fn();
-			if (result->has_value()) {
-				exitMessage = result.value();
-			}
+			if (result->has_value()) { exitMessage = result.value(); }
 		} else if constexpr (std::is_void_v<ReturnType>) {
 			fn();
 		} else {
@@ -128,9 +128,7 @@ public:
 			semmety_log(LOG, "EXIT {}", name);
 		}
 
-		if constexpr (!std::is_void_v<ReturnType>) {
-			return *result;
-		}
+		if constexpr (!std::is_void_v<ReturnType>) { return *result; }
 	}
 
 	bool _shouldUpdateBar = false;

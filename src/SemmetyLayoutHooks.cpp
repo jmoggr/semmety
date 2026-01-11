@@ -11,9 +11,7 @@ void SemmetyLayout::workspaceHook(void*, SCallbackInfo&, std::any data) {
 
 void SemmetyLayout::urgentHook(void*, SCallbackInfo&, std::any data) {
 	auto layout = g_SemmetyLayout.get();
-	if (layout == nullptr) {
-		return;
-	}
+	if (layout == nullptr) { return; }
 
 	// m_isUrgent is not set until after the hook event is handled, so we hack it this way
 	layout->updateBarOnNextTick = true;
@@ -28,18 +26,12 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 	auto render_stage = std::any_cast<eRenderStage>(data);
 
 	auto monitor = g_pHyprOpenGL->m_renderData.pMonitor.lock();
-	if (monitor == nullptr) {
-		return;
-	}
+	if (monitor == nullptr) { return; }
 
-	if (monitor->m_activeWorkspace == nullptr) {
-		return;
-	}
+	if (monitor->m_activeWorkspace == nullptr) { return; }
 
 	auto layout = g_SemmetyLayout.get();
-	if (layout == nullptr) {
-		return;
-	}
+	if (layout == nullptr) { return; }
 	auto ww = layout->getOrCreateWorkspaceWrapper(monitor->m_activeWorkspace);
 	auto emptyFrames = ww.getRoot()->getEmptyFrames();
 
@@ -82,9 +74,7 @@ void SemmetyLayout::renderHook(void*, SCallbackInfo&, std::any data) {
 
 void SemmetyLayout::tickHook(void*, SCallbackInfo&, std::any) {
 	auto layout = g_SemmetyLayout.get();
-	if (layout == nullptr) {
-		return;
-	}
+	if (layout == nullptr) { return; }
 
 	if (layout->updateBarOnNextTick) {
 		updateBar();
@@ -94,20 +84,14 @@ void SemmetyLayout::tickHook(void*, SCallbackInfo&, std::any) {
 	if (g_pLayoutManager->getCurrentLayout() != layout) return;
 
 	for (const auto& monitor: g_pCompositor->m_monitors) {
-		if (monitor->m_activeWorkspace == nullptr) {
-			continue;
-		}
+		if (monitor->m_activeWorkspace == nullptr) { continue; }
 
 		const auto activeWorkspace = monitor->m_activeWorkspace;
-		if (activeWorkspace == nullptr) {
-			continue;
-		}
+		if (activeWorkspace == nullptr) { continue; }
 
 		const auto ww = layout->getOrCreateWorkspaceWrapper(monitor->m_activeWorkspace);
 		auto emptyFrames = ww.getRoot()->getEmptyFrames();
 
-		for (const auto& frame: emptyFrames) {
-			frame->damageEmptyFrameBox(*monitor);
-		}
+		for (const auto& frame: emptyFrames) { frame->damageEmptyFrameBox(*monitor); }
 	}
 }

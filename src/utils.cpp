@@ -9,8 +9,8 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
-#include <hyprland/src/managers/animation/AnimationManager.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
+#include <hyprland/src/managers/animation/AnimationManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/Renderer.hpp>
@@ -84,38 +84,24 @@ std::optional<Direction> directionFromString(const std::string& str) {
 // TODO: should it every be allowed to return null?
 SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
 	auto layout = g_SemmetyLayout.get();
-	if (layout == nullptr) {
-		return nullptr;
-	}
+	if (layout == nullptr) { return nullptr; }
 
-	if (g_pLayoutManager->getCurrentLayout() != layout) {
-		return nullptr;
-	}
+	if (g_pLayoutManager->getCurrentLayout() != layout) { return nullptr; }
 
 	auto workspace = g_pCompositor->m_lastMonitor->m_activeSpecialWorkspace;
-	if (!valid(workspace)) {
-		workspace = g_pCompositor->m_lastMonitor->m_activeWorkspace;
-	}
+	if (!valid(workspace)) { workspace = g_pCompositor->m_lastMonitor->m_activeWorkspace; }
 
-	if (!valid(workspace)) {
-		return nullptr;
-	}
-	if (!allow_fullscreen && workspace->m_hasFullscreenWindow) {
-		return nullptr;
-	}
+	if (!valid(workspace)) { return nullptr; }
+	if (!allow_fullscreen && workspace->m_hasFullscreenWindow) { return nullptr; }
 
 	return &layout->getOrCreateWorkspaceWrapper(workspace);
 }
 
 SemmetyWorkspaceWrapper* workspace_for_window(PHLWINDOW window) {
-	if (!window || !window->m_workspace) {
-		return nullptr;
-	}
+	if (!window || !window->m_workspace) { return nullptr; }
 
 	for (auto& workspace: g_SemmetyLayout->workspaceWrappers) {
-		if (window->m_workspace == workspace.workspace) {
-			return &workspace;
-		}
+		if (window->m_workspace == workspace.workspace) { return &workspace; }
 	}
 
 	return &g_SemmetyLayout->getOrCreateWorkspaceWrapper(window->m_workspace);
@@ -151,15 +137,11 @@ void updateBar() {
 
 void focusWindow(PHLWINDOWREF window) {
 	auto focused_window = g_pCompositor->m_lastWindow.lock();
-	if (focused_window == window) {
-		return;
-	}
+	if (focused_window == window) { return; }
 	if (window) {
 		semmety_log(ERR, "Focusing window {}", window->fetchTitle());
 
-		if (window->isHidden()) {
-			window->setHidden(false);
-		}
+		if (window->isHidden()) { window->setHidden(false); }
 		g_pCompositor->focusWindow(window.lock());
 	} else {
 		g_pCompositor->focusWindow(nullptr);
@@ -180,15 +162,11 @@ std::string getCallStackAsString() {
 	// Retrieve current stack addresses using the vector's data pointer.
 	int addrLen = backtrace(addrList.data(), static_cast<int>(addrList.size()));
 
-	if (addrLen == 0) {
-		return "<empty, possibly corrupt stack>";
-	}
+	if (addrLen == 0) { return "<empty, possibly corrupt stack>"; }
 
 	// Convert addresses to an array of symbolic strings.
 	char** symbolList = backtrace_symbols(addrList.data(), addrLen);
-	if (!symbolList) {
-		return "<failed to obtain symbols>";
-	}
+	if (!symbolList) { return "<failed to obtain symbols>"; }
 
 	std::ostringstream oss;
 	for (int i = 0; i < addrLen; ++i) {
