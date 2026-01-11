@@ -76,6 +76,30 @@ std::string SemmetyFrame::getPathString() const {
 
 void SemmetyFrame::setFramePath(const std::vector<int>& path) { framePath = path; }
 
+SP<SemmetyFrame>
+SemmetyFrame::findRecursive(std::function<bool(const SP<SemmetyFrame>&)> predicate) const {
+	// Check if current frame matches
+	auto selfPtr = self.lock();
+	if (predicate(selfPtr)) { return selfPtr; }
+
+	// If leaf, no children to search
+	if (isLeaf()) { return nullptr; }
+
+	// If split, recursively search children
+	auto split = asSplit();
+	const auto& children = split->getChildren();
+
+	if (children.first) {
+		if (auto found = children.first->findRecursive(predicate)) { return found; }
+	}
+
+	if (children.second) {
+		if (auto found = children.second->findRecursive(predicate)) { return found; }
+	}
+
+	return nullptr;
+}
+
 //
 // SemmetySplitFrame
 //
@@ -281,6 +305,9 @@ void SemmetyLeafFrame::setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWRE
 
 PHLWINDOWREF
 SemmetyLeafFrame::replaceWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win) {
+	// replacing a window with itself is a no-op returning null
+	if (win == window) { return {}; }
+
 	const auto oldWin = window;
 	_setWindow(workspace, win, true);
 	return oldWin;

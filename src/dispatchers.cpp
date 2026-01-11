@@ -147,14 +147,23 @@ dispatchMoveToWorkspace(SemmetyWorkspaceWrapper&, SP<SemmetyLeafFrame>, CVarList
 }
 
 std::optional<std::string>
-dispatchActivate(SemmetyWorkspaceWrapper&, SP<SemmetyLeafFrame>, CVarList args) {
-	if (args.size() == 0 || args[0].empty()) { return "No regex provided for activation"; }
+dispatchJump(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame>, CVarList args) {
+	if (args.size() == 0 || args[0].empty()) { return "No regex provided for jump"; }
 
 	const auto window = g_pCompositor->getWindowByRegex(args[0]);
 	if (!window) { return "No window matched the regex"; }
 
-	auto workspace = workspace_for_window(window);
-	workspace->activateWindow(window);
+	// Parse mode parameter (default to 0)
+	int mode = 0;
+	if (args.size() >= 2 && !args[1].empty()) {
+		try {
+			mode = std::stoi(args[1]);
+			if (mode < 0 || mode > 2) { return "Mode must be 0, 1, or 2"; }
+		} catch (...) { return "Invalid mode parameter"; }
+	}
+
+	auto targetWorkspace = workspace_for_window(window);
+	targetWorkspace->jumpToWindow(window, mode);
 
 	return std::nullopt;
 }
@@ -208,7 +217,7 @@ void registerDispatchers() {
 	registerSemmetyDispatcher("focus", dispatchFocus);
 	registerSemmetyDispatcher("swap", dispatchSwap);
 	registerSemmetyDispatcher("movetoworkspace", dispatchMoveToWorkspace);
-	registerSemmetyDispatcher("activate", dispatchActivate);
+	registerSemmetyDispatcher("jump", dispatchJump);
 	registerSemmetyDispatcher("changewindoworder", dispatchChangeWindowOrder);
 	registerSemmetyDispatcher("updatebar", dispatchUpdateBar);
 	registerSemmetyDispatcher("debug", dispatchDebug);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -37,6 +38,7 @@ public:
 	SP<SemmetyLeafFrame> getLastFocussedLeaf() const;
 	std::string getPathString() const;
 	void setFramePath(const std::vector<int>& path);
+	SP<SemmetyFrame> findRecursive(std::function<bool(const SP<SemmetyFrame>&)> predicate) const;
 
 	virtual bool isSameOrDescendant(const SP<SemmetyFrame>& target) const = 0;
 	virtual bool isLeaf() const = 0;

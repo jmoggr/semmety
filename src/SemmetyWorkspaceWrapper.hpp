@@ -66,6 +66,7 @@ public:
 	void changeWindowOrder(bool prev);
 	json getWorkspaceWindowsJson() const;
 	void activateWindow(PHLWINDOWREF window);
+	void jumpToWindow(PHLWINDOWREF window, int mode);
 	SP<SemmetyLeafFrame> getLargestEmptyFrame();
 	void updateFrameHistory(SP<SemmetyFrame> frame, PHLWINDOWREF window);
 	std::vector<std::string> getWindowFrameHistory(PHLWINDOWREF window) const;

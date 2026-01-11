@@ -315,6 +315,40 @@ void SemmetyWorkspaceWrapper::activateWindow(PHLWINDOWREF window) {
 	putWindowInFocussedFrame(window);
 }
 
+void SemmetyWorkspaceWrapper::jumpToWindow(PHLWINDOWREF window, int mode) {
+	if (!window) { return; }
+
+	if (mode == 0 || window->m_isFloating) {
+		activateWindow(window);
+		return;
+	}
+
+	auto frameWithWindow = getFrameForWindow(window);
+	if (frameWithWindow) {
+		activateWindow(window);
+		return;
+	}
+
+	auto frameHistory = getWindowFrameHistory(window);
+	for (auto it = frameHistory.rbegin(); it != frameHistory.rend(); ++it) {
+		const auto& pathString = *it;
+
+		auto frame = root->findRecursive([&pathString](const SP<SemmetyFrame>& f) {
+			return f && f->getPathString() == pathString;
+		});
+
+		if (!frame || !frame->isLeaf()) { continue; }
+
+		auto leafFrame = frame->asLeaf();
+		putWindowInFrame(window, leafFrame);
+		setFocusedFrame(leafFrame);
+
+		return;
+	}
+
+	activateWindow(window);
+}
+
 void SemmetyWorkspaceWrapper::updateFrameHistory(SP<SemmetyFrame> frame, PHLWINDOWREF window) {
 	const auto path = frame->getPathString();
 
@@ -356,20 +390,32 @@ std::string SemmetyWorkspaceWrapper::getDebugString() {
 			continue;
 		}
 
+		auto winPtr = window.lock();
 		const auto ptrString = std::format("{:x}", (uintptr_t) window.get());
 		const auto focusString = isWindowFocussed(window) ? "focus" : "     ";
 		const auto hiddenString = isWindowVisible(window) ? "visible" : "hidden ";
 		const auto floatingString = isWindowFloating(window) ? "floating" : "tiled   ";
 		const auto frameString = isWindowInFrame(window) ? "inframe" : "       ";
+		const auto mappedString = winPtr->m_isMapped ? "mapped  " : "unmapped";
+		const auto actualHiddenString = winPtr->isHidden() ? "ishidden" : "        ";
+
+		// Check for mismatch: frame thinks window is visible but it's actually unmapped or hidden
+		std::string warning = "";
+		if (isWindowInFrame(window) && (!winPtr->m_isMapped || winPtr->isHidden())) {
+			warning = " [MISMATCH!]";
+		}
 
 		out += format(
-		    "{} {} {} {} {} {}\n",
+		    "{} {} {} {} {} {} {} {}{}\n",
 		    ptrString,
 		    focusString,
 		    hiddenString,
 		    floatingString,
 		    frameString,
-		    window.lock()->m_title
+		    mappedString,
+		    actualHiddenString,
+		    winPtr->m_title,
+		    warning
 		);
 	}
 
@@ -491,10 +537,18 @@ std::vector<std::string> SemmetyWorkspaceWrapper::testInvariants() {
 			frameWindowSet.insert(window);
 		}
 
-		// Windows in frames should not be hidden/minimized.
-		// if (isWindowHidden(window)) {
-		// 	errors.push_back("Invariant violation: Window in a frame is hidden.");
-		// }
+		// Check that window visibility state matches actual hidden state
+		// For tiled windows in frames, isWindowVisible returns true if in frame
+		// But the actual window might still be hidden
+		auto winPtr = window.lock();
+		if (winPtr && isWindowInFrame(window) && (winPtr->isHidden() || !winPtr->m_isMapped)) {
+			errors.push_back(
+			    std::format(
+			        "Invariant violation: Window in frame is actually hidden or unmapped. Title: '{}'",
+			        winPtr->m_title
+			    )
+			);
+		}
 	}
 
 	// 6. There should be no empty leaf frames if there are minimized windows.

@@ -1,6 +1,6 @@
 all:
 	ninja -C build
-	scp build/libsemmety.so ananke:/repos/semmety/build/libsemmety-actual.so
+	scp build/libsemmety.so ananke:/repos/semmety/build/libsemmety.so
 
 setup:
 	meson setup build
