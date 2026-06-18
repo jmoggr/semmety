@@ -317,7 +317,7 @@ Layout::eFullscreenRequestResult SemmetyLayout::requestFullscreen(const Layout::
 				window->m_size = window->m_realSize->goal();
 			}
 
-			window->updateDynamicRules();
+			window->updateWindowData();
 			window->updateWindowDecos();
 
 			const auto& monitor = window->m_monitor;

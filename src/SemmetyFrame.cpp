@@ -460,7 +460,7 @@ void SemmetyLeafFrame::applyRecursive(
 }
 
 // from void CCompositor::updateWindowAnimatedDecorationValues(PHLWINDOW pWindow) {
-void SemmetyLeafFrame::setBorderColor(CGradientValueData grad) {
+void SemmetyLeafFrame::setBorderColor(Config::CGradientValueData grad) {
 	if (grad == m_cRealBorderColor) { return; }
 
 	m_cRealBorderColorPrevious = m_cRealBorderColor;
