@@ -4,6 +4,7 @@
 
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
+#include <hyprland/src/config/shared/animation/AnimationTree.hpp>
 #include <hyprland/src/config/shared/workspace/WorkspaceRuleManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/view/Window.hpp>
@@ -14,7 +15,7 @@
 
 #include "SemmetyFrameUtils.hpp"
 #include "log.hpp"
-#include "src/config/shared/complex/ComplexDataTypes.hpp"
+#include <hyprland/src/config/shared/complex/ComplexDataTypes.hpp>
 #include "utils.hpp"
 
 //
@@ -277,15 +278,15 @@ SemmetyLeafFrame::SemmetyLeafFrame(PHLWINDOWREF window, std::optional<bool> isAc
 	g_pAnimationManager->createAnimation(
 	    0.f,
 	    this->m_fBorderFadeAnimationProgress,
-	    g_pConfigManager->getAnimationPropertyConfig("border"),
+	    Config::animationTree()->getAnimationPropertyConfig("border"),
 	    AVARDAMAGE_ENTIRE
 	);
 
-	CGradientValueData* color;
+	Config::CGradientValueData* color;
 	if (isActive.value_or(false)) {
-		color = (CGradientValueData*) (PACTIVECOL.ptr())->getData();
+		color = (Config::CGradientValueData*) (PACTIVECOL.ptr())->getData();
 	} else {
-		color = (CGradientValueData*) (PINACTIVECOL.ptr())->getData();
+		color = (Config::CGradientValueData*) (PINACTIVECOL.ptr())->getData();
 	}
 
 	m_cRealBorderColor = *color;
@@ -381,11 +382,12 @@ CBox SemmetyLeafFrame::getStandardWindowArea(
 	static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, Config::CCssGapData>("general:gaps_in");
 
 	auto workspace_rule = Config::workspaceRuleMgr()->getWorkspaceRuleFor(workspace);
-	auto gaps_in = workspace_rule.m_gapsIn.value_or(*p_gaps_in);
+	Config::CCssGapData gaps_in = *p_gaps_in;
+	if (workspace_rule && workspace_rule->m_gapsIn) { gaps_in = *workspace_rule->m_gapsIn; }
 
 	SBoxExtents inner_gap_extents;
-	inner_gap_extents.topLeft = {(int) -gaps_in.m_left, (int) -gaps_in.m_top};
-	inner_gap_extents.bottomRight = {(int) -gaps_in.m_right, (int) -gaps_in.m_bottom};
+	inner_gap_extents.topLeft = Vector2D((int) -gaps_in.m_left, (int) -gaps_in.m_top);
+	inner_gap_extents.bottomRight = Vector2D((int) -gaps_in.m_right, (int) -gaps_in.m_bottom);
 
 	SBoxExtents combined_outer_extents;
 	combined_outer_extents.topLeft = -this->gap_topleft_offset;
@@ -409,7 +411,7 @@ void SemmetyLeafFrame::applyRecursive(
 
 	if (!valid(window) || !window->m_isMapped) {
 		semmety_log(
-		    ERR,
+		    Log::ERR,
 		    "node {:x} is an unmapped window ({:x}), cannot apply node data, removing from tiled "
 		    "layout",
 		    (uintptr_t) this,
@@ -421,7 +423,6 @@ void SemmetyLeafFrame::applyRecursive(
 
 	if (window->isHidden()) { window->setHidden(false); }
 
-	window->unsetWindowData(PRIORITY_LAYOUT);
 	window->updateWindowData();
 
 	if (window->isFullscreen()) {

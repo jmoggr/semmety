@@ -7,6 +7,7 @@
 #include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/event/EventBus.hpp>
 #include <hyprland/src/layout/LayoutManager.hpp>
+#include <hyprland/src/layout/algorithm/Algorithm.hpp>
 #include <hyprland/src/layout/target/Target.hpp>
 #include <hyprland/src/managers/EventManager.hpp>
 #include <hyprland/src/managers/animation/AnimationManager.hpp>
@@ -185,7 +186,6 @@ void SemmetyLayout::removeTarget(SP<Layout::ITarget> target) {
 		    window->fetchTitle()
 		);
 
-		window->unsetWindowData(PRIORITY_LAYOUT);
 		window->updateWindowData();
 		if (window->isFullscreen()) { g_pCompositor->setWindowFullscreenInternal(window, FSMODE_NONE); }
 
@@ -287,7 +287,7 @@ void SemmetyLayout::resizeTarget(
 	commonParent->applyRecursive(*workspace, std::nullopt, true);
 }
 
-eFullscreenRequestResult SemmetyLayout::requestFullscreen(const Layout::SFullscreenRequest& request) {
+Layout::eFullscreenRequestResult SemmetyLayout::requestFullscreen(const Layout::SFullscreenRequest& request) {
 	auto target = request.target;
 	auto window = target->window();
 	const auto CURRENT_EFFECTIVE_MODE = request.currentEffectiveMode;
@@ -308,7 +308,7 @@ eFullscreenRequestResult SemmetyLayout::requestFullscreen(const Layout::SFullscr
 				*window->m_realPosition = window->m_realPosition->goal();
 				*window->m_realSize = lastSize;
 
-				window->unsetWindowData(PRIORITY_LAYOUT);
+				window->updateWindowData();
 			}
 		} else {
 			if (window->m_isFloating && CURRENT_EFFECTIVE_MODE == FSMODE_NONE) {
@@ -330,7 +330,7 @@ eFullscreenRequestResult SemmetyLayout::requestFullscreen(const Layout::SFullscr
 		return std::nullopt;
 	});
 
-	return FULLSCREEN_REQUEST_DEFAULT;
+	return Layout::FULLSCREEN_REQUEST_DEFAULT;
 }
 
 Config::ErrorResult SemmetyLayout::layoutMsg(const std::string_view& sv) {

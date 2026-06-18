@@ -5,13 +5,11 @@
 #include <utility>
 #include <vector>
 
+#include <hyprland/src/config/shared/complex/ComplexDataTypes.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprutils/math/Box.hpp>
 
-#include "src/config/shared/complex/ComplexDataTypes.hpp"
 #include "src/helpers/AnimatedVariable.hpp"
-
-using CGradientValueData = Config::CGradientValueData;
 
 using namespace Hyprutils::Math;
 
@@ -99,13 +97,13 @@ class SemmetyLeafFrame: public SemmetyFrame {
 public:
 	static SP<SemmetyLeafFrame>
 	create(PHLWINDOWREF window, std::optional<bool> isActive = std::nullopt);
-	CGradientValueData m_cRealBorderColor = {0};
-	CGradientValueData m_cRealBorderColorPrevious = {0};
+	Config::CGradientValueData m_cRealBorderColor = {0};
+	Config::CGradientValueData m_cRealBorderColorPrevious = {0};
 	PHLANIMVAR<float> m_fBorderFadeAnimationProgress;
 
 	bool isEmpty() const;
 	PHLWINDOWREF getWindow();
-	void setBorderColor(CGradientValueData grad);
+	void setBorderColor(Config::CGradientValueData grad);
 	void setWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win);
 	PHLWINDOWREF replaceWindow(SemmetyWorkspaceWrapper& workspace, PHLWINDOWREF win);
 	CBox getStandardWindowArea(CBox area, SBoxExtents extents, PHLWORKSPACE workspace) const;

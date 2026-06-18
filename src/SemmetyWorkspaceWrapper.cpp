@@ -35,11 +35,12 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 	workspace = w;
 
 	auto& monitor = w->m_monitor;
-	auto pos = monitor->m_position + monitor->m_reservedTopLeft;
-	auto size = monitor->m_size - monitor->m_reservedTopLeft - monitor->m_reservedBottomRight;
+	auto reserved = monitor->m_reservedArea;
+	auto pos = monitor->m_position + Vector2D(reserved.left(), reserved.top());
+	auto size = monitor->m_size - Vector2D(reserved.left() + reserved.right(), reserved.top() + reserved.bottom());
 
 	auto frame = SemmetyLeafFrame::create({}, true);
-	frame->geometry = {pos, size};
+	frame->geometry = CBox(pos, size);
 	frame->setFramePath({}); // Empty path for root
 
 	root = frame;
@@ -280,8 +281,8 @@ void SemmetyWorkspaceWrapper::setFocusedFrame(SP<SemmetyFrame> frame) {
 	static int focusOrder = 0;
 	static auto PACTIVECOL = CConfigValue<Hyprlang::CUSTOMTYPE>("general:col.active_border");
 	static auto PINACTIVECOL = CConfigValue<Hyprlang::CUSTOMTYPE>("general:col.inactive_border");
-	auto* const ACTIVECOL = (CGradientValueData*) (PACTIVECOL.ptr())->getData();
-	auto* const INACTIVECOL = (CGradientValueData*) (PINACTIVECOL.ptr())->getData();
+	auto* const ACTIVECOL = (Config::CGradientValueData*) (PACTIVECOL.ptr())->getData();
+	auto* const INACTIVECOL = (Config::CGradientValueData*) (PINACTIVECOL.ptr())->getData();
 
 	if (!frame) { semmety_critical_error("Cannot set a null frame as focused"); }
 
@@ -438,7 +439,7 @@ void SemmetyWorkspaceWrapper::printDebug() {
 	std::string debugStr = getDebugString();
 	std::istringstream stream(debugStr);
 	std::string line;
-	while (std::getline(stream, line)) { semmety_log(ERR, "{}", line); }
+	while (std::getline(stream, line)) { semmety_log(Log::ERR, "{}", line); }
 }
 
 json SemmetyWorkspaceWrapper::getWorkspaceWindowsJson() const {

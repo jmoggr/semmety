@@ -6,6 +6,8 @@
 #include "dispatchers.hpp"
 #include <optional>
 
+using Hyprutils::String::CVarList;
+
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>

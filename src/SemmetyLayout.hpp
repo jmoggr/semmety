@@ -29,7 +29,7 @@ public:
 	void moveTargetInDirection(SP<Layout::ITarget> t, Math::eDirection dir, bool silent) override;
 	Config::ErrorResult layoutMsg(const std::string_view& sv) override;
 	std::optional<Vector2D> predictSizeForNewTarget() override;
-	eFullscreenRequestResult requestFullscreen(const Layout::SFullscreenRequest& request) override;
+	Layout::eFullscreenRequestResult requestFullscreen(const Layout::SFullscreenRequest& request) override;
 	SP<Layout::ITarget> getNextCandidate(SP<Layout::ITarget> old) override;
 
 	std::optional<std::string> layoutName() const override { return "semmety"; }
