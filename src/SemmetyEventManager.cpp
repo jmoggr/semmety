@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include <hyprland/src/Compositor.hpp>
+#include "log.hpp"
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -15,27 +16,27 @@ using namespace Hyprutils::OS;
 SemmetyEventManager::SemmetyEventManager():
     m_iSocketFD(socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0)) {
 	if (!m_iSocketFD.isValid()) {
-		Debug::log(ERR, "Couldn't start the Hyprland Socket 2. (1) IPC will not work.");
+		Log::logger->log(Log::ERR, "Couldn't start the Hyprland Socket 2. (1) IPC will not work.");
 		return;
 	}
 
 	sockaddr_un SERVERADDRESS = {.sun_family = AF_UNIX};
 	const auto PATH = g_pCompositor->m_instancePath + "/.semmety-socket2.sock";
 	if (PATH.length() > sizeof(SERVERADDRESS.sun_path) - 1) {
-		Debug::log(ERR, "Socket2 path is too long. (2) IPC will not work.");
+		Log::logger->log(Log::ERR, "Socket2 path is too long. (2) IPC will not work.");
 		return;
 	}
 
 	strncpy(SERVERADDRESS.sun_path, PATH.c_str(), sizeof(SERVERADDRESS.sun_path) - 1);
 
 	if (bind(m_iSocketFD.get(), (sockaddr*) &SERVERADDRESS, SUN_LEN(&SERVERADDRESS)) < 0) {
-		Debug::log(ERR, "Couldn't bind the Hyprland Socket 2. (3) IPC will not work.");
+		Log::logger->log(Log::ERR, "Couldn't bind the Hyprland Socket 2. (3) IPC will not work.");
 		return;
 	}
 
 	// 10 max queued.
 	if (listen(m_iSocketFD.get(), 10) < 0) {
-		Debug::log(ERR, "Couldn't listen on the Hyprland Socket 2. (4) IPC will not work.");
+		Log::logger->log(Log::ERR, "Couldn't listen on the Hyprland Socket 2. (4) IPC will not work.");
 		return;
 	}
 
@@ -64,7 +65,7 @@ int SemmetyEventManager::onClientEvent(int fd, uint32_t mask, void* data) {
 
 int SemmetyEventManager::onServerEvent(int fd, uint32_t mask) {
 	if (mask & WL_EVENT_ERROR || mask & WL_EVENT_HANGUP) {
-		Debug::log(ERR, "Socket2 hangup?? IPC broke");
+		Log::logger->log(Log::ERR, "Socket2 hangup?? IPC broke");
 
 		wl_event_source_remove(m_pEventSource);
 		m_pEventSource = nullptr;
@@ -83,7 +84,7 @@ int SemmetyEventManager::onServerEvent(int fd, uint32_t mask) {
 	)};
 	if (!ACCEPTEDCONNECTION.isValid()) {
 		if (errno != EAGAIN) {
-			Debug::log(ERR, "Socket2 failed receiving connection, errno: {}", errno);
+			Log::logger->log(Log::ERR, "Socket2 failed receiving connection, errno: {}", errno);
 			wl_event_source_remove(m_pEventSource);
 			m_pEventSource = nullptr;
 			m_iSocketFD.reset();
@@ -92,7 +93,7 @@ int SemmetyEventManager::onServerEvent(int fd, uint32_t mask) {
 		return 0;
 	}
 
-	Debug::log(LOG, "Socket2 accepted a new client at FD {}", ACCEPTEDCONNECTION.get());
+	Log::logger->log(Log::INFO, "Socket2 accepted a new client at FD {}", ACCEPTEDCONNECTION.get());
 
 	// add to event loop so we can close it when we need to
 	auto* eventSource = wl_event_loop_add_fd(
@@ -115,7 +116,7 @@ int SemmetyEventManager::onServerEvent(int fd, uint32_t mask) {
 
 int SemmetyEventManager::onClientEvent(int fd, uint32_t mask) {
 	if (mask & WL_EVENT_ERROR || mask & WL_EVENT_HANGUP) {
-		Debug::log(LOG, "Socket2 fd {} hung up", fd);
+		Log::logger->log(Log::INFO, "Socket2 fd {} hung up", fd);
 		removeClientByFD(fd);
 		return 0;
 	}
@@ -153,7 +154,7 @@ std::vector<SemmetyEventManager::SClient>::iterator SemmetyEventManager::removeC
 
 void SemmetyEventManager::postBarUpdate(std::string updateJson) {
 	if (g_pCompositor->m_isShuttingDown) {
-		Debug::log(WARN, "Suppressed (shutting down) postBarUpdate event");
+		Log::logger->log(Log::WARN, "Suppressed (shutting down) postBarUpdate event");
 		return;
 	}
 
@@ -167,7 +168,7 @@ void SemmetyEventManager::postBarUpdate(std::string updateJson) {
 		{
 			if (QUEUESIZE >= MAX_QUEUED_EVENTS) {
 				// too many events queued, remove the client
-				Debug::log(ERR, "Socket2 fd {} overflowed event queue, removing", it->fd.get());
+				Log::logger->log(Log::ERR, "Socket2 fd {} overflowed event queue, removing", it->fd.get());
 				it = removeClientByFD(it->fd.get());
 				continue;
 			}

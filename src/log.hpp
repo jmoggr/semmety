@@ -1,6 +1,6 @@
 #pragma once
 
-#include <hyprland/src/debug/Log.hpp>
+#include <hyprland/src/debug/log/Logger.hpp>
 
 // declared in utils.cpp
 std::string getSemmetyIndent();
@@ -9,11 +9,10 @@ std::string getCurrentDebugString();
 std::string getCallStackAsString();
 
 template <typename... Args>
-void semmety_log(eLogLevel level, std::format_string<Args...> fmt, Args&&... args) {
+void semmety_log(Hyprutils::CLI::eLogLevel level, std::format_string<Args...> fmt, Args&&... args) {
 	auto msg = std::vformat(fmt.get(), std::make_format_args(args...));
-	// TODO: handle if you can't get the indent
 	std::string indent = getSemmetyIndent();
-	Debug::log(level, "[semmety] {}{}", indent, msg);
+	Log::logger->log(level, "[semmety] {}{}", indent, msg);
 }
 
 template <typename... Args>
@@ -26,6 +25,6 @@ template <typename... Args>
 	out += "\ninitial state:\n" + getInitialDebugString();
 	out += "\ncurrent state:\n" + getCurrentDebugString();
 
-	Debug::log(CRIT, "{}", out);
+	Log::logger->log(Log::CRIT, "{}", out);
 	throw std::runtime_error(out);
 }

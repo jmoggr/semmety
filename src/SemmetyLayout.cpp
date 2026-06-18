@@ -1,6 +1,8 @@
 #include "SemmetyLayout.hpp"
 #include <optional>
 
+#include <hyprland/src/desktop/state/FocusState.hpp>
+
 #include "SemmetyWorkspaceWrapper.hpp"
 #include "log.hpp"
 #include "src/globals.hpp"
@@ -15,7 +17,7 @@ SemmetyWorkspaceWrapper& SemmetyLayout::getOrCreateWorkspaceWrapper(PHLWORKSPACE
 		if (wrapper.workspace.get() == &*workspace) { return wrapper; }
 	}
 
-	semmety_log(ERR, "Creating new workspace wrapper for workspace {}", workspace->m_id);
+	semmety_log(Log::ERR, "Creating new workspace wrapper for workspace {}", workspace->m_id);
 	auto ww = SemmetyWorkspaceWrapper(workspace, *this);
 
 	this->workspaceWrappers.emplace_back(ww);
@@ -26,7 +28,6 @@ json SemmetyLayout::getWorkspacesJson() {
 	const auto ws = workspace_for_action();
 
 	json jsonWorkspaces = json::array();
-	// TODO: get max workspace ID iterate to that if it's large than 8
 	for (int workspaceIndex = 0; workspaceIndex < 8; workspaceIndex++) {
 		auto it = std::find_if(
 		    workspaceWrappers.begin(),
@@ -65,7 +66,7 @@ void SemmetyLayout::activateWindow(PHLWINDOW window) {
 	if (entryCount > 0) { return; }
 
 	entryWrapper("activateWindow", [&]() -> std::optional<std::string> {
-		auto layout = g_SemmetyLayout.get();
+		auto layout = g_SemmetyLayout;
 		auto ww = layout->getOrCreateWorkspaceWrapper(window->m_workspace);
 
 		ww.activateWindow(window);
@@ -79,8 +80,7 @@ void SemmetyLayout::activateWindow(PHLWINDOW window) {
 
 void SemmetyLayout::moveWindowToWorkspace(std::string wsname) {
 	entryWrapper("moveWindowToWorkspace", [&]() -> std::optional<std::string> {
-		// TODO: follow?
-		auto focused_window = g_pCompositor->m_lastWindow.lock();
+		auto focused_window = Desktop::focusState()->window();
 		if (!focused_window) { return format("no focused window {}", wsname); }
 
 		const auto sourceWorkspace = focused_window->m_workspace;
@@ -93,7 +93,7 @@ void SemmetyLayout::moveWindowToWorkspace(std::string wsname) {
 
 		auto targetWorkspace = g_pCompositor->getWorkspaceByID(target.id);
 		if (!targetWorkspace) {
-			semmety_log(LOG, "creating target workspace {} for node move", target.id);
+			semmety_log(Log::INFO, "creating target workspace {} for node move", target.id);
 
 			targetWorkspace =
 			    g_pCompositor->createNewWorkspace(target.id, sourceWorkspace->monitorID(), target.name);
@@ -107,17 +107,8 @@ void SemmetyLayout::moveWindowToWorkspace(std::string wsname) {
 		auto sourceWrapper = getOrCreateWorkspaceWrapper(sourceWorkspace);
 		auto targetWrapper = getOrCreateWorkspaceWrapper(targetWorkspace);
 
-		// onWindowCreatedTiling is called when the new window is put in the target workspace
-
-		if (focused_window->m_isFloating) { g_SemmetyLayout->onWindowRemovedFloating(focused_window); }
 		g_pCompositor->moveWindowToWorkspaceSafe(focused_window, targetWorkspace);
 		sourceWrapper.removeWindow(focused_window);
-
-		if (focused_window->m_isFloating) { g_SemmetyLayout->onWindowCreatedFloating(focused_window); }
-
-		// focused_window->updateToplevel();
-		// focused_window->updateDynamicRules();
-		// focused_window->uncacheWindowDecos();
 
 		g_pHyprRenderer->damageWindow(focused_window);
 
@@ -131,8 +122,8 @@ void SemmetyLayout::testWorkspaceInvariance() {
 		auto errors = ws.testInvariants();
 		if (errors.empty()) { continue; }
 
-		semmety_log(ERR, "Found {} errors", errors.size());
-		for (auto& error: errors) { semmety_log(ERR, "{}", error); }
+		semmety_log(Log::ERR, "Found {} errors", errors.size());
+		for (auto& error: errors) { semmety_log(Log::ERR, "{}", error); }
 
 		ws.printDebug();
 		semmety_critical_error("invariant failed");

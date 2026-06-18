@@ -8,8 +8,10 @@
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprutils/math/Box.hpp>
 
-#include "src/config/ConfigDataValues.hpp"
+#include "src/config/shared/complex/ComplexDataTypes.hpp"
 #include "src/helpers/AnimatedVariable.hpp"
+
+using CGradientValueData = Config::CGradientValueData;
 
 using namespace Hyprutils::Math;
 

@@ -10,8 +10,9 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
-#include <hyprland/src/managers/LayoutManager.hpp>
+#include <hyprland/src/layout/LayoutManager.hpp>
 #include <hyprland/src/managers/PointerManager.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
@@ -44,8 +45,8 @@ SemmetyWorkspaceWrapper::SemmetyWorkspaceWrapper(PHLWORKSPACEREF w, SemmetyLayou
 	root = frame;
 	focused_frame = frame;
 
-	semmety_log(ERR, "init workspace monitor size {} {}", monitor->m_size.x, monitor->m_size.y);
-	semmety_log(ERR, "workspace has root frame: {}", frame->print(*this));
+	semmety_log(Log::ERR, "init workspace monitor size {} {}", monitor->m_size.x, monitor->m_size.y);
+	semmety_log(Log::ERR, "workspace has root frame: {}", frame->print(*this));
 }
 
 void SemmetyWorkspaceWrapper::putWindowInFrame(PHLWINDOWREF window, SP<SemmetyLeafFrame> frame) {
@@ -55,7 +56,7 @@ void SemmetyWorkspaceWrapper::putWindowInFrame(PHLWINDOWREF window, SP<SemmetyLe
 
 	// Don't focus the window unless it is on the active workspace. This prevents active workspace
 	// changing when a window is addded to an inactive workspace.
-	if (workspace == g_pCompositor->m_lastMonitor->m_activeWorkspace) { focusWindow(window); }
+	if (workspace == Desktop::focusState()->monitor()->m_activeWorkspace) { focusWindow(window); }
 
 	if (!replacedWindow) { return; }
 
@@ -372,7 +373,8 @@ std::vector<std::string> SemmetyWorkspaceWrapper::getWindowFrameHistory(PHLWINDO
 }
 
 bool isWindowFocussed(PHLWINDOWREF window) {
-	return g_pCompositor->m_lastWindow && g_pCompositor->m_lastWindow == window;
+	auto focused = Desktop::focusState()->window();
+	return focused && focused == window;
 }
 
 std::string SemmetyWorkspaceWrapper::getDebugString() {
@@ -458,9 +460,8 @@ json SemmetyWorkspaceWrapper::getWorkspaceWindowsJson() const {
 void SemmetyWorkspaceWrapper::changeWindowOrder(bool prev) {
 	if (windows.size() < 2) { return; }
 
-	if (!g_pCompositor->m_lastWindow) { return; }
-
-	auto focusedWindow = g_pCompositor->m_lastWindow.lock();
+	auto focusedWindow = Desktop::focusState()->window();
+	if (!focusedWindow) { return; }
 	auto it = findWindowIt(focusedWindow);
 	size_t index = std::distance(windows.begin(), it);
 	int offset = prev ? -1 : 1;

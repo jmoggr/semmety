@@ -4,8 +4,9 @@
 
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
+#include <hyprland/src/config/shared/workspace/WorkspaceRuleManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
-#include <hyprland/src/desktop/Window.hpp>
+#include <hyprland/src/desktop/view/Window.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/xwayland/XSurface.hpp>
 #include <hyprutils/math/Box.hpp>
@@ -13,7 +14,7 @@
 
 #include "SemmetyFrameUtils.hpp"
 #include "log.hpp"
-#include "src/config/ConfigDataValues.hpp"
+#include "src/config/shared/complex/ComplexDataTypes.hpp"
 #include "utils.hpp"
 
 //
@@ -377,10 +378,10 @@ CBox SemmetyLeafFrame::getStandardWindowArea(
     SBoxExtents extents,
     PHLWORKSPACE workspace
 ) const {
-	static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
+	static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, Config::CCssGapData>("general:gaps_in");
 
-	auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(workspace);
-	auto gaps_in = workspace_rule.gapsIn.value_or(*p_gaps_in);
+	auto workspace_rule = Config::workspaceRuleMgr()->getWorkspaceRuleFor(workspace);
+	auto gaps_in = workspace_rule.m_gapsIn.value_or(*p_gaps_in);
 
 	SBoxExtents inner_gap_extents;
 	inner_gap_extents.topLeft = {(int) -gaps_in.m_left, (int) -gaps_in.m_top};

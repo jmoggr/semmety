@@ -9,7 +9,8 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
-#include <hyprland/src/managers/LayoutManager.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
+#include <hyprland/src/layout/LayoutManager.hpp>
 #include <hyprland/src/managers/animation/AnimationManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
@@ -20,9 +21,7 @@
 #include "globals.hpp"
 #include "log.hpp"
 #include "src/SemmetyEventManager.hpp"
-#include "src/desktop/DesktopTypes.hpp"
 
-// defined in log.hpp
 std::string getSemmetyIndent() {
 	return g_SemmetyLayout ? std::string(g_SemmetyLayout->entryCount * 4, ' ') : "";
 }
@@ -34,10 +33,13 @@ std::string getCurrentDebugString() {
 }
 
 std::optional<size_t> getFocusHistoryIndex(PHLWINDOW wnd) {
-	const auto& history = g_pCompositor->m_windowFocusHistory;
-
-	for (size_t i = 0; i < history.size(); ++i) {
-		if (history[i].lock() == wnd) return i;
+	// Focus history was removed from CCompositor in 0.55.2.
+	// Use the focus order from the window cycle instead.
+	auto windows = g_pCompositor->m_windows;
+	size_t idx = 0;
+	for (auto& w : windows) {
+		if (w == wnd) return idx;
+		idx++;
 	}
 
 	return std::nullopt;
@@ -81,15 +83,15 @@ std::optional<Direction> directionFromString(const std::string& str) {
 	else return {};
 }
 
-// TODO: should it every be allowed to return null?
 SemmetyWorkspaceWrapper* workspace_for_action(bool allow_fullscreen) {
-	auto layout = g_SemmetyLayout.get();
+	auto layout = g_SemmetyLayout;
 	if (layout == nullptr) { return nullptr; }
 
-	if (g_pLayoutManager->getCurrentLayout() != layout) { return nullptr; }
+	auto monitor = Desktop::focusState()->monitor();
+	if (!monitor) { return nullptr; }
 
-	auto workspace = g_pCompositor->m_lastMonitor->m_activeSpecialWorkspace;
-	if (!valid(workspace)) { workspace = g_pCompositor->m_lastMonitor->m_activeWorkspace; }
+	auto workspace = monitor->m_activeSpecialWorkspace;
+	if (!valid(workspace)) { workspace = monitor->m_activeWorkspace; }
 
 	if (!valid(workspace)) { return nullptr; }
 	if (!allow_fullscreen && workspace->m_hasFullscreenWindow) { return nullptr; }
@@ -121,7 +123,7 @@ std::string escapeSingleQuotes(const std::string& input) {
 void updateBar() {
 	auto workspace_wrapper = workspace_for_action();
 	if (workspace_wrapper == nullptr) {
-		semmety_log(ERR, "no workspace");
+		semmety_log(Log::ERR, "no workspace");
 		return;
 	}
 
@@ -132,19 +134,18 @@ void updateBar() {
 
 	auto jsonString = updateJson.dump();
 	g_SemmetyEventManager->postBarUpdate(jsonString);
-	// auto escapedJsonString = "\'" + escapeSingleQuotes(jsonString) + "\'";
 }
 
 void focusWindow(PHLWINDOWREF window) {
-	auto focused_window = g_pCompositor->m_lastWindow.lock();
+	auto focused_window = Desktop::focusState()->window();
 	if (focused_window == window) { return; }
 	if (window) {
-		semmety_log(ERR, "Focusing window {}", window->fetchTitle());
+		semmety_log(Log::ERR, "Focusing window {}", window->fetchTitle());
 
 		if (window->isHidden()) { window->setHidden(false); }
-		g_pCompositor->focusWindow(window.lock());
+		Desktop::focusState()->fullWindowFocus(window.lock(), Desktop::FOCUS_REASON_OTHER);
 	} else {
-		g_pCompositor->focusWindow(nullptr);
+		Desktop::focusState()->resetWindowFocus();
 	}
 }
 
@@ -156,15 +157,12 @@ std::string windowToString(PHLWINDOWREF window) {
 
 std::string getCallStackAsString() {
 	const auto maxFrames = 64;
-	// Create a vector to hold the stack addresses.
 	std::vector<void*> addrList(maxFrames + 1);
 
-	// Retrieve current stack addresses using the vector's data pointer.
 	int addrLen = backtrace(addrList.data(), static_cast<int>(addrList.size()));
 
 	if (addrLen == 0) { return "<empty, possibly corrupt stack>"; }
 
-	// Convert addresses to an array of symbolic strings.
 	char** symbolList = backtrace_symbols(addrList.data(), addrLen);
 	if (!symbolList) { return "<failed to obtain symbols>"; }
 
@@ -172,7 +170,6 @@ std::string getCallStackAsString() {
 	for (int i = 0; i < addrLen; ++i) {
 		std::string symbol(symbolList[i]);
 
-		// Optionally demangle the symbol name for readability.
 		std::size_t begin = symbol.find('(');
 		std::size_t end = symbol.find('+', begin);
 		if (begin != std::string::npos && end != std::string::npos) {

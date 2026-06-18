@@ -10,7 +10,7 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
-#include <hyprland/src/managers/LayoutManager.hpp>
+#include <hyprland/src/layout/LayoutManager.hpp>
 #include <hyprland/src/managers/PointerManager.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/animation/AnimationManager.hpp>
@@ -46,7 +46,7 @@ dispatchSplit(SemmetyWorkspaceWrapper& workspace, SP<SemmetyLeafFrame> focussedF
 	auto next = workspace.getNextWindow(nextTiledWindowParams);
 	if (next) {
 		semmety_log(
-		    ERR,
+		    Log::ERR,
 		    "Split found next window {} {}",
 		    next->fetchTitle(),
 		    workspace.isWindowInFrame(next)

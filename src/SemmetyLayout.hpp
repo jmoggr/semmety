@@ -3,7 +3,7 @@
 #include <list>
 
 #include <hyprland/src/desktop/DesktopTypes.hpp>
-#include <hyprland/src/layout/IHyprLayout.hpp>
+#include <hyprland/src/layout/algorithm/TiledAlgorithm.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
 #include "SemmetyWorkspaceWrapper.hpp"
@@ -14,67 +14,32 @@
 void updateBar();
 using json = nlohmann::json;
 
-class SemmetyLayout: public IHyprLayout {
+class SemmetyLayout: public Layout::ITiledAlgorithm {
 public:
 	//
-	// IHyprLayout
+	// Layout::ITiledAlgorithm / Layout::IModeAlgorithm
 	//
 
-	void onEnable() override;
-	void onDisable() override;
-	// void onWindowCreated(PHLWINDOW, eDirection direction = DIRECTION_DEFAULT) override;
-	void onWindowCreatedTiling(PHLWINDOW, eDirection direction = DIRECTION_DEFAULT) override;
-	void onWindowCreatedFloating(PHLWINDOW) override;
-	// bool onWindowCreatedAutoGroup(PHLWINDOW) override;
-	bool isWindowTiled(PHLWINDOW) override;
-	// void onWindowRemoved(PHLWINDOW) override;
-	void onWindowRemovedTiling(PHLWINDOW) override;
-	void onWindowRemovedFloating(PHLWINDOW) override;
+	void newTarget(SP<Layout::ITarget> target) override;
+	void movedTarget(SP<Layout::ITarget> target, std::optional<Vector2D> focalPoint = std::nullopt) override;
+	void removeTarget(SP<Layout::ITarget> target) override;
+	void resizeTarget(const Vector2D& delta, SP<Layout::ITarget> target, Layout::eRectCorner corner = Layout::CORNER_NONE) override;
+	void recalculate(Layout::eRecalculateReason reason = Layout::RECALCULATE_REASON_UNKNOWN) override;
+	void swapTargets(SP<Layout::ITarget> a, SP<Layout::ITarget> b) override;
+	void moveTargetInDirection(SP<Layout::ITarget> t, Math::eDirection dir, bool silent) override;
+	Config::ErrorResult layoutMsg(const std::string_view& sv) override;
+	std::optional<Vector2D> predictSizeForNewTarget() override;
+	eFullscreenRequestResult requestFullscreen(const Layout::SFullscreenRequest& request) override;
+	SP<Layout::ITarget> getNextCandidate(SP<Layout::ITarget> old) override;
 
-	void recalculateMonitor(const MONITORID&) override;
-	void recalculateWindow(PHLWINDOW) override;
-	void changeWindowFloatingMode(PHLWINDOW) override;
-	// void onBeginDragWindow() override;
-	// void onEndDragWindow() override;
-	// void onMouseMove(const Vector2D&) override;
-	void resizeActiveWindow(
-	    const Vector2D&,
-	    eRectCorner corner = CORNER_NONE,
-	    PHLWINDOW pWindow = nullptr
-	) override;
-	void fullscreenRequestForWindow(
-	    PHLWINDOW pWindow,
-	    const eFullscreenMode CURRENT_EFFECTIVE_MODE,
-	    const eFullscreenMode EFFECTIVE_MODE
-	) override;
-	std::any layoutMessage(SLayoutMessageHeader, std::string) override;
-	SWindowRenderLayoutHints requestRenderHints(PHLWINDOW) override;
-	void switchWindows(PHLWINDOW, PHLWINDOW) override;
-	void moveWindowTo(PHLWINDOW, const std::string& direction, bool silent = false) override;
-	// void moveActiveWindow(const Vector2D&, PHLWINDOW pWindow = nullptr) override;
-	void alterSplitRatio(PHLWINDOW, float, bool exact = false) override;
-	std::string getLayoutName() override;
-	PHLWINDOW getNextWindowCandidate(PHLWINDOW) override;
-	void onWindowFocusChange(PHLWINDOW) override;
-	void replaceWindowDataWith(PHLWINDOW from, PHLWINDOW to) override;
-	Vector2D predictSizeForNewWindowTiled() override;
-	// Vector2D predictSizeForNewWindow(PHLWINDOW pWindow) override;
-	// Vector2D predictSizeForNewWindowFloating(PHLWINDOW pWindow) override;
-	bool isWindowReachable(PHLWINDOW) override;
-	void testWorkspaceInvariance();
-	// void bringWindowToTop(PHLWINDOW) override;
-	// void requestFocusForWindow(PHLWINDOW) override;
+	std::optional<std::string> layoutName() const override { return "semmety"; }
 
 	//
 	// Semmety
 	//
 
-	static void renderHook(void*, SCallbackInfo&, std::any);
-	static void tickHook(void*, SCallbackInfo&, std::any);
-	static void activeWindowHook(void*, SCallbackInfo&, std::any);
-	static void workspaceHook(void*, SCallbackInfo&, std::any);
-	static void urgentHook(void*, SCallbackInfo&, std::any);
-	static void windowTitleHook(void*, SCallbackInfo&, std::any);
+	void onEnabled();
+	void onDisabled();
 
 	void moveWindowToWorkspace(std::string wsname);
 	void recalculateWorkspace(const PHLWORKSPACE& workspace);
@@ -88,10 +53,11 @@ public:
 	json getWorkspacesJson();
 
 	std::string getDebugString();
+	void testWorkspaceInvariance();
 
 	template <typename Fn>
 	auto entryWrapper(std::string name, Fn&& fn) {
-		semmety_log(ERR, "ENTER {} {}", name, entryCount);
+		semmety_log(Log::ERR, "ENTER {} {}", name, entryCount);
 
 		if (entryCount == 0) {
 			testWorkspaceInvariance();
@@ -124,9 +90,9 @@ public:
 		entryCount -= 1;
 
 		if (exitMessage.has_value()) {
-			semmety_log(LOG, "EXIT {} -- {}", name, exitMessage.value());
+			semmety_log(Log::INFO, "EXIT {} -- {}", name, exitMessage.value());
 		} else {
-			semmety_log(LOG, "EXIT {}", name);
+			semmety_log(Log::INFO, "EXIT {}", name);
 		}
 
 		if constexpr (!std::is_void_v<ReturnType>) { return *result; }

@@ -1,5 +1,5 @@
 #include <hyprland/src/Compositor.hpp>
-#include <hyprland/src/config/ConfigDataValues.hpp>
+#include <hyprland/src/config/values/ConfigValues.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/version.h>
 #include <hyprlang.hpp>
@@ -17,8 +17,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
 	const std::string HASH = __hyprland_api_get_hash();
 
-	Debug::log(ERR, "[semmety] new!");
-	// Log version info but don't fail - version checks are often too strict
+	Log::logger->log(Log::ERR, "[semmety] new!");
 	HyprlandAPI::addNotification(
 	    PHANDLE,
 	    std::format("[semmety] Loaded (Hyprland API: {})", HASH).c_str(),
@@ -27,11 +26,12 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	);
 
 	g_SemmetyEventManager = makeUnique<SemmetyEventManager>();
-	g_SemmetyLayout = std::make_unique<SemmetyLayout>();
-	[[maybe_unused]] auto res = HyprlandAPI::addLayout(PHANDLE, "semmety", g_SemmetyLayout.get());
-	if (res) {
-		// TODO: handle error?
-	}
+	HyprlandAPI::addTiledAlgo(PHANDLE, "semmety", &typeid(SemmetyLayout), []() -> UP<Layout::ITiledAlgorithm> {
+		auto algo = makeUnique<SemmetyLayout>();
+		g_SemmetyLayout = algo.get();
+		g_SemmetyLayout->onEnabled();
+		return algo;
+	});
 
 	registerDispatchers();
 	HyprlandAPI::reloadConfig();
@@ -39,4 +39,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	return {"semmety", "Semi automatic tiling window manager", "jmoggr", "0.4"};
 }
 
-APICALL EXPORT void PLUGIN_EXIT() {}
+APICALL EXPORT void PLUGIN_EXIT() {
+	if (g_SemmetyLayout) {
+		g_SemmetyLayout->onDisabled();
+		g_SemmetyLayout = nullptr;
+	}
+}
