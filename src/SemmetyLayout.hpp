@@ -1,6 +1,7 @@
 #pragma once
 
 #include <list>
+#include <vector>
 
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/layout/algorithm/TiledAlgorithm.hpp>
@@ -16,6 +17,17 @@ using json = nlohmann::json;
 
 class SemmetyLayout: public Layout::ITiledAlgorithm {
 public:
+	SemmetyLayout();
+	~SemmetyLayout() override;
+
+	// Hyprland >= 0.55 instantiates one tiled-algorithm object per space (workspace), so several
+	// SemmetyLayout instances can exist at once. semmety's data model is a single, global tree of
+	// workspaces, so that state is shared between all instances (see the `inline static` members
+	// below) and the global setup (event listeners, adopting existing windows) runs only once.
+	// s_instances tracks live instances so g_SemmetyLayout never dangles when a space is destroyed.
+	inline static std::vector<SemmetyLayout*> s_instances;
+	inline static bool s_globalsInitialized = false;
+
 	//
 	// Layout::ITiledAlgorithm / Layout::IModeAlgorithm
 	//
@@ -45,8 +57,8 @@ public:
 	void recalculateWorkspace(const PHLWORKSPACE& workspace);
 	SemmetyWorkspaceWrapper& getOrCreateWorkspaceWrapper(PHLWORKSPACE workspace);
 
-	std::list<SemmetyWorkspaceWrapper> workspaceWrappers;
-	bool updateBarOnNextTick = false;
+	inline static std::list<SemmetyWorkspaceWrapper> workspaceWrappers;
+	inline static bool updateBarOnNextTick = false;
 
 	void activateWindow(PHLWINDOW window);
 	void changeWindowOrder(bool prev);
@@ -98,8 +110,8 @@ public:
 		if constexpr (!std::is_void_v<ReturnType>) { return *result; }
 	}
 
-	bool _shouldUpdateBar = false;
+	inline static bool _shouldUpdateBar = false;
 
-	int entryCount = 0;
-	std::string debugStringOnEntry = "";
+	inline static int entryCount = 0;
+	inline static std::string debugStringOnEntry = "";
 };

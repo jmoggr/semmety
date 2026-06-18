@@ -9,6 +9,7 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
+#include <hyprland/src/desktop/history/WindowHistoryTracker.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/layout/LayoutManager.hpp>
 #include <hyprland/src/managers/animation/AnimationManager.hpp>
@@ -33,13 +34,13 @@ std::string getCurrentDebugString() {
 }
 
 std::optional<size_t> getFocusHistoryIndex(PHLWINDOW wnd) {
-	// Focus history was removed from CCompositor in 0.55.2.
-	// Use the focus order from the window cycle instead.
-	auto windows = g_pCompositor->m_windows;
-	size_t idx = 0;
-	for (auto& w : windows) {
-		if (w == wnd) return idx;
-		idx++;
+	// CCompositor::m_windowFocusHistory was removed in 0.55; focus history now lives in the
+	// dedicated window tracker. fullHistory() is ordered old -> new (back() is the most recently
+	// focused), so convert the position into a "0 == most recently focused" rank to preserve the
+	// original semantics relied on by getLastFocusedWindowIndex().
+	const auto& history = Desktop::History::windowTracker()->fullHistory();
+	for (size_t i = 0; i < history.size(); ++i) {
+		if (history[i].lock() == wnd) { return history.size() - 1 - i; }
 	}
 
 	return std::nullopt;

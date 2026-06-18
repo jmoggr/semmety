@@ -29,6 +29,7 @@ CHyprSignalListener tickListener;
 CHyprSignalListener workspaceListener;
 CHyprSignalListener urgentListener;
 CHyprSignalListener windowTitleListener;
+CHyprSignalListener focusListener;
 
 static void renderHook(eRenderStage render_stage) {
 	static auto PBORDERSIZE = CConfigValue<Hyprlang::INT>("general:border_size");
@@ -96,7 +97,27 @@ static void tickHook() {
 	}
 }
 
+SemmetyLayout::SemmetyLayout() {
+	s_instances.push_back(this);
+	if (g_SemmetyLayout == nullptr) { g_SemmetyLayout = this; }
+}
+
+SemmetyLayout::~SemmetyLayout() {
+	std::erase(s_instances, this);
+
+	// Keep the global pointer valid: repoint it at another live instance, or null when the last
+	// one is destroyed. All shared state is static, so any live instance is interchangeable.
+	if (g_SemmetyLayout == this) {
+		g_SemmetyLayout = s_instances.empty() ? nullptr : s_instances.back();
+	}
+}
+
 void SemmetyLayout::onEnabled() {
+	// The global tree, event listeners and adoption of pre-existing windows are process-wide, not
+	// per-space, so set them up exactly once regardless of how many spaces get created.
+	if (s_globalsInitialized) { return; }
+	s_globalsInitialized = true;
+
 	for (auto& window: g_pCompositor->m_windows) {
 		if (window->isHidden() || !window->m_isMapped || window->m_fadingOut || window->m_isFloating)
 			continue;
@@ -129,6 +150,28 @@ void SemmetyLayout::onEnabled() {
 	windowTitleListener = Event::bus()->m_events.window.title.listen([](PHLWINDOW) {
 		updateBar();
 	});
+
+	// Replaces the old IHyprLayout::onWindowFocusChange override (removed in the 0.55 algorithm
+	// API): when the focused window changes, mark its frame active and refresh the bar.
+	focusListener =
+	    Event::bus()->m_events.window.active.listen([](PHLWINDOW window, Desktop::eFocusReason) {
+		    auto layout = g_SemmetyLayout;
+		    if (layout == nullptr) { return; }
+		    if (entryCount > 0) { return; }
+
+		    layout->entryWrapper("onWindowFocusChange", [&]() -> std::optional<std::string> {
+			    if (window == nullptr) { return "window is null"; }
+			    if (window->m_workspace == nullptr) { return "window workspace is null"; }
+			    if (window->m_isFloating) { return "window is floating"; }
+
+			    auto& workspace_wrapper = layout->getOrCreateWorkspaceWrapper(window->m_workspace);
+			    workspace_wrapper.activateWindow(window);
+
+			    shouldUpdateBar();
+
+			    return std::nullopt;
+		    });
+	    });
 }
 
 void SemmetyLayout::onDisabled() {
@@ -137,6 +180,8 @@ void SemmetyLayout::onDisabled() {
 	workspaceListener.reset();
 	urgentListener.reset();
 	windowTitleListener.reset();
+	focusListener.reset();
+	s_globalsInitialized = false;
 }
 
 void SemmetyLayout::newTarget(SP<Layout::ITarget> target) {
@@ -158,6 +203,14 @@ void SemmetyLayout::newTarget(SP<Layout::ITarget> target) {
 		if (window->m_isFloating) { return "window is floating"; }
 
 		auto& workspace_wrapper = getOrCreateWorkspaceWrapper(window->m_workspace);
+
+		// addWindow() is not idempotent (it unconditionally appends), so guard against re-adding a
+		// window that is already tracked. movedTarget() routes here, and may fire for a target that
+		// is already part of this space.
+		if (workspace_wrapper.findWindowIt(window) != workspace_wrapper.windows.end()) {
+			return "window already tracked in workspace";
+		}
+
 		workspace_wrapper.addWindow(window);
 
 		shouldUpdateBar();
@@ -199,17 +252,49 @@ void SemmetyLayout::removeTarget(SP<Layout::ITarget> target) {
 	});
 }
 
+void SemmetyLayout::recalculateWorkspace(const PHLWORKSPACE& workspace) {
+	entryWrapper("recalculateWorkspace", [&]() -> std::optional<std::string> {
+		if (workspace == nullptr) { return "workspace is null"; }
+
+		const auto monitor = workspace->m_monitor;
+		if (!monitor) { return "monitor is null"; }
+
+		auto& ww = getOrCreateWorkspaceWrapper(workspace);
+
+		// Mirror the pre-0.55 geometry: monitor box minus reserved area. (Per-window gaps are still
+		// applied separately via SemmetyLeafFrame::getStandardWindowArea, so gaps_out is not removed
+		// here, matching the original behaviour and the workspace-wrapper constructor.)
+		auto reserved = monitor->m_reservedArea;
+		auto pos = monitor->m_position + Vector2D(reserved.left(), reserved.top());
+		auto size = monitor->m_size
+		    - Vector2D(reserved.left() + reserved.right(), reserved.top() + reserved.bottom());
+		ww.setRootGeometry(CBox(pos, size));
+
+		return std::nullopt;
+	});
+}
+
 void SemmetyLayout::recalculate(Layout::eRecalculateReason) {
 	entryWrapper("recalculate", [&]() -> std::optional<std::string> {
-		if (!m_parent.lock()) { return "no parent algorithm"; }
+		auto parent = m_parent.lock();
+		if (!parent) { return "no parent algorithm"; }
 
-		auto space = m_parent.lock()->space();
+		auto space = parent->space();
 		if (!space) { return "no space"; }
 
 		auto workspace = space->workspace();
 		if (!workspace) { return "no workspace"; }
 
 		recalculateWorkspace(workspace);
+
+		// In the 0.55 algorithm API recalculate() is the single entry point for (re)positioning
+		// tiled windows (it replaces IHyprLayout::recalculateMonitor), so reflow the frame tree
+		// after updating the root geometry. A fullscreen window is positioned by the engine, so
+		// skip the tree in that case (matching the built-in algorithms).
+		if (!workspace->m_hasFullscreenWindow) {
+			auto& ww = getOrCreateWorkspaceWrapper(workspace);
+			ww.getRoot()->applyRecursive(ww, std::nullopt, std::nullopt);
+		}
 
 		return std::nullopt;
 	});

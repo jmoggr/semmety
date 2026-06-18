@@ -27,9 +27,10 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
 	g_SemmetyEventManager = makeUnique<SemmetyEventManager>();
 	HyprlandAPI::addTiledAlgo(PHANDLE, "semmety", &typeid(SemmetyLayout), []() -> UP<Layout::ITiledAlgorithm> {
+		// One instance is created per space. The constructor registers it (and keeps g_SemmetyLayout
+		// valid); onEnabled() performs the process-wide setup only once.
 		auto algo = makeUnique<SemmetyLayout>();
-		g_SemmetyLayout = algo.get();
-		g_SemmetyLayout->onEnabled();
+		algo->onEnabled();
 		return algo;
 	});
 
