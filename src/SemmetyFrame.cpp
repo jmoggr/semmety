@@ -272,8 +272,11 @@ SP<SemmetyLeafFrame> SemmetyLeafFrame::create(PHLWINDOWREF window, std::optional
 
 SemmetyLeafFrame::SemmetyLeafFrame(PHLWINDOWREF window, std::optional<bool> isActive):
     window(window) {
-	static auto PINACTIVECOL = CConfigValue<Hyprlang::CUSTOMTYPE>("general:col.inactive_border");
-	static auto PACTIVECOL = CConfigValue<Hyprlang::CUSTOMTYPE>("general:col.active_border");
+	// In Hyprland 0.55 gradient config values are read via CConfigValue<Config::IComplexConfigValue>,
+	// whose ptr() already returns the (CGradientValueData) data. The old CUSTOMTYPE + ->getData()
+	// idiom returns a bad pointer and crashes.
+	static auto PINACTIVECOL = CConfigValue<Config::IComplexConfigValue>("general:col.inactive_border");
+	static auto PACTIVECOL = CConfigValue<Config::IComplexConfigValue>("general:col.active_border");
 
 	g_pAnimationManager->createAnimation(
 	    0.f,
@@ -284,9 +287,9 @@ SemmetyLeafFrame::SemmetyLeafFrame(PHLWINDOWREF window, std::optional<bool> isAc
 
 	Config::CGradientValueData* color;
 	if (isActive.value_or(false)) {
-		color = (Config::CGradientValueData*) (PACTIVECOL.ptr())->getData();
+		color = (Config::CGradientValueData*) PACTIVECOL.ptr();
 	} else {
-		color = (Config::CGradientValueData*) (PINACTIVECOL.ptr())->getData();
+		color = (Config::CGradientValueData*) PINACTIVECOL.ptr();
 	}
 
 	m_cRealBorderColor = *color;

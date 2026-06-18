@@ -122,6 +122,9 @@ std::string escapeSingleQuotes(const std::string& input) {
 }
 
 void updateBar() {
+	// Avoid creating workspace wrappers (and thus frames) before the event loop is running.
+	if (!g_semmetyReady) { return; }
+
 	auto workspace_wrapper = workspace_for_action();
 	if (workspace_wrapper == nullptr) {
 		semmety_log(Log::ERR, "no workspace");

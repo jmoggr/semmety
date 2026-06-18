@@ -279,10 +279,10 @@ SP<SemmetyLeafFrame> SemmetyWorkspaceWrapper::getFocusedFrame() { return focused
 
 void SemmetyWorkspaceWrapper::setFocusedFrame(SP<SemmetyFrame> frame) {
 	static int focusOrder = 0;
-	static auto PACTIVECOL = CConfigValue<Hyprlang::CUSTOMTYPE>("general:col.active_border");
-	static auto PINACTIVECOL = CConfigValue<Hyprlang::CUSTOMTYPE>("general:col.inactive_border");
-	auto* const ACTIVECOL = (Config::CGradientValueData*) (PACTIVECOL.ptr())->getData();
-	auto* const INACTIVECOL = (Config::CGradientValueData*) (PINACTIVECOL.ptr())->getData();
+	static auto PACTIVECOL = CConfigValue<Config::IComplexConfigValue>("general:col.active_border");
+	static auto PINACTIVECOL = CConfigValue<Config::IComplexConfigValue>("general:col.inactive_border");
+	auto* const ACTIVECOL = (Config::CGradientValueData*) PACTIVECOL.ptr();
+	auto* const INACTIVECOL = (Config::CGradientValueData*) PINACTIVECOL.ptr();
 
 	if (!frame) { semmety_critical_error("Cannot set a null frame as focused"); }
 

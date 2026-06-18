@@ -32,6 +32,8 @@ CHyprSignalListener windowTitleListener;
 CHyprSignalListener focusListener;
 
 static void renderHook(eRenderStage render_stage) {
+	if (!g_semmetyReady) { return; }
+
 	static auto PBORDERSIZE = CConfigValue<Hyprlang::INT>("general:border_size");
 	static auto PROUNDING = CConfigValue<Hyprlang::INT>("decoration:rounding");
 	static auto PROUNDINGPOWER = CConfigValue<Hyprlang::FLOAT>("decoration:rounding_power");
@@ -76,6 +78,10 @@ static void renderHook(eRenderStage render_stage) {
 }
 
 static void tickHook() {
+	// The tick event only fires once Hyprland is running its Wayland event loop, so by now it is
+	// safe to build animated variables (and thus frames).
+	g_semmetyReady = true;
+
 	auto layout = g_SemmetyLayout;
 	if (layout == nullptr) { return; }
 
@@ -155,6 +161,8 @@ void SemmetyLayout::onEnabled() {
 	// API): when the focused window changes, mark its frame active and refresh the bar.
 	focusListener =
 	    Event::bus()->m_events.window.active.listen([](PHLWINDOW window, Desktop::eFocusReason) {
+		    if (!g_semmetyReady) { return; }
+
 		    auto layout = g_SemmetyLayout;
 		    if (layout == nullptr) { return; }
 		    if (entryCount > 0) { return; }
@@ -285,6 +293,20 @@ void SemmetyLayout::recalculate(Layout::eRecalculateReason) {
 		auto workspace = space->workspace();
 		if (!workspace) { return "no workspace"; }
 
+		// Only lay out a workspace we are already managing. Don't lazily build the frame tree here:
+		// recalculate() can fire very early (e.g. during CMonitor::onConnect in unsafe state) before
+		// the config/animation subsystems are ready to construct a frame, and the built-in algorithms
+		// likewise only reposition existing nodes. The wrapper (and its root frame) is created on
+		// first real use - window add or render - when construction is safe.
+		SemmetyWorkspaceWrapper* ww = nullptr;
+		for (auto& candidate: workspaceWrappers) {
+			if (candidate.workspace.get() == &*workspace) {
+				ww = &candidate;
+				break;
+			}
+		}
+		if (ww == nullptr) { return "workspace not managed yet"; }
+
 		recalculateWorkspace(workspace);
 
 		// In the 0.55 algorithm API recalculate() is the single entry point for (re)positioning
@@ -292,8 +314,7 @@ void SemmetyLayout::recalculate(Layout::eRecalculateReason) {
 		// after updating the root geometry. A fullscreen window is positioned by the engine, so
 		// skip the tree in that case (matching the built-in algorithms).
 		if (!workspace->m_hasFullscreenWindow) {
-			auto& ww = getOrCreateWorkspaceWrapper(workspace);
-			ww.getRoot()->applyRecursive(ww, std::nullopt, std::nullopt);
+			ww->getRoot()->applyRecursive(*ww, std::nullopt, std::nullopt);
 		}
 
 		return std::nullopt;
