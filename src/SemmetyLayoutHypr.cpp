@@ -90,6 +90,16 @@ static void tickHook() {
 		layout->updateBarOnNextTick = false;
 	}
 
+	// Re-apply our layout after a window was added: by now onMap (and its target->recalc() that
+	// resets the window to the engine's stored box) has run and the window is mapped, so
+	// applyRecursive can position it and overrides the engine's reset.
+	if (SemmetyLayout::s_reflowPending) {
+		SemmetyLayout::s_reflowPending = false;
+		for (auto& ww: SemmetyLayout::workspaceWrappers) {
+			if (ww.getRoot()) { ww.getRoot()->applyRecursive(ww, std::nullopt, std::nullopt); }
+		}
+	}
+
 	for (const auto& monitor: g_pCompositor->m_monitors) {
 		if (monitor->m_activeWorkspace == nullptr) { continue; }
 
@@ -220,6 +230,10 @@ void SemmetyLayout::newTarget(SP<Layout::ITarget> target) {
 		}
 
 		workspace_wrapper.addWindow(window);
+
+		// Re-apply layout on the next tick: the window isn't mapped yet here (so applyRecursive
+		// can't size it), and Hyprland will reset it to the engine box once it maps.
+		s_reflowPending = true;
 
 		shouldUpdateBar();
 		g_pAnimationManager->scheduleTick();

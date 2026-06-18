@@ -28,6 +28,12 @@ public:
 	inline static std::vector<SemmetyLayout*> s_instances;
 	inline static bool s_globalsInitialized = false;
 
+	// Set when a window is added. Hyprland re-applies a target's stored box right after the window
+	// maps (CWindow::onMap -> layoutTarget()->recalc()), which clobbers the geometry semmety wrote
+	// directly to the window. We re-apply semmety's layout on the next tick, which fires from the
+	// event loop after onMap completes (and after the window is mapped), so our geometry wins.
+	inline static bool s_reflowPending = false;
+
 	//
 	// Layout::ITiledAlgorithm / Layout::IModeAlgorithm
 	//
