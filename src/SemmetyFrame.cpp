@@ -8,6 +8,7 @@
 #include <hyprland/src/config/shared/workspace/WorkspaceRuleManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/view/Window.hpp>
+#include <hyprland/src/layout/target/Target.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/xwayland/XSurface.hpp>
 #include <hyprutils/math/Box.hpp>
@@ -436,28 +437,25 @@ void SemmetyLeafFrame::applyRecursive(
 	} else {
 		geometry.round();
 
-		window->m_size = geometry.size();
-		window->m_position = geometry.pos();
+		// Position through the window's layout target instead of writing m_realPosition/m_realSize
+		// directly. This keeps Hyprland's m_box consistent (its post-map recalc re-applies it, which
+		// previously clobbered our geometry and broke the open animation) and lets the engine drive
+		// the configured window-open animation (e.g. popin). We pass our exact window rect as
+		// visualBox so updatePos() uses it as-is rather than re-applying its own gap model, which
+		// preserves semmety's gap layout. logicalBox is the node box (the logical/tiled size).
+		// updatePos() adds the window's reserved area itself, so compute visualBox without it.
+		auto visualBox =
+		    this->getStandardWindowArea(this->geometry, SBoxExtents {}, workspace.workspace.lock());
 
-		auto reserved = window->getFullWindowReservedArea();
-		auto wb = this->getStandardWindowArea(
-		    this->geometry,
-		    {-reserved.topLeft, -reserved.bottomRight},
-		    workspace.workspace.lock()
-		);
-
-		*window->m_realSize = wb.size();
-		*window->m_realPosition = wb.pos();
+		if (auto target = window->layoutTarget()) {
+			target->setPositionGlobal(
+			    Layout::STargetBox {.logicalBox = this->geometry, .visualBox = visualBox}
+			);
+		}
 	}
 
-	if (force.has_value() && force.value()) {
-		g_pHyprRenderer->damageWindow(window.lock());
-
-		window->m_realPosition->warp();
-		window->m_realSize->warp();
-
-		g_pHyprRenderer->damageWindow(window.lock());
-	}
+	// NOTE: we no longer warp m_realPosition/m_realSize here. Positioning now goes through the
+	// layout target (above), so Hyprland animates moves/resizes and plays the window-open animation.
 
 	window->updateWindowDecos();
 }

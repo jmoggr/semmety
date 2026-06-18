@@ -90,9 +90,10 @@ static void tickHook() {
 		layout->updateBarOnNextTick = false;
 	}
 
-	// Re-apply our layout after a window was added: by now onMap (and its target->recalc() that
-	// resets the window to the engine's stored box) has run and the window is mapped, so
-	// applyRecursive can position it and overrides the engine's reset.
+	// Safety net: re-apply our layout on the tick after a window was added, in case the window
+	// wasn't mapped yet at newTarget (so applyRecursive couldn't position it then). applyRecursive
+	// now positions via the layout target, so this just re-asserts the geometry without warping -
+	// it won't disturb an in-progress window-open animation.
 	if (SemmetyLayout::s_reflowPending) {
 		SemmetyLayout::s_reflowPending = false;
 		for (auto& ww: SemmetyLayout::workspaceWrappers) {
